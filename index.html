@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор Базы: Москва</title>
+    <style>
+        :root { --primary: #007bff; --bg: #f4f6f9; --text: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Боковая панель (Статистика) */
+        .sidebar { width: 300px; background: white; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 10; }
+        .stat-box { background: #eef2f7; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .stat-label { font-size: 0.9em; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #2c3e50; font-variant-numeric: tabular-nums; }
+        .total-box { background: #e3f2fd; border: 2px solid #2196F3; }
+        .total-box .stat-value { color: #0d47a1; }
+        
+        .btn { width: 100%; padding: 10px; margin-top: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-reset { background: #ffebee; color: #c62828; }
+        .btn-reset:hover { background: #ffcdd2; }
+        
+        /* Основная часть (Дерево) */
+        .main { flex: 1; padding: 20px; overflow-y: auto; position: relative; }
+        .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px; font-size: 1em; box-sizing: border-box; }
+        
+        /* Стили дерева */
+        ul { list-style: none; padding-left: 20px; margin: 0; }
+        ul.root { padding-left: 0; }
+        li { margin: 5px 0; }
+        
+        /* Контейнер строки */
+        .node-row { display: flex; align-items: center; padding: 4px; border-radius: 4px; transition: 0.1s; }
+        .node-row:hover { background: #e2e6ea; }
+        
+        /* Чекбокс */
+        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 10px; cursor: pointer; }
+        
+        /* Кнопка раскрытия [+] */
+        .toggler { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; cursor: pointer; color: #777; font-weight: bold; user-select: none; border-radius: 4px; }
+        .toggler:hover { background: #d0d0d0; }
+        .toggler.empty { opacity: 0; cursor: default; }
+        
+        /* Текст категории */
+        .node-name { flex: 1; cursor: pointer; font-size: 15px; user-select: none; }
+        .badge { font-size: 0.75em; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #ccc; color: #666; margin-left: 8px; }
+
+        /* Скрытые ветки */
+        ul.nested { display: none; }
+        ul.nested.active { display: block; border-left: 1px solid #ccc; margin-left: 9px; }
+
+        /* Загрузчик */
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; z-index: 100; flex-direction: column; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error-msg { color: red; text-align: center; background: #ffebee; padding: 20px; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>📊 Москва</h2>
+        
+        <div class="stat-box total-box">
+            <div class="stat-label">Всего строк</div>
+            <div class="stat-value" id="dispLines">0</div>
+        </div>
+        
+        <div class="stat-box">
+            <div class="stat-label">Телефонов</div>
+            <div class="stat-value" id="dispPhones">0</div>
+        </div>
+        
+        <div class="stat-box">
+            <div class="stat-label">Email</div>
+            <div class="stat-value" id="dispEmails">0</div>
+        </div>
+
+        <button class="btn btn-reset" onclick="resetAll()">❌ Сбросить выбор</button>
+        <div style="margin-top: auto; font-size: 0.8em; color: #999;">
+            Источник: Moscow.txt
+        </div>
+    </div>
+
+    <div class="main">
+        <div id="loader">
+            <div class="spinner"></div>
+            <h3>Загрузка базы данных...</h3>
+            <div id="errorText" class="error-msg"></div>
+        </div>
+
+        <input type="text" id="search" class="search-bar" placeholder="🔍 Поиск категории (например: Строительство)..." onkeyup="filterTree()">
+        
+        <div id="treeContainer"></div>
+    </div>
+
+<script>
+    // === НАСТРОЙКИ ===
+    const DATA_FILE = 'Moscow.txt'; // Имя файла, который лежит рядом
+
+    let treeData = [];
+    let selectedIds = new Set();
+    
+    // === 1. ЗАГРУЗКА ДАННЫХ ===
+    window.onload = async function() {
+        try {
+            const response = await fetch(DATA_FILE);
+            if (!response.ok) throw new Error(`Файл ${DATA_FILE} не найден (Код: ${response.status})`);
+            const text = await response.text();
+            
+            treeData = parseData(text);
+            renderTree(treeData, document.getElementById('treeContainer'));
+            document.getElementById('loader').style.display = 'none';
+        } catch (err) {
+            document.querySelector('.spinner').style.display = 'none';
+            const errDiv = document.getElementById('errorText');
+            errDiv.style.display = 'block';
+            errDiv.innerHTML = `<b>Ошибка:</b> Не удалось загрузить файл.<br><br>
+            1. Убедитесь, что файл называется точно <code>${DATA_FILE}</code><br>
+            2. Убедитесь, что он залит на GitHub в ту же папку.<br>
+            3. Ошибка: ${err.message}`;
+        }
+    };
+
+    // === 2. ПАРСИНГ ФАЙЛА ===
+    function parseData(text) {
+        const lines = text.split('\n');
+        const root = [];
+        const stack = [{ level: -1, children: root }];
+        let idCounter = 0;
+
+        // Регулярка для строк вида: "Категория [Строк: 100 | Тел: 50 | Email: 10]" или "Категория [0]"
+        const regexStats = /\[(?:Строк:\s*(\d+)\s*\|\s*Тел:\s*(\d+)\s*\|\s*Email:\s*(\d+)|0)\]\s*$/;
+
+        lines.forEach(line => {
+            if (!line.trim() || line.startsWith('===')) return; // Пропуск пустых и заголовков
+
+            // Считаем уровень вложенности по табуляции или пробелам
+            const level = line.search(/\S/);
+            if (level === -1) return;
+
+            const content = line.trim();
+            const match = content.match(regexStats);
+            
+            let name = content;
+            let stats = { lines: 0, phones: 0, emails: 0 };
+
+            if (match) {
+                // Убираем статистику из названия
+                name = content.substring(0, match.index).trim();
+                if (match[1]) {
+                    stats.lines = parseInt(match[1]) || 0;
+                    stats.phones = parseInt(match[2]) || 0;
+                    stats.emails = parseInt(match[3]) || 0;
+                }
+            }
+
+            const node = {
+                id: idCounter++,
+                name: name,
+                stats: stats,
+                children: [],
+                visible: true // для поиска
+            };
+
+            // Логика иерархии
+            while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+                stack.pop();
+            }
+            stack[stack.length - 1].children.push(node);
+            stack.push({ level: level, children: node.children });
+        });
+
+        return root;
+    }
+
+    // === 3. ОТРИСОВКА ДЕРЕВА ===
+    function renderTree(nodes, container) {
+        const ul = document.createElement('ul');
+        ul.className = container.id === 'treeContainer' ? 'root' : 'nested';
+        
+        nodes.forEach(node => {
+            if (!node.visible) return; // Скрываем, если не подходит под поиск
+
+            const li = document.createElement('li');
+            const hasChildren = node.children.length > 0;
+
+            // Строка с элементами
+            const row = document.createElement('div');
+            row.className = 'node-row';
+
+            // Кнопка [+/-]
+            const toggler = document.createElement('span');
+            toggler.className = `toggler ${hasChildren ? '' : 'empty'}`;
+            toggler.innerText = hasChildren ? '+' : '•';
+            
+            // Чекбокс
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.id = node.id;
+            checkbox.onchange = (e) => toggleSelection(node, e.target.checked);
+
+            // Название и бейдж
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'node-name';
+            nameSpan.innerHTML = `${node.name} <span class="badge">Lines: ${node.stats.lines}</span>`;
+            
+            // Клики
+            row.append(toggler, checkbox, nameSpan);
+            li.appendChild(row);
+
+            // Если есть дети, создаем контейнер (скрытый)
+            if (hasChildren) {
+                const childContainer = document.createElement('div'); // Плейсхолдер
+                
+                // Логика открытия
+                const toggleAction = () => {
+                    const existingUl = li.querySelector('ul.nested');
+                    if (existingUl) {
+                        existingUl.classList.toggle('active');
+                        toggler.innerText = existingUl.classList.contains('active') ? '−' : '+';
+                    } else {
+                        // Ленивая отрисовка (первый раз)
+                        renderTree(node.children, li);
+                        const newUl = li.querySelector('ul.nested');
+                        newUl.classList.add('active');
+                        toggler.innerText = '−';
+                    }
+                };
+
+                toggler.onclick = toggleAction;
+                nameSpan.onclick = toggleAction; // Можно кликать и по названию
+            }
+
+            ul.appendChild(li);
+        });
+        container.appendChild(ul);
+    }
+
+    // === 4. ЛОГИКА ПОДСЧЕТА (САМАЯ ВАЖНАЯ) ===
+    function toggleSelection(node, isChecked) {
+        if (isChecked) selectedIds.add(node.id);
+        else selectedIds.delete(node.id);
+        
+        // Визуально проставляем галочки вниз (для красоты), но в логике считаем только верхний
+        // (Здесь упрощенно: считаем только то, что реально нажато)
+        recalculate();
+    }
+
+    function recalculate() {
+        let totalL = 0, totalP = 0, totalE = 0;
+
+        // Рекурсивная функция обхода
+        // Если узел выбран -> берем его цифры и НЕ ИДЕМ внутрь (чтобы не дублировать)
+        // Если узел НЕ выбран -> идем внутрь искать выбранных детей
+        
+        function traverse(nodes) {
+            nodes.forEach(node => {
+                if (selectedIds.has(node.id)) {
+                    totalL += node.stats.lines;
+                    totalP += node.stats.phones;
+                    totalE += node.stats.emails;
+                    // Стоп! Детей не смотрим, они уже включены в цифру родителя
+                } else {
+                    // Родитель не выбран, проверяем детей
+                    if (node.children.length > 0) traverse(node.children);
+                }
+            });
+        }
+
+        traverse(treeData);
+        
+        // Обновляем экран
+        animateVal('dispLines', totalL);
+        animateVal('dispPhones', totalP);
+        animateVal('dispEmails', totalE);
+    }
+
+    function animateVal(id, end) {
+        document.getElementById(id).innerText = end.toLocaleString();
+    }
+
+    function resetAll() {
+        selectedIds.clear();
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        recalculate();
+    }
+
+    // === 5. ПОИСК ===
+    function filterTree() {
+        const query = document.getElementById('search').value.toLowerCase();
+        
+        // Рекурсивно помечаем visible: true/false
+        function filterNode(node) {
+            let isMatch = node.name.toLowerCase().includes(query);
+            let hasVisibleChildren = false;
+
+            if (node.children.length > 0) {
+                node.children.forEach(child => {
+                    if (filterNode(child)) hasVisibleChildren = true;
+                });
+            }
+
+            // Показываем узел, если он совпал ИЛИ если у него есть совпавшие дети
+            node.visible = isMatch || hasVisibleChildren;
+            return node.visible;
+        }
+
+        treeData.forEach(node => filterNode(node));
+        
+        // Перерисовываем всё дерево
+        const container = document.getElementById('treeContainer');
+        container.innerHTML = '';
+        renderTree(treeData, container);
+        
+        // Если поиск активен, раскрываем всё найденное
+        if (query) {
+            document.querySelectorAll('ul.nested').forEach(ul => ul.classList.add('active'));
+            document.querySelectorAll('.toggler').forEach(t => {
+                if (!t.classList.contains('empty')) t.innerText = '−';
+            });
+        }
+    }
+</script>
+
+</body>
+</html>
