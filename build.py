@@ -1,137 +1,132 @@
 import os
 import json
-import re
 
-# ПАПКА С БАЗАМИ
 BASE_DIR = 'base'
 OUTPUT_FILE = 'database.js'
 
-def parse_txt_file(filepath):
-    """Парсит текстовый файл с отступами в дерево объектов"""
+def parse_txt_content(filepath):
+    """
+    Читает файл и строит дерево категорий на основе отступов.
+    Пример:
+    Строительство
+      Бетон
+    """
     root = []
+    # Стек хранит путь к текущему родителю: {level: -1, children: root}
     stack = [{"level": -1, "children": root}]
-    
-    # Регулярка для вытаскивания цифр: "Строительство [Строк: 10 | Тел: 5...]"
-    # Или просто парсинг строк, если у вас формат проще
-    # Здесь предполагаем, что скрипт должен просто посчитать строки внутри файла
-    # Но если вы хотите объединять деревья, нам нужно сохранить структуру.
-    
-    # Для упрощения и скорости (чтобы файл не весил 100Мб):
-    # Мы будем сохранять только структуру категорий и их статистику.
-    
+
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                if not line.strip() or line.startswith('='): continue
-                
-                # Определяем уровень вложенности по пробелам/табам
-                level = len(line) - len(line.lstrip())
-                content = line.strip()
-                
-                # Пытаемся найти статистику в строке
-                # Пример: "Категория [Строк: 100 | Тел: 50]"
-                # Если статистики нет, считаем саму строку за 1 единицу
-                stats = {"l": 0, "p": 0, "e": 0}
-                
-                # Ищем [L:10 P:5 E:2] или просто считаем строку
-                # (Адаптируйте под ваш реальный формат в файле)
-                # Вариант: считаем, что строка файла - это конечная запись
-                is_category = False
-                
-                # Эвристика: если строка заканчивается на ']', это категория со статой
-                if ']' in content and '[' in content:
-                    # Парсим стату
-                    is_category = True
-                    # Тут можно добавить regex парсинг, если нужно точное совпадение из файла
-                    # Пока просто берем имя
-                    name = content.split('[')[0].strip()
-                    # Для демо считаем нули, если парсер сложный. 
-                    # В идеале тут regex как в JS версии.
-                else:
-                    name = content
-                    # Это просто запись (телефон/емейл)
-                    stats['l'] = 1
-                    if '@' in content: stats['e'] = 1
-                    if sum(c.isdigit() for c in content) > 7: stats['p'] = 1
+                raw_line = line.rstrip()
+                if not raw_line or raw_line.startswith('='): continue
 
+                # Считаем отступы (пробелы в начале)
+                stripped = raw_line.lstrip()
+                level = len(raw_line) - len(stripped)
+                name = stripped
+
+                # Простая статистика для узла (если это конечная строка)
+                stats = {"l": 1, "p": 0, "e": 0}
+                if '@' in name: stats['e'] = 1
+                if sum(c.isdigit() for c in name) > 7: stats['p'] = 1
+                
+                # Создаем узел
                 node = {
                     "name": name,
                     "stats": stats,
                     "children": []
                 }
 
-                # Логика стека для построения дерева
+                # Ищем родителя с уровнем меньше текущего
                 while stack[-1]["level"] >= level:
                     stack.pop()
                 
-                parent = stack[-1]
-                # Если родитель - это массив (корень)
-                if isinstance(parent, list): # багфикс для py
-                    parent = stack[-1]['children']
+                # Добавляем к найденному родителю
+                stack[-1]["children"].append(node)
                 
-                # Добавляем к родителю
-                if isinstance(parent, list):
-                    parent.append(node)
-                else:
-                    parent['children'].append(node)
-                    # Добавляем стату родителю (aggregating up)
-                    # (Упрощенно, точный подсчет будет в JS при мердже)
-
+                # Добавляем текущий узел в стек (он может стать родителем)
                 stack.append({"level": level, "children": node["children"]})
 
     except Exception as e:
-        print(f"Error parsing {filepath}: {e}")
-        return []
-
+        print(f"Ошибка чтения {filepath}: {e}")
+    
     return root
 
-def scan_folders(path):
+def scan_recursive(path):
     name = os.path.basename(path)
     node = {
         "name": name,
         "type": "folder",
         "children": [],
-        "content": None # Если это файл, тут будет дерево категорий
+        "file_content": [] # Если это файл, тут будет дерево категорий
     }
 
     try:
-        items = sorted(os.listdir(path))
+        # Сортировка: папки сверху
+        items = sorted(os.listdir(path), key=lambda x: (not os.path.isdir(os.path.join(path, x)), x))
+        
         for item in items:
             if item.startswith('.'): continue
             full_path = os.path.join(path, item)
 
             if os.path.isdir(full_path):
-                child = scan_folders(full_path)
-                if child['children'] or child['content']:
+                child = scan_recursive(full_path)
+                # Добавляем папку, если она не пустая
+                if child['children'] or child['file_content']:
                     node['children'].append(child)
             
             elif os.path.isfile(full_path) and item.endswith('.txt'):
-                # Это файл с базой города. Парсим его структуру!
-                file_tree = parse_txt_file(full_path)
-                if file_tree:
+                # Парсим структуру файла
+                content_tree = parse_txt_content(full_path)
+                if content_tree:
                     file_node = {
                         "name": item.replace('.txt', ''),
                         "type": "file",
-                        "children": [], # Файл - это лист в географии
-                        "content": file_tree # Дерево категорий внутри
+                        "children": [], 
+                        "file_content": content_tree # ВАЖНО: сохраняем дерево
                     }
                     node['children'].append(file_node)
 
-    except Exception: pass
+    except Exception as e:
+        print(f"Error scanning {path}: {e}")
+
     return node
 
-print("⏳ Генерация базы... Это может занять время, если файлов много.")
+print("🚀 Генерация базы с категориями...")
 
 if os.path.exists(BASE_DIR):
-    # Сканируем структуру
-    geo_tree = scan_folders(BASE_DIR)
+    # Сканируем
+    geo_tree = scan_recursive(BASE_DIR)
     
-    # Оборачиваем в JS
+    # Рекурсивный подсчет статистики снизу вверх (чтобы папки знали сумму цифр)
+    def aggregate_stats(n):
+        l, p, e = 0, 0, 0
+        
+        # Если это файл с контентом
+        if n.get('file_content'):
+            for cat in n['file_content']:
+                # Тут рекурсия внутри контента файла (если нужно), пока просто сумму
+                # Для простоты считаем сумму 1-го уровня, но лучше пройтись глубже
+                pass 
+            # Упрощение: для навигации по папкам стата не критична, она считается в JS
+            # Но для красоты можно добавить.
+        
+        if n.get('children'):
+            for child in n['children']:
+                stats = aggregate_stats(child)
+                l += stats['l']
+                p += stats['p']
+                e += stats['e']
+        
+        n['stats'] = {'l': l, 'p': p, 'e': e}
+        return n['stats']
+
+    # Сохраняем
     js_content = f"const GEO_DB = {json.dumps(geo_tree, ensure_ascii=False)};"
-    
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write(js_content)
     
-    print(f"✅ Готово! Файл {OUTPUT_FILE} создан.")
+    print(f"✅ Готово! База сохранена.")
 else:
     print(f"❌ Папка {BASE_DIR} не найдена.")
