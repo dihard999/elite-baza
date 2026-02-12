@@ -37,52 +37,77 @@
             box-shadow: 4px 0 24px rgba(0,0,0,0.05);
         }
 
-        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;}
+        .sidebar-content { 
+            padding: 20px; 
+            overflow-y: auto; 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px;
+        }
 
         /* 1. БЛОК ЦЕНЫ */
         .total-box {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
             color: white; padding: 20px; border-radius: 16px; text-align: center;
             box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+            flex-shrink: 0; /* Не сжимать */
         }
         .total-label { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
         .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
         .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; background: rgba(0,0,0,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;}
 
-        /* 2. БЛОК БОНУСА (ВИДЕН ВСЕГДА) */
+        /* 2. БЛОК БОНУСА (ИСПРАВЛЕННЫЙ) */
         .bonus-box {
-            background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 15px;
-            transition: 0.3s all; position: relative; overflow: hidden;
+            background: #f8fafc; 
+            border: 2px dashed #cbd5e1; 
+            border-radius: 12px; 
+            padding: 16px;
+            transition: 0.3s all; 
+            flex-shrink: 0; /* ВАЖНО: Не даем блоку сжиматься */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
+        
         /* Активное состояние (Зеленое) */
         .bonus-box.active {
-            background: var(--success-bg); border: 2px solid var(--success-border);
+            background: var(--success-bg); 
+            border: 2px solid var(--success-border);
             box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.2);
         }
 
         .bonus-header { 
             display: flex; justify-content: space-between; align-items: center; 
-            color: var(--text-muted); font-weight: 700; font-size: 0.9rem; margin-bottom: 8px;
+            color: var(--text-muted); font-weight: 700; font-size: 0.95rem;
         }
         .bonus-box.active .bonus-header { color: #047857; }
         
-        .bonus-text { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        .bonus-text { 
+            font-size: 0.9rem; /* Чуть крупнее */
+            color: var(--text-muted); 
+            line-height: 1.5; 
+        }
         .bonus-box.active .bonus-text { color: #065f46; }
         
         .bonus-highlight { 
             color: var(--text-main); font-weight: 800; background: rgba(0,0,0,0.05); 
-            padding: 2px 6px; border-radius: 4px; 
+            padding: 2px 6px; border-radius: 4px; display: inline-block;
         }
         .bonus-box.active .bonus-highlight { color: #059669; background: white; }
 
         /* Прогресс бар "Ведро 500р" */
-        .bucket-progress { height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 10px; overflow: hidden; }
+        .bucket-container {
+            width: 100%;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .bucket-progress { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 100%; }
         .bucket-fill { height: 100%; background: #94a3b8; width: 0%; transition: width 0.3s; }
         .bonus-box.active .bucket-progress { background: #d1fae5; }
         .bonus-box.active .bucket-fill { background: #10b981; }
 
         /* 3. СТАТИСТИКА */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; flex-shrink: 0;}
         .stat-item { background: white; padding: 10px 5px; border-radius: 10px; border: 1px solid var(--border); }
         .stat-num { display: block; font-weight: 800; font-size: 1rem; color: var(--text-main); margin-bottom: 2px; }
         .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -125,8 +150,8 @@
         /* BUTTONS */
         .actions { margin-top: auto; padding-top: 10px; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
-        .btn-download { background: #0f172a; color: white; }
-        .btn-download:hover { background: #1e293b; }
+        .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-download:hover { background: #1e293b; transform: translateY(-1px); }
         .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
         .btn-reset:hover { background: #fef2f2; }
 
@@ -185,11 +210,15 @@
                 <span id="bonusTitle">Выберите данные</span>
                 <span id="bonusPercent">0%</span>
             </div>
+            
             <div class="bonus-text" id="bonusText">
                 Начните выбирать категории, чтобы увидеть расчет стоимости и бонусов.
             </div>
-            <div class="bucket-progress">
-                <div class="bucket-fill" id="bucketFill"></div>
+            
+            <div class="bucket-container">
+                <div class="bucket-progress">
+                    <div class="bucket-fill" id="bucketFill"></div>
+                </div>
             </div>
         </div>
         
@@ -282,7 +311,7 @@
             } else { treeData = []; }
             renderTree(treeData, document.getElementById('treeContainer'), 0);
             document.getElementById('loader').style.display = 'none';
-            recalculate(); // Инит нулей
+            recalculate(); 
         } catch (e) {
             document.querySelector('.spinner').style.display = 'none';
             document.getElementById('errorText').style.display = 'block';
@@ -425,9 +454,9 @@
         const bonusPercent = document.getElementById('bonusPercent');
 
         if (volume === 0) {
-            bonusBox.className = 'bonus-box'; // Not active
+            bonusBox.className = 'bonus-box';
             bonusTitle.innerText = "Выберите данные";
-            bonusText.innerHTML = "Отмечайте галочками регионы или категории, чтобы увидеть расчет.";
+            bonusText.innerHTML = "Отмечайте галочками регионы, чтобы увидеть расчет стоимости.";
             bucketFill.style.width = '0%';
             bonusPercent.innerText = "0%";
         } else {
@@ -441,16 +470,16 @@
             bucketFill.style.width = percentUsed + '%';
 
             if (freeVolume > 0) {
-                bonusText.innerHTML = `Пакет на ${finalPrice}₽ заполнен на ${percentUsed}%.<br> Вы можете бесплатно добавить еще <span class="bonus-highlight">${freeVolume.toLocaleString()}</span> записей!`;
+                bonusText.innerHTML = `В пакет ${finalPrice}₽ поместится еще <span class="bonus-highlight">${freeVolume.toLocaleString()}</span> записей бесплатно!`;
             } else {
-                bonusText.innerHTML = `Пакет на ${finalPrice}₽ заполнен идеально (100%).<br> Следующая запись добавит +500₽ к чеку.`;
+                bonusText.innerHTML = `Пакет на ${finalPrice}₽ заполнен идеально (100%). Следующая запись добавит +500₽ к чеку.`;
             }
         }
 
-        renderTierList(tierIndex, volume, currentTier);
+        renderTierList(tierIndex, volume);
     }
 
-    function renderTierList(currentIndex, volume, currentTier) {
+    function renderTierList(currentIndex, volume) {
         const container = document.getElementById('tierListContainer');
         container.innerHTML = '';
         const baseRate = TIERS[0].rate; 
@@ -463,11 +492,10 @@
             let label = `<span class="save-badge">-${saving}%</span>`;
             if (saving === 0) label = '';
 
-            // PROGRESS BAR LOGIC (Only for active tier)
             let progressHtml = '';
+            
             if (index === currentIndex) {
                 statusClass = 'current';
-                
                 // Считаем прогресс до следующего уровня
                 const nextTier = TIERS[index + 1];
                 let pct = 0;
