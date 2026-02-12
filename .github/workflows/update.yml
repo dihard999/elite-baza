@@ -1,58 +1,45 @@
-name: Build & Save Database
+name: Deploy Site (Clean)
 
 on:
-  # Запуск при обновлении ветки main
   push:
-    branches:
-      - main
-  # Кнопка ручного запуска
+    branches: ["main"]
   workflow_dispatch:
 
-# Даем права на запись в репозиторий (ВАЖНО!)
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      # 1. Скачиваем код
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Ставим Python
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 3. Запускаем генератор
-      - name: Generate Database
+      - name: Build Database
         run: python build.py
 
-      # 4. === НОВЫЙ ШАГ: СОХРАНЯЕМ ФАЙЛ В РЕПОЗИТОРИЙ ===
-      - name: Commit and Push database.js
-        run: |
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
-          git add database.js
-          # Если файл изменился - сохраняем. Если нет - не ломаемся.
-          git commit -m "🤖 Auto-update database.js" || echo "No changes to commit"
-          git push
-
-      # 5. Настраиваем публикацию сайта
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # 6. Загружаем сайт
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
 
-      # 7. Публикуем
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
