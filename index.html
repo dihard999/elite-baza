@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Base Calculator: Pro Logic</title>
+    <title>Smart Base Calculator: Final</title>
     <style>
         :root {
             --bg-body: #f1f5f9;       
@@ -102,6 +102,12 @@
 
         /* BUTTONS */
         .actions { margin-top: auto; padding-top: 10px; }
+        
+        /* HINT TEXT ABOVE BUTTON */
+        .download-hint {
+            font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 500;
+        }
+
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
         .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-download:hover { background: #1e293b; transform: translateY(-1px); }
@@ -130,9 +136,7 @@
         .node-row:hover { background: #f8fafc; }
         .node-row.selected { background: #eff6ff; }
         .node-row.is-root-node { background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-weight: 700; margin-bottom: 10px; margin-top: 10px; padding: 12px 0; }
-        
-        /* Стили для частичного выделения (Неопределенный статус) */
-        .node-row.indeterminate { background: #fff7ed; } /* Оранжеватый фон */
+        .node-row.indeterminate { background: #fff7ed; } 
         .node-row.indeterminate input[type="checkbox"] { opacity: 0.6; }
 
         .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
@@ -198,6 +202,8 @@
         </div>
 
         <div class="actions">
+            <div class="download-hint">Скачайте файл и просто скиньте мне в чат для заказа 👇</div>
+            
             <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" onclick="resetAll()">Сброс</button>
         </div>
@@ -242,7 +248,7 @@
 
     let treeData = [];
     let selectedIds = new Set();
-    let indeterminateIds = new Set(); // Множество для "частично выбранных"
+    let indeterminateIds = new Set(); 
     let debounceTimer;
 
     window.onload = async () => {
@@ -253,7 +259,6 @@
             const text = await resp.text();
             let rawNodes = parseHierarchy(text);
             
-            // Обертка корня, если категорий много
             if (rawNodes.length === 1) {
                 treeData = rawNodes;
                 treeData[0].name = "ВСЕ БАЗЫ"; treeData[0].isRoot = true; treeData[0].expanded = true;
@@ -262,10 +267,11 @@
                     acc.l += node.stats.l; acc.p += node.stats.p; acc.e += node.stats.e;
                     return acc;
                 }, { l:0, p:0, e:0 });
-                const rootNode = { id: 'ROOT_WRAPPER', name: 'ВСЕ БАЗЫ', stats: totalStats, children: rawNodes, expanded: true, visible: true, isRoot: true };
-                treeData = [rootNode];
-                // Присваиваем родителя для rawNodes
+                const rootNode = { id: 'ROOT_WRAPPER', name: 'ВСЕ БАЗЫ', stats: totalStats, children: rawNodes, expanded: true, visible: true, isRoot: true, parent: null };
+                
+                // Присваиваем родителя для первого уровня
                 rawNodes.forEach(child => child.parent = rootNode);
+                treeData = [rootNode];
             } else { treeData = []; }
 
             renderTree(treeData, document.getElementById('treeContainer'), 0);
@@ -301,8 +307,8 @@
             }
             const node = { id: idCounter++, name, stats, children: [], expanded: false, visible: true, parent: null };
 
-            // Связываем с родителем
             while (stack.length > 1 && stack[stack.length-1].level >= level) stack.pop();
+            
             const parent = stack[stack.length-1].node;
             if (parent) {
                 node.parent = parent;
@@ -314,13 +320,12 @@
         return root;
     }
 
-    // === ЛОГИКА ВЫДЕЛЕНИЯ (ГЛАВНОЕ ИСПРАВЛЕНИЕ) ===
+    // --- ЛОГИКА ВЫДЕЛЕНИЯ ---
     function toggleNodeSelection(node, isSelected) {
-        // 1. Вниз: Рекурсивно ставим статус всем детям
         function setAllChildren(n, state) {
             if (state) {
                 selectedIds.add(n.id);
-                indeterminateIds.delete(n.id); // Если выбран полностью, он не indeterminate
+                indeterminateIds.delete(n.id);
             } else {
                 selectedIds.delete(n.id);
                 indeterminateIds.delete(n.id);
@@ -331,7 +336,6 @@
         }
         setAllChildren(node, isSelected);
 
-        // 2. Вверх: Проверяем родителей и обновляем их статус
         let current = node.parent;
         while (current) {
             updateParentState(current);
@@ -341,18 +345,14 @@
 
     function updateParentState(node) {
         if (!node.children || node.children.length === 0) return;
-
         let allSelected = true;
         let noneSelected = true;
-
         for (let child of node.children) {
             const childSelected = selectedIds.has(child.id);
             const childIndeterminate = indeterminateIds.has(child.id);
-
             if (!childSelected) allSelected = false;
             if (childSelected || childIndeterminate) noneSelected = false;
         }
-
         if (allSelected) {
             selectedIds.add(node.id);
             indeterminateIds.delete(node.id);
@@ -360,8 +360,7 @@
             selectedIds.delete(node.id);
             indeterminateIds.delete(node.id);
         } else {
-            // Частично выбран
-            selectedIds.delete(node.id); // Убираем из "полностью выбранных" (чтобы цена не считалась дважды)
+            selectedIds.delete(node.id);
             indeterminateIds.add(node.id);
         }
     }
@@ -374,12 +373,10 @@
             if (!node.visible) return;
             const li = document.createElement('li');
             const hasChildren = node.children.length > 0;
-            
             const isSelected = selectedIds.has(node.id);
             const isIndeterminate = indeterminateIds.has(node.id);
 
             const row = document.createElement('div');
-            // Добавляем класс indeterminate для стилизации (оранжевый фон)
             row.className = `node-row ${isSelected ? 'selected' : ''} ${isIndeterminate ? 'indeterminate' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
             
             const leftDiv = document.createElement('div');
@@ -393,7 +390,7 @@
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = isSelected;
-            checkbox.indeterminate = isIndeterminate; // Визуальная "черточка"
+            checkbox.indeterminate = isIndeterminate;
 
             const nameDiv = document.createElement('div');
             nameDiv.className = 'node-name';
@@ -423,11 +420,8 @@
             
             const handleCheck = (e) => {
                 e.stopPropagation();
-                const newState = !isSelected; // Если был indeterminate (false), станет true. Если был selected (true), станет false.
-                
+                const newState = !isSelected;
                 toggleNodeSelection(node, newState);
-
-                // Перерисовка
                 document.getElementById('treeContainer').innerHTML = '';
                 renderTree(treeData, document.getElementById('treeContainer'), 0);
                 recalculate();
@@ -435,7 +429,7 @@
 
             toggler.onclick = toggleExpand;
             row.onclick = (e) => { if(e.target !== checkbox && !e.target.closest('.toggler')) handleCheck(e); }; 
-            checkbox.onclick = handleCheck; // Перехватываем клик по чекбоксу
+            checkbox.onclick = handleCheck; 
 
             if (node.expanded && hasChildren) {
                 renderTree(node.children, li, depth + 1);
@@ -446,33 +440,23 @@
         container.appendChild(ul);
     }
 
-    // === ПЕРЕСЧЕТ СТОИМОСТИ ===
     function recalculate() {
         let l=0, p=0, e=0;
         
-        // Рекурсивная функция обхода для подсчета
         function traverseCalc(nodes) {
             nodes.forEach(n => {
-                // ВАЖНО: Если узел выбран полностью (selectedIds), берем его цифры и НЕ идем внутрь (чтобы не двоить).
                 if (selectedIds.has(n.id)) {
                     l += n.stats.l; p += n.stats.p; e += n.stats.e;
                 } 
-                // Если узел частично выбран (indeterminateIds) ИЛИ просто раскрыт (но это лишнее), идем внутрь.
-                // Indeterminate означает, что внутри есть галочки.
                 else if (indeterminateIds.has(n.id) || (n.children && n.children.length > 0)) {
-                    // Идем внутрь, чтобы найти конкретно выбранных детей
                     if (n.children.length) traverseCalc(n.children);
                 }
-                // Если ни то, ни другое - пропускаем.
             });
         }
-        
-        // Запускаем расчет с корня
         traverseCalc(treeData);
 
         const volume = l + p + e;
 
-        // Определяем тариф
         let currentTier = TIERS[0];
         let tierIndex = 0;
         for (let i = 0; i < TIERS.length; i++) {
@@ -494,7 +478,7 @@
         document.getElementById('selEmails').innerText = e.toLocaleString();
         document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
 
-        // LOGIC FOR BONUS BOX
+        // BONUS LOGIC
         const bonusBox = document.getElementById('bonusBox');
         const bucketFill = document.getElementById('bucketFill');
         const bonusTitle = document.getElementById('bonusTitle');
@@ -540,8 +524,6 @@
             let label = `<span class="save-badge">-${saving}%</span>`;
             if (saving === 0) label = '';
 
-            let progressHtml = '';
-            
             if (index === currentIndex) {
                 statusClass = 'current';
                 const nextTier = TIERS[index + 1];
@@ -572,13 +554,26 @@
         });
     }
 
+    // --- ПОЛУЧЕНИЕ ПУТИ (ДЛЯ ФАЙЛА) ---
+    function getNodePath(node) {
+        let path = [];
+        let curr = node;
+        // Поднимаемся вверх, пока не дойдем до null или до Корневой Обертки
+        while (curr && !curr.isRoot) {
+            path.unshift(curr.name);
+            curr = curr.parent;
+        }
+        return path.join(" / ");
+    }
+
     function resetAll() {
         selectedIds.clear();
-        indeterminateIds.clear(); // Очищаем частичный выбор
+        indeterminateIds.clear();
         document.getElementById('treeContainer').innerHTML = '';
         renderTree(treeData, document.getElementById('treeContainer'), 0);
         recalculate();
     }
+    
     function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
     function runSearch() {
         const q = document.getElementById('searchInput').value.toLowerCase();
@@ -594,20 +589,31 @@
         document.getElementById('treeContainer').innerHTML = '';
         renderTree(treeData, document.getElementById('treeContainer'), 0);
     }
+
+    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ СКАЧИВАНИЯ ---
     function downloadOrder() {
         if (selectedIds.size === 0 && indeterminateIds.size === 0) { alert('Ничего не выбрано!'); return; }
         const price = document.getElementById('totalPrice').innerText;
         let text = `ЗАКАЗ\nДата: ${new Date().toLocaleString()}\n`;
         text += `К оплате: ${price} руб.\n`;
-        text += `Объем: L:${document.getElementById('selLines').innerText} P:${document.getElementById('selPhones').innerText} E:${document.getElementById('selEmails').innerText}\n`;
+        text += `Объем: Строк:${document.getElementById('selLines').innerText} | Телефонов:${document.getElementById('selPhones').innerText} | Email:${document.getElementById('selEmails').innerText}\n`;
         text += `--------------------------------\n`;
+        
         const traverseWrite = (nodes) => {
             nodes.forEach(n => {
-                if (selectedIds.has(n.id)) text += `[+] ${n.name} (L:${n.stats.l} P:${n.stats.p} E:${n.stats.e})\n`;
-                else if (n.children.length) traverseWrite(n.children);
+                // Если выбран полностью - пишем его путь
+                if (selectedIds.has(n.id)) {
+                    const fullPath = getNodePath(n);
+                    text += `[+] ${fullPath} (Строк: ${n.stats.l} | Телефонов: ${n.stats.p} | Email: ${n.stats.e})\n`;
+                } 
+                // Если частично (или просто папка раскрыта), идем внутрь
+                else if (n.children.length) {
+                    traverseWrite(n.children);
+                }
             });
         };
         traverseWrite(treeData);
+        
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
         link.download = `Order_${price}RUB.txt`;
