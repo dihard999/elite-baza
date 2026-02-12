@@ -3,98 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Base Analyzer</title>
+    <title>Base Catalog Auto</title>
     <script src="database.js"></script> 
-    
     <style>
-        :root {
-            --bg-body: #f1f5f9; --bg-sidebar: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-            --c-lines-bg: #f8fafc; --c-lines-text: #475569; --c-phones-bg: #eff6ff; --c-phones-text: #1d4ed8; --c-emails-bg: #f0fdf4; --c-emails-text: #15803d;
-            --primary: #3b82f6; --success: #22c55e; --success-bg: #ecfdf5; --success-border: #6ee7b7;
-        }
+        :root { --bg-body: #f8fafc; --bg-sidebar: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0; --primary: #2563eb; --success: #16a34a; --success-bg: #dcfce7; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
         .sidebar { width: 400px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
-        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;}
-
-        /* ЦЕНА */
-        .total-box { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); flex-shrink: 0; }
-        .total-label { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
-        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
-        .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; background: rgba(0,0,0,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;}
-
-        /* БОНУС */
-        .bonus-box { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; transition: 0.3s all; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
-        .bonus-box.active { background: var(--success-bg); border: 2px solid var(--success-border); box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.2); }
-        .bonus-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-weight: 700; font-size: 0.95rem; }
-        .bonus-box.active .bonus-header { color: #047857; }
-        .bonus-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
-        .bonus-box.active .bonus-text { color: #065f46; }
-        .bonus-highlight { color: var(--text-main); font-weight: 800; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; display: inline-block; }
-        .bonus-box.active .bonus-highlight { color: #059669; background: white; }
-        .bucket-container { width: 100%; display: flex; flex-direction: column; gap: 4px; }
-        .bucket-progress { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 100%; }
-        .bucket-fill { height: 100%; background: #94a3b8; width: 0%; transition: width 0.3s; }
-        .bonus-box.active .bucket-progress { background: #d1fae5; }
-        .bonus-box.active .bucket-fill { background: #10b981; }
-
-        /* СТАТИСТИКА */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; flex-shrink: 0;}
-        .stat-item { background: white; padding: 10px 5px; border-radius: 10px; border: 1px solid var(--border); }
-        .stat-num { display: block; font-weight: 800; font-size: 1rem; color: var(--text-main); margin-bottom: 2px; }
-        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
-        /* ТАРИФЫ */
-        .tier-section { border-top: 1px solid var(--border); padding-top: 15px; }
-        .tier-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; padding-left: 5px; }
-        .tier-list { display: flex; flex-direction: column; gap: 8px; }
-        .tier-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: white; border: 1px solid transparent; transition: 0.2s; font-size: 0.85rem; color: var(--text-muted); }
-        .tier-item.passed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
-        .tier-item.current { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; font-weight: 600; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden; }
-        .tier-item.current::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; background: #3b82f6; width: var(--progress, 0%); transition: width 0.3s; }
-        .tier-item.locked { background: white; border: 1px solid #f1f5f9; }
-        .tier-rate { font-weight: 700; }
-        .save-badge { font-size: 0.7rem; font-weight: 700; color: white; background: #10b981; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
-
-        /* ACTIONS */
+        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .total-box { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 20px; border-radius: 12px; text-align: center; }
+        .total-val { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+        .total-lbl { font-size: 0.75rem; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; margin-bottom: 5px; }
+        .bonus-box { background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 15px; transition: 0.3s; }
+        .bonus-box.active { background: var(--success-bg); border: 2px solid #86efac; }
+        .bonus-head { font-weight: 700; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-muted); }
+        .bonus-box.active .bonus-head { color: #15803d; }
+        .bonus-text { font-size: 0.85rem; color: var(--text-muted); }
+        .bonus-box.active .bonus-text { color: #166534; }
+        .progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #94a3b8; width: 0%; transition: 0.3s; }
+        .bonus-box.active .progress-fill { background: #22c55e; }
+        .tier-list { display: flex; flex-direction: column; gap: 5px; border-top: 1px solid var(--border); padding-top: 15px; }
+        .tier-item { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 0.8rem; border-radius: 6px; color: var(--text-muted); }
+        .tier-item.current { background: #eff6ff; color: var(--primary); font-weight: 700; border: 1px solid #bfdbfe; }
+        .tier-item.passed { text-decoration: line-through; opacity: 0.5; }
         .actions { margin-top: auto; padding-top: 10px; }
-        .download-hint { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 500; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
-        .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-download:hover { background: #1e293b; transform: translateY(-1px); }
-        .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
-        .btn-reset:hover { background: #fef2f2; }
-
-        /* MAIN */
+        .dl-hint { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
+        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; margin-top: 5px; }
         .main { flex: 1; display: flex; flex-direction: column; background: white; }
-        .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); }
-        .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; }
-        .search-input:focus { background: white; border-color: var(--primary); outline: none; }
-        .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
+        .toolbar { padding: 15px 25px; border-bottom: 1px solid var(--border); }
+        .search-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-size: 1rem; }
+        .tree-header { display: flex; padding: 10px 25px; background: #f8fafc; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+        .th-name { flex: 1; padding-left: 40px; }
+        .th-col { width: 90px; text-align: center; }
+        .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 25px 20px 25px; }
         ul { list-style: none; padding: 0; margin: 0; }
-        .table-header { position: sticky; top: 0; z-index: 10; background: white; padding-top: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; }
-        .header-pad { padding-left: 50px; flex: 1; } 
-        .col-fixed { width: 90px; text-align: center; }
-
-        .node-row { display: flex; align-items: center; padding: 8px 0; border-radius: 6px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .node-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
         .node-row:hover { background: #f8fafc; }
         .node-row.selected { background: #eff6ff; }
-        .node-row.is-root-node { background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-weight: 700; margin-bottom: 10px; margin-top: 10px; padding: 12px 0; }
-        .node-row.indeterminate { background: #fff7ed; } 
-        .node-row.indeterminate input[type="checkbox"] { opacity: 0.6; }
-        .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
+        .node-row.indeterminate { background: #fff7ed; }
+        .node-row.indeterminate input { opacity: 0.5; }
+        .row-left { flex: 1; display: flex; align-items: center; padding-right: 10px; overflow: hidden; }
         .row-right { display: flex; gap: 5px; }
-        .toggler { width: 24px; display: flex; justify-content: center; margin-right: 8px; color: #94a3b8; flex-shrink: 0;}
-        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
-        .node-name { font-weight: 500; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .badge { padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: center; width: 100%; }
-        .b-lines { color: var(--c-lines-text); }
-        .b-phones { color: var(--c-phones-text); }
-        .b-emails { color: var(--c-emails-text); }
-        
-        .error-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .error-text { color: #dc2626; font-weight: bold; margin-bottom: 10px; }
-        .error-sub { color: #64748b; font-size: 0.9rem; }
+        .toggler { width: 24px; display: flex; justify-content: center; margin-right: 5px; color: #94a3b8; cursor: pointer; }
+        input[type="checkbox"] { margin-right: 10px; cursor: pointer; }
+        .node-name { font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge { width: 90px; text-align: center; font-size: 0.85rem; font-weight: 700; }
+        .b-lines { color: #475569; } .b-phones { color: #2563eb; } .b-emails { color: #16a34a; }
+        .loader { position: fixed; inset: 0; background: white; z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -102,49 +58,19 @@
 <div class="sidebar">
     <div class="sidebar-content">
         <div class="total-box">
-            <div class="total-label">К оплате</div>
-            <div class="total-value"><span id="totalPrice">0</span>₽</div>
-            <div class="total-step">Шаг тарифа 500₽</div>
+            <div class="total-lbl">Итоговая стоимость</div>
+            <div class="total-val"><span id="totalPrice">0</span>₽</div>
+            <div style="font-size:0.8rem; opacity:0.8; margin-top:5px">Шаг 500₽</div>
         </div>
-
         <div class="bonus-box" id="bonusBox">
-            <div class="bonus-header">
-                <span id="bonusTitle">Выберите данные</span>
-                <span id="bonusPercent">0%</span>
-            </div>
-            <div class="bonus-text" id="bonusText">
-                Начните выбирать категории, чтобы увидеть расчет стоимости и бонусов.
-            </div>
-            <div class="bucket-container">
-                <div class="bucket-progress">
-                    <div class="bucket-fill" id="bucketFill"></div>
-                </div>
-            </div>
+            <div class="bonus-head" id="bonusTitle">Выберите базы</div>
+            <div class="bonus-text" id="bonusText">Начните выбирать регионы для расчета.</div>
+            <div class="progress-bar"><div class="progress-fill" id="bucketFill"></div></div>
         </div>
-        
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-num" id="selLines" style="color:var(--c-lines-text)">0</span>
-                <span class="stat-lbl">Строк</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-num" id="selPhones" style="color:var(--c-phones-text)">0</span>
-                <span class="stat-lbl">Тел</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-num" id="selEmails" style="color:var(--c-emails-text)">0</span>
-                <span class="stat-lbl">Email</span>
-            </div>
-        </div>
-
-        <div class="tier-section">
-            <div class="tier-title">Ваша скидка (от объема)</div>
-            <div class="tier-list" id="tierListContainer"></div>
-        </div>
-
+        <div class="tier-list" id="tierList"></div>
         <div class="actions">
-            <div class="download-hint">Скачайте файл и просто скиньте мне в чат для заказа 👇</div>
-            <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ</button>
+            <div class="dl-hint">Скачайте файл и отправьте менеджеру 👇</div>
+            <button class="btn" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" onclick="resetAll()">Сброс</button>
         </div>
     </div>
@@ -152,383 +78,216 @@
 
 <div class="main">
     <div class="toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск (Страна, Регион, Город)...">
+        <input type="text" id="search" placeholder="🔍 Поиск (Страна, Регион, Город)...">
     </div>
-    
     <div class="tree-wrapper">
-        <div class="table-header">
-            <div class="header-pad">Категория</div>
-            <div class="col-fixed">Строк</div>
-            <div class="col-fixed" style="color:var(--c-phones-text)">Тел</div>
-            <div class="col-fixed" style="color:var(--c-emails-text)">Email</div>
+        <div class="tree-header">
+            <div class="th-name">Категория</div>
+            <div class="th-col">Строк</div>
+            <div class="th-col" style="color:#2563eb">Тел</div>
+            <div class="th-col" style="color:#16a34a">Email</div>
         </div>
         <div id="treeContainer"></div>
     </div>
 </div>
 
-<div id="errorOverlay" class="error-overlay" style="display: none;">
-    <div class="error-text">❌ База данных не найдена</div>
-    <div class="error-sub">Убедитесь, что файл <b>database.js</b> лежит рядом с index.html</div>
+<div class="loader" id="loader">
+    <h3 style="color:#475569">Синхронизация с базой...</h3>
+    <div style="color:#94a3b8; font-size:0.9rem; margin-top:5px" id="loaderMsg"></div>
 </div>
 
 <script>
     const TIERS = [
-        { limit: 1000,   rate: 0.10,  name: "Новичок" },
-        { limit: 5000,   rate: 0.075, name: "Старт" },
-        { limit: 10000,  rate: 0.06,  name: "Активный" },
-        { limit: 50000,  rate: 0.04,  name: "Бизнес" },
-        { limit: 100000, rate: 0.03,  name: "Профи" },
-        { limit: 300000, rate: 0.02,  name: "Корпоративный" },
+        { limit: 1000, rate: 0.10, name: "Новичок" }, { limit: 5000, rate: 0.075, name: "Старт" },
+        { limit: 10000, rate: 0.06, name: "Активный" }, { limit: 50000, rate: 0.04, name: "Бизнес" },
+        { limit: 100000, rate: 0.03, name: "Профи" }, { limit: 300000, rate: 0.02, name: "Корп" },
         { limit: Infinity, rate: 0.005, name: "Опт" }
     ];
     const PRICE_STEP = 500;
+    let treeData = [], selectedIds = new Set(), indeterminateIds = new Set(), idCounter = 0, debounceTimer;
 
-    let treeData = [];
-    let selectedIds = new Set();
-    let indeterminateIds = new Set();
-    let idCounter = 0;
-    let debounceTimer;
-
-    // === АВТОЗАГРУЗКА ===
     window.onload = () => {
-        document.getElementById('searchInput').addEventListener('input', debounceSearch);
-
-        // Проверяем, загрузился ли database.js
-        if (typeof AUTO_LOAD_DATA !== 'undefined') {
-            initApp(AUTO_LOAD_DATA);
-        } else {
-            document.getElementById('errorOverlay').style.display = 'flex';
-        }
+        document.getElementById('search').addEventListener('input', debounceSearch);
+        if (typeof STATIC_DB !== 'undefined') { initApp(STATIC_DB); } 
+        else { document.getElementById('loaderMsg').innerText = "База обновляется, подождите 1 мин и обновите страницу..."; }
     };
 
     function initApp(rawData) {
-        // Преобразуем сырые данные в формат дерева с родителями
-        const processedRoot = processRawData(rawData, null);
-        
-        // Устанавливаем корень
-        processedRoot.isRoot = true;
-        processedRoot.expanded = true;
-        
-        treeData = [processedRoot];
-        
+        treeData = rawData.map(node => processNode(node, null));
+        if (treeData[0]) { treeData[0].isRoot = true; treeData[0].expanded = true; }
         renderTree(treeData, document.getElementById('treeContainer'), 0);
         recalculate();
+        document.getElementById('loader').style.display = 'none';
     }
 
-    function processRawData(node, parent) {
-        // Создаем объект узла для нашего приложения
-        const newNode = {
-            id: idCounter++,
-            name: node.name,
-            stats: node.stats,
-            children: [],
-            expanded: false,
-            visible: true,
-            parent: parent
-        };
-
-        if (node.children && node.children.length > 0) {
-            // Рекурсивно обрабатываем детей
-            newNode.children = node.children.map(child => processRawData(child, newNode));
-        }
-
+    function processNode(node, parent) {
+        const newNode = { id: idCounter++, name: node.name, stats: node.stats, children: [], expanded: false, visible: true, parent: parent };
+        if (node.children) newNode.children = node.children.map(child => processNode(child, newNode));
         return newNode;
     }
 
-    // --- ЛОГИКА ВЫДЕЛЕНИЯ ---
-    function toggleNodeSelection(node, isSelected) {
-        function setAllChildren(n, state) {
-            if (state) {
-                selectedIds.add(n.id);
-                indeterminateIds.delete(n.id);
-            } else {
-                selectedIds.delete(n.id);
-                indeterminateIds.delete(n.id);
-            }
-            if (n.children) {
-                n.children.forEach(c => setAllChildren(c, state));
-            }
+    function toggleSelect(node, state) {
+        function setChildren(n, s) {
+            if (s) { selectedIds.add(n.id); indeterminateIds.delete(n.id); } else { selectedIds.delete(n.id); indeterminateIds.delete(n.id); }
+            if (n.children) n.children.forEach(c => setChildren(c, s));
         }
-        setAllChildren(node, isSelected);
-
-        let current = node.parent;
-        while (current) {
-            updateParentState(current);
-            current = current.parent;
-        }
+        setChildren(node, state);
+        let curr = node.parent;
+        while (curr) { updateParent(curr); curr = curr.parent; }
     }
 
-    function updateParentState(node) {
-        if (!node.children || node.children.length === 0) return;
-        let allSelected = true;
-        let noneSelected = true;
-        for (let child of node.children) {
-            const childSelected = selectedIds.has(child.id);
-            const childIndeterminate = indeterminateIds.has(child.id);
-            if (!childSelected) allSelected = false;
-            if (childSelected || childIndeterminate) noneSelected = false;
-        }
-        if (allSelected) {
-            selectedIds.add(node.id);
-            indeterminateIds.delete(node.id);
-        } else if (noneSelected) {
-            selectedIds.delete(node.id);
-            indeterminateIds.delete(node.id);
-        } else {
-            selectedIds.delete(node.id);
-            indeterminateIds.add(node.id);
-        }
+    function updateParent(node) {
+        if (!node.children) return;
+        let all = true, none = true;
+        node.children.forEach(c => {
+            const sel = selectedIds.has(c.id);
+            const ind = indeterminateIds.has(c.id);
+            if (!sel) all = false;
+            if (sel || ind) none = false;
+        });
+        if (all) { selectedIds.add(node.id); indeterminateIds.delete(node.id); }
+        else if (none) { selectedIds.delete(node.id); indeterminateIds.delete(node.id); }
+        else { selectedIds.delete(node.id); indeterminateIds.add(node.id); }
     }
 
-    // --- ОТРИСОВКА ---
     function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
-        ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
-
         nodes.forEach(node => {
-            if (!node.visible) return;
-            // ФИЛЬТР: Скрываем пустые категории (0 строк)
-            if (node.stats.l === 0) return;
-
+            if (!node.visible || node.stats.l === 0) return;
             const li = document.createElement('li');
-            const hasChildren = node.children && node.children.length > 0;
-            const isSelected = selectedIds.has(node.id);
-            const isIndeterminate = indeterminateIds.has(node.id);
-
+            const hasChild = node.children && node.children.length > 0;
+            const sel = selectedIds.has(node.id);
+            const ind = indeterminateIds.has(node.id);
             const row = document.createElement('div');
-            row.className = `node-row ${isSelected ? 'selected' : ''} ${isIndeterminate ? 'indeterminate' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
-            
-            const leftDiv = document.createElement('div');
-            leftDiv.className = 'row-left';
-            leftDiv.style.paddingLeft = (depth * 20) + 'px'; 
-
+            row.className = `node-row ${sel ? 'selected' : ''} ${ind ? 'indeterminate' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
+            const left = document.createElement('div');
+            left.className = 'row-left';
+            left.style.paddingLeft = (depth * 20) + 'px';
             const toggler = document.createElement('div');
-            toggler.className = `toggler ${hasChildren ? '' : 'empty'}`;
-            toggler.innerHTML = node.expanded ? '▼' : '▶';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = isSelected;
-            checkbox.indeterminate = isIndeterminate;
-
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'node-name';
-            nameDiv.innerText = node.name;
-            
-            leftDiv.append(toggler, checkbox, nameDiv);
-
-            const rightDiv = document.createElement('div');
-            rightDiv.className = 'row-right';
-            const createBadge = (type, val) => {
-                const cell = document.createElement('div');
-                cell.className = 'col-fixed';
-                cell.innerHTML = val > 0 ? `<div class="badge b-${type}">${val.toLocaleString()}</div>` : `<span style="opacity:0.3; font-size:0.8rem">—</span>`;
-                return cell;
-            }
-            rightDiv.append(createBadge('lines', node.stats.l), createBadge('phones', node.stats.p), createBadge('emails', node.stats.e));
-            row.append(leftDiv, rightDiv);
+            toggler.className = 'toggler';
+            toggler.innerHTML = hasChild ? (node.expanded ? '▼' : '▶') : '';
+            if (!hasChild) toggler.style.pointerEvents = 'none';
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.checked = sel;
+            chk.indeterminate = ind;
+            const name = document.createElement('div');
+            name.className = 'node-name';
+            name.innerText = node.name;
+            left.append(toggler, chk, name);
+            const right = document.createElement('div');
+            right.className = 'row-right';
+            right.innerHTML = `<div class="badge b-lines">${node.stats.l.toLocaleString()}</div><div class="badge b-phones">${node.stats.p.toLocaleString()}</div><div class="badge b-emails">${node.stats.e.toLocaleString()}</div>`;
+            row.append(left, right);
             li.appendChild(row);
-            
-            const toggleExpand = (e) => {
-                e.stopPropagation(); if (!hasChildren) return;
-                node.expanded = !node.expanded; toggler.innerHTML = node.expanded ? '▼' : '▶';
-                let childUl = li.querySelector('ul.nested');
-                if (!childUl) { renderTree(node.children, li, depth + 1); childUl = li.querySelector('ul.nested'); }
-                if (node.expanded) childUl.style.display = 'block'; else childUl.style.display = 'none';
+            const onToggle = (e) => {
+                e.stopPropagation(); if (!hasChild) return;
+                node.expanded = !node.expanded;
+                document.getElementById('treeContainer').innerHTML = '';
+                renderTree(treeData, document.getElementById('treeContainer'), 0);
             };
-            
-            const handleCheck = (e) => {
+            const onCheck = (e) => {
                 e.stopPropagation();
-                const newState = !isSelected;
-                toggleNodeSelection(node, newState);
+                toggleSelect(node, !sel);
                 document.getElementById('treeContainer').innerHTML = '';
                 renderTree(treeData, document.getElementById('treeContainer'), 0);
                 recalculate();
             };
-
-            toggler.onclick = toggleExpand;
-            row.onclick = (e) => { if(e.target !== checkbox && !e.target.closest('.toggler')) handleCheck(e); }; 
-            checkbox.onclick = handleCheck; 
-
-            if (node.expanded && hasChildren) {
-                renderTree(node.children, li, depth + 1);
-                li.querySelector('ul.nested').style.display = 'block';
+            toggler.onclick = onToggle; chk.onclick = onCheck; row.onclick = (e) => { if (e.target !== chk && e.target !== toggler) onCheck(e); };
+            if (node.expanded && hasChild) {
+                const childCont = document.createElement('div');
+                renderTree(node.children, childCont, depth + 1);
+                li.appendChild(childCont);
             }
             ul.appendChild(li);
         });
         container.appendChild(ul);
     }
 
-    // --- РАСЧЕТЫ ---
     function recalculate() {
         let l=0, p=0, e=0;
-        
-        function traverseCalc(nodes) {
+        function trav(nodes) {
             nodes.forEach(n => {
-                if (selectedIds.has(n.id)) {
-                    l += n.stats.l; p += n.stats.p; e += n.stats.e;
-                } 
-                else if (indeterminateIds.has(n.id) || (n.children && n.children.length > 0)) {
-                    if (n.children.length) traverseCalc(n.children);
-                }
+                if (selectedIds.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; }
+                else if (indeterminateIds.has(n.id) || (n.children && n.children.length)) trav(n.children);
             });
         }
-        traverseCalc(treeData);
-
-        const volume = l + p + e;
-
-        let currentTier = TIERS[0];
-        let tierIndex = 0;
-        for (let i = 0; i < TIERS.length; i++) {
-            if (volume < TIERS[i].limit) {
-                currentTier = TIERS[i]; tierIndex = i; break;
-            }
-        }
-        if (volume >= TIERS[TIERS.length-1].limit) {
-             currentTier = TIERS[TIERS.length-1]; tierIndex = TIERS.length - 1;
-        }
-
-        const rawPrice = volume * currentTier.rate;
-        let finalPrice = Math.ceil(rawPrice / PRICE_STEP) * PRICE_STEP;
-        if (finalPrice === 0 && volume > 0) finalPrice = PRICE_STEP;
-
-        document.getElementById('selLines').innerText = l.toLocaleString();
-        document.getElementById('selPhones').innerText = p.toLocaleString();
-        document.getElementById('selEmails').innerText = e.toLocaleString();
-        document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
-
-        // BONUS UI
+        trav(treeData);
+        const vol = l + p + e;
+        let cur = TIERS[0], tIdx = 0;
+        for (let i=0; i<TIERS.length; i++) { if (vol < TIERS[i].limit) { cur = TIERS[i]; tIdx=i; break; } }
+        if (vol >= TIERS[TIERS.length-1].limit) { cur = TIERS[TIERS.length-1]; tIdx=TIERS.length-1; }
+        const raw = vol * cur.rate;
+        let final = Math.ceil(raw / PRICE_STEP) * PRICE_STEP;
+        if (final === 0 && vol > 0) final = PRICE_STEP;
+        document.getElementById('totalPrice').innerText = final.toLocaleString();
+        
         const bonusBox = document.getElementById('bonusBox');
-        const bucketFill = document.getElementById('bucketFill');
-        const bonusTitle = document.getElementById('bonusTitle');
-        const bonusText = document.getElementById('bonusText');
-        const bonusPercent = document.getElementById('bonusPercent');
-
-        if (volume === 0) {
-            bonusBox.className = 'bonus-box';
-            bonusTitle.innerText = "Выберите данные";
-            bonusText.innerHTML = "Отмечайте галочками регионы, чтобы увидеть расчет стоимости.";
-            bucketFill.style.width = '0%';
-            bonusPercent.innerText = "0%";
+        const fill = document.getElementById('bucketFill');
+        const bTitle = document.getElementById('bonusTitle');
+        const bText = document.getElementById('bonusText');
+        if (vol === 0) {
+            bonusBox.className = 'bonus-box'; bTitle.innerText = "Выберите базы"; bText.innerText = "Начните выбирать регионы."; fill.style.width = '0%';
         } else {
             bonusBox.className = 'bonus-box active';
-            const maxVolume = Math.floor(finalPrice / currentTier.rate);
-            const freeVolume = maxVolume - volume;
-            const percentUsed = Math.round((volume / maxVolume) * 100);
-            
-            bonusTitle.innerText = "Пакет активен!";
-            bonusPercent.innerText = percentUsed + "%";
-            bucketFill.style.width = percentUsed + '%';
-
-            if (freeVolume > 0) {
-                bonusText.innerHTML = `В пакет ${finalPrice}₽ поместится еще <span class="bonus-highlight">${freeVolume.toLocaleString()}</span> записей бесплатно!`;
-            } else {
-                bonusText.innerHTML = `Пакет на ${finalPrice}₽ заполнен идеально (100%). Следующая запись добавит +500₽ к чеку.`;
-            }
+            const maxVol = Math.floor(final / cur.rate);
+            const free = maxVol - vol;
+            const pct = Math.round((vol / maxVol) * 100);
+            bTitle.innerText = "Пакет активен!";
+            fill.style.width = pct + '%';
+            if (free > 0) bText.innerHTML = `В цену входит еще <b>${free.toLocaleString()}</b> строк бесплатно!`;
+            else bText.innerHTML = "Пакет заполнен на 100%.";
         }
-
-        renderTierList(tierIndex, volume);
-    }
-
-    function renderTierList(currentIndex, volume) {
-        const container = document.getElementById('tierListContainer');
-        container.innerHTML = '';
-        const baseRate = TIERS[0].rate; 
-
-        TIERS.forEach((tier, index) => {
-            const el = document.createElement('div');
-            const saving = Math.round(((baseRate - tier.rate) / baseRate) * 100);
-            
-            let statusClass = '';
-            let label = `<span class="save-badge">-${saving}%</span>`;
-            if (saving === 0) label = '';
-
-            if (index === currentIndex) {
-                statusClass = 'current';
-                const nextTier = TIERS[index + 1];
-                let pct = 0;
-                if (nextTier) {
-                    const prevLimit = index > 0 ? TIERS[index-1].limit : 0;
-                    const range = nextTier.limit - prevLimit;
-                    const val = volume - prevLimit;
-                    pct = (val / range) * 100;
-                    if (pct > 100) pct = 100;
-                    el.style.setProperty('--progress', pct + '%');
-                } else {
-                    el.style.setProperty('--progress', '100%');
-                }
-            } else if (index < currentIndex) {
-                statusClass = 'passed';
-            } else {
-                statusClass = 'locked';
-            }
-
-            el.className = `tier-item ${statusClass}`;
-            el.innerHTML = `<div>${tier.name} ${label}</div><div class="tier-rate">${tier.rate}₽</div>`;
-            container.appendChild(el);
+        const tList = document.getElementById('tierList');
+        tList.innerHTML = '';
+        TIERS.forEach((t, i) => {
+            const div = document.createElement('div');
+            let cls = 'tier-item';
+            if (i < tIdx) cls += ' passed'; if (i === tIdx) cls += ' current';
+            div.className = cls;
+            div.innerHTML = `<span>${t.name} (${t.limit >= Infinity ? '∞' : t.limit/1000 + 'k'})</span> <span>${t.rate}₽</span>`;
+            tList.appendChild(div);
         });
     }
 
-    // --- ПУТЬ К ФАЙЛУ (ДЛЯ ЗАКАЗА) ---
-    function getNodePath(node) {
-        let path = [];
-        let curr = node;
-        while (curr && !curr.isRoot) {
-            path.unshift(curr.name);
-            curr = curr.parent;
-        }
-        return path.join(" / ");
-    }
-
-    function resetAll() {
-        selectedIds.clear();
-        indeterminateIds.clear();
-        document.getElementById('treeContainer').innerHTML = '';
-        renderTree(treeData, document.getElementById('treeContainer'), 0);
-        recalculate();
-    }
-    
+    function resetAll() { selectedIds.clear(); indeterminateIds.clear(); document.getElementById('treeContainer').innerHTML = ''; renderTree(treeData, document.getElementById('treeContainer'), 0); recalculate(); }
     function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
     function runSearch() {
-        const q = document.getElementById('searchInput').value.toLowerCase();
-        const filter = (node) => {
-            const match = node.name.toLowerCase().includes(q);
+        const q = document.getElementById('search').value.toLowerCase();
+        const filter = (n) => {
+            let match = n.name.toLowerCase().includes(q);
             let childMatch = false;
-            if (node.children.length) node.children.forEach(c => { if (filter(c)) childMatch = true; });
-            node.visible = match || childMatch;
-            if (q && childMatch) node.expanded = true; else if (!q) node.expanded = !!node.isRoot;
-            return node.visible;
+            if (n.children) n.children.forEach(c => { if(filter(c)) childMatch = true; });
+            n.visible = match || childMatch;
+            if (q && childMatch) n.expanded = true; else if (!q) n.expanded = !!n.isRoot;
+            return n.visible;
         };
         treeData.forEach(filter);
         document.getElementById('treeContainer').innerHTML = '';
         renderTree(treeData, document.getElementById('treeContainer'), 0);
     }
+    
+    function getPath(node) {
+        let path = [];
+        let curr = node;
+        while (curr && !curr.isRoot) { path.unshift(curr.name); curr = curr.parent; }
+        return path.join(" / ");
+    }
 
     function downloadOrder() {
-        if (selectedIds.size === 0 && indeterminateIds.size === 0) { alert('Ничего не выбрано!'); return; }
-        const price = document.getElementById('totalPrice').innerText;
-        let text = `ЗАКАЗ\nДата: ${new Date().toLocaleString()}\n`;
-        text += `К оплате: ${price} руб.\n`;
-        text += `Объем: Строк:${document.getElementById('selLines').innerText} | Телефонов:${document.getElementById('selPhones').innerText} | Email:${document.getElementById('selEmails').innerText}\n`;
-        text += `--------------------------------\n`;
-        
-        const traverseWrite = (nodes) => {
+        if (selectedIds.size === 0 && indeterminateIds.size === 0) { alert('Пусто!'); return; }
+        let text = `ЗАКАЗ\nСумма: ${document.getElementById('totalPrice').innerText} руб\n---\n`;
+        const write = (nodes) => {
             nodes.forEach(n => {
-                if (selectedIds.has(n.id)) {
-                    const fullPath = getNodePath(n);
-                    text += `[+] ${fullPath} (Строк: ${n.stats.l} | Телефонов: ${n.stats.p} | Email: ${n.stats.e})\n`;
-                } 
-                else if (n.children && n.children.length) {
-                    traverseWrite(n.children);
-                }
+                if (selectedIds.has(n.id)) text += `[+] ${getPath(n)} (L:${n.stats.l} P:${n.stats.p} E:${n.stats.e})\n`;
+                else if (n.children) write(n.children);
             });
         };
-        traverseWrite(treeData);
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
-        link.download = `Order_${price}RUB.txt`;
-        link.click();
+        write(treeData);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
+        a.download = 'Order.txt';
+        a.click();
     }
 </script>
 
