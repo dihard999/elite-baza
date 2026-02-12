@@ -1,9 +1,12 @@
-name: Update Database & Deploy
+name: Build Database & Deploy
 
 on:
+  # 1. Запуск автоматически, когда вы что-то заливаете в ветку main
   push:
     branches:
-      - main  # Или master, если ваша ветка называется так
+      - main
+  # 2. Добавляем кнопку "Запустить вручную" во вкладке Actions
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,25 +17,31 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
+      # 1. Скачиваем код репозитория
       - name: Checkout code
-        uses: actions/checkout@v4  # Обновили до v4
+        uses: actions/checkout@v4
 
+      # 2. Устанавливаем Python
       - name: Set up Python
-        uses: actions/setup-python@v5  # Обновили до v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      - name: Generate Database
-        run: python generate.py
+      # 3. ЗАПУСКАЕМ ВАШ СКРИПТ (САМОЕ ВАЖНОЕ)
+      - name: Run Build Script
+        run: python build.py
 
+      # 4. Настраиваем Pages
       - name: Setup Pages
-        uses: actions/configure-pages@v5  # Обновили до v5
+        uses: actions/configure-pages@v5
 
+      # 5. Загружаем результат (весь сайт + созданный database.js)
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3  # Обновили до v3 (это исправит ошибку)
+        uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
 
+      # 6. Публикуем в интернет
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4  # Обновили до v4
+        uses: actions/deploy-pages@v4
