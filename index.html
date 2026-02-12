@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Конструктор Базы</title>
+    <title>Конструктор Базы: 7 Уровней</title>
     <style>
         :root {
             --bg-body: #f8fafc;       
@@ -18,7 +18,6 @@
             
             --primary: #2563eb;
             --success: #16a34a;
-            --warning: #ca8a04;
         }
 
         body { 
@@ -149,7 +148,7 @@
 
         <div class="bonus-box" id="bonusBox">
             <div class="bonus-title">🎁 Бонус доступен!</div>
-            <div class="bonus-text">Вы платите за пакет <span id="paidFor">1000</span>₽. <br>Добавьте бесплатно еще <b id="freeCount">0</b> строк!</div>
+            <div class="bonus-text">Вы платите за <span id="paidFor">500</span>₽. <br>Можно добавить бесплатно еще <b id="freeCount">0</b> записей!</div>
             <div class="progress-bg">
                 <div class="progress-fill" id="bonusProgress"></div>
             </div>
@@ -200,15 +199,18 @@
 </div>
 
 <script>
-    // === МАТРИЦА ЦЕНООБРАЗОВАНИЯ (TIERS) ===
+    // === НОВАЯ МАТРИЦА ЦЕН (7 КАТЕГОРИЙ) ===
     const TIERS = [
-        { limit: 1000,   rate: 1.0,  name: "Микро (до 1к)" },
-        { limit: 10000,  rate: 0.40, name: "Малый (до 10к)" },
-        { limit: 100000, rate: 0.20, name: "Средний (до 100к)" },
-        { limit: Infinity, rate: 0.05, name: "Опт (100к+)" }
+        { limit: 1000,   rate: 0.20, name: "Новичок" },
+        { limit: 5000,   rate: 0.15, name: "Старт" },
+        { limit: 10000,  rate: 0.12, name: "Активный" },
+        { limit: 50000,  rate: 0.08, name: "Бизнес" },
+        { limit: 100000, rate: 0.06, name: "Профи" },
+        { limit: 300000, rate: 0.04, name: "Корпоративный" },
+        { limit: Infinity, rate: 0.01, name: "Партнер" }
     ];
     
-    // Шаг цены
+    // Шаг цены 500 руб
     const PRICE_STEP = 500;
 
     const DATA_FILE = 'Moscow.txt';
@@ -226,7 +228,6 @@
             
             let rawNodes = parseHierarchy(text);
             
-            // Логика корня
             if (rawNodes.length === 1) {
                 treeData = rawNodes;
                 treeData[0].name = "ВСЕ БАЗЫ"; 
@@ -387,12 +388,10 @@
         }
         traverse(treeData);
 
-        // 1. Считаем общий объем данных
-        // Вы можете решить, считать ли просто строки, или сумму (строки+тел+email). 
-        // Здесь сумма всех сущностей (volume):
+        // Объем = сумма всех сущностей
         const volume = l + p + e;
 
-        // 2. Определяем Тариф (Tier)
+        // Поиск тарифа
         let currentRate = TIERS[0].rate;
         let currentTierName = TIERS[0].name;
 
@@ -402,22 +401,20 @@
                 currentTierName = tier.name;
                 break;
             }
-            // Если volume больше всех лимитов, останется последний rate (Опт)
         }
 
-        // 3. Считаем "Сырую" цену
         const rawPrice = volume * currentRate;
 
-        // 4. Округляем до шага 500 (в большую сторону)
-        // Минимум 500р, даже если выбрано 1 запись
+        // Округляем до шага 500
         let finalPrice = Math.ceil(rawPrice / PRICE_STEP) * PRICE_STEP;
+        // Если что-то выбрано, но цена < 500, то минимум 500
         if (finalPrice === 0 && volume > 0) finalPrice = PRICE_STEP;
 
-        // 5. Логика бонуса ("Досыпь еще")
-        const maxVolumeForThisPrice = finalPrice / currentRate;
-        const freeVolume = Math.floor(maxVolumeForThisPrice - volume);
+        // Логика бонуса
+        // Сколько всего можно купить за эту "округленную цену" по текущему тарифу?
+        const maxVolumeForThisPrice = Math.floor(finalPrice / currentRate);
+        const freeVolume = maxVolumeForThisPrice - volume;
 
-        // UI UPDATES
         document.getElementById('selLines').innerText = l.toLocaleString();
         document.getElementById('selPhones').innerText = p.toLocaleString();
         document.getElementById('selEmails').innerText = e.toLocaleString();
@@ -425,14 +422,12 @@
         document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
         document.getElementById('currentTierBadge').innerText = `${currentTierName} (${currentRate}₽/шт)`;
 
-        // Показываем блок бонуса, если есть что добрать и что-то выбрано
         const bonusBox = document.getElementById('bonusBox');
         if (freeVolume > 0 && volume > 0) {
             bonusBox.classList.add('active');
             document.getElementById('paidFor').innerText = finalPrice;
             document.getElementById('freeCount').innerText = freeVolume.toLocaleString();
             
-            // Прогресс бар заполненности текущего "пакета"
             const percentFilled = (volume / maxVolumeForThisPrice) * 100;
             document.getElementById('bonusProgress').style.width = percentFilled + '%';
         } else {
