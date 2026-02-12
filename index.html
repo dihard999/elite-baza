@@ -102,12 +102,9 @@
 
         /* BUTTONS */
         .actions { margin-top: auto; padding-top: 10px; }
-        
-        /* HINT TEXT ABOVE BUTTON */
         .download-hint {
             font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 500;
         }
-
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
         .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-download:hover { background: #1e293b; transform: translateY(-1px); }
@@ -203,7 +200,6 @@
 
         <div class="actions">
             <div class="download-hint">Скачайте файл и просто скиньте мне в чат для заказа 👇</div>
-            
             <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" onclick="resetAll()">Сброс</button>
         </div>
@@ -269,7 +265,6 @@
                 }, { l:0, p:0, e:0 });
                 const rootNode = { id: 'ROOT_WRAPPER', name: 'ВСЕ БАЗЫ', stats: totalStats, children: rawNodes, expanded: true, visible: true, isRoot: true, parent: null };
                 
-                // Присваиваем родителя для первого уровня
                 rawNodes.forEach(child => child.parent = rootNode);
                 treeData = [rootNode];
             } else { treeData = []; }
@@ -320,7 +315,6 @@
         return root;
     }
 
-    // --- ЛОГИКА ВЫДЕЛЕНИЯ ---
     function toggleNodeSelection(node, isSelected) {
         function setAllChildren(n, state) {
             if (state) {
@@ -371,6 +365,9 @@
 
         nodes.forEach(node => {
             if (!node.visible) return;
+            // ФИЛЬТР ПУСТЫХ СТРОК
+            if (node.stats.l === 0) return;
+
             const li = document.createElement('li');
             const hasChildren = node.children.length > 0;
             const isSelected = selectedIds.has(node.id);
@@ -472,13 +469,11 @@
         let finalPrice = Math.ceil(rawPrice / PRICE_STEP) * PRICE_STEP;
         if (finalPrice === 0 && volume > 0) finalPrice = PRICE_STEP;
 
-        // UI
         document.getElementById('selLines').innerText = l.toLocaleString();
         document.getElementById('selPhones').innerText = p.toLocaleString();
         document.getElementById('selEmails').innerText = e.toLocaleString();
         document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
 
-        // BONUS LOGIC
         const bonusBox = document.getElementById('bonusBox');
         const bucketFill = document.getElementById('bucketFill');
         const bonusTitle = document.getElementById('bonusTitle');
@@ -554,11 +549,9 @@
         });
     }
 
-    // --- ПОЛУЧЕНИЕ ПУТИ (ДЛЯ ФАЙЛА) ---
     function getNodePath(node) {
         let path = [];
         let curr = node;
-        // Поднимаемся вверх, пока не дойдем до null или до Корневой Обертки
         while (curr && !curr.isRoot) {
             path.unshift(curr.name);
             curr = curr.parent;
@@ -590,7 +583,6 @@
         renderTree(treeData, document.getElementById('treeContainer'), 0);
     }
 
-    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ СКАЧИВАНИЯ ---
     function downloadOrder() {
         if (selectedIds.size === 0 && indeterminateIds.size === 0) { alert('Ничего не выбрано!'); return; }
         const price = document.getElementById('totalPrice').innerText;
@@ -601,12 +593,10 @@
         
         const traverseWrite = (nodes) => {
             nodes.forEach(n => {
-                // Если выбран полностью - пишем его путь
                 if (selectedIds.has(n.id)) {
                     const fullPath = getNodePath(n);
                     text += `[+] ${fullPath} (Строк: ${n.stats.l} | Телефонов: ${n.stats.p} | Email: ${n.stats.e})\n`;
                 } 
-                // Если частично (или просто папка раскрыта), идем внутрь
                 else if (n.children.length) {
                     traverseWrite(n.children);
                 }
