@@ -3,420 +3,419 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Manager</title>
+    <title>Smart Base Calculator: Final</title>
     <script src="database.js"></script>
     <style>
-        :root { --bg: #f8fafc; --text: #0f172a; --border: #e2e8f0; --primary: #2563eb; --green: #16a34a; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root {
+            --bg-body: #f1f5f9; --bg-sidebar: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
+            --c-lines-bg: #f8fafc; --c-lines-text: #475569; --c-phones-bg: #eff6ff; --c-phones-text: #1d4ed8; --c-emails-bg: #f0fdf4; --c-emails-text: #15803d;
+            --primary: #3b82f6; --success: #22c55e; --success-bg: #ecfdf5; --success-border: #6ee7b7;
+        }
+
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         /* SIDEBAR */
-        .sidebar { width: 360px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; box-shadow: 4px 0 20px rgba(0,0,0,0.05); }
-        .sb-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
-        
-        .price-box { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 20px; border-radius: 12px; text-align: center; }
-        .price-val { font-size: 2.5rem; font-weight: 800; line-height: 1; }
-        .tier-list { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 5px; }
-        .tier-row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; color: #64748b; }
-        .tier-row.active { background: #eff6ff; color: var(--primary); font-weight: 700; border: 1px solid #bfdbfe; }
+        .sidebar { width: 400px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
+        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;}
 
-        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; margin-top: 10px; }
+        .total-box { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); flex-shrink: 0; }
+        .total-label { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
+        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
+        .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; background: rgba(0,0,0,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;}
+
+        .bonus-box { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; transition: 0.3s all; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+        .bonus-box.active { background: var(--success-bg); border: 2px solid var(--success-border); box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.2); }
+        .bonus-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-weight: 700; font-size: 0.95rem; }
+        .bonus-box.active .bonus-header { color: #047857; }
+        .bonus-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+        .bonus-box.active .bonus-text { color: #065f46; }
+        .bucket-container { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+        .bucket-progress { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 100%; }
+        .bucket-fill { height: 100%; background: #94a3b8; width: 0%; transition: width 0.3s; }
+        .bonus-box.active .bucket-progress { background: #d1fae5; }
+        .bonus-box.active .bucket-fill { background: #10b981; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; flex-shrink: 0;}
+        .stat-item { background: white; padding: 10px 5px; border-radius: 10px; border: 1px solid var(--border); }
+        .stat-num { display: block; font-weight: 800; font-size: 1rem; color: var(--text-main); margin-bottom: 2px; }
+        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .tier-section { border-top: 1px solid var(--border); padding-top: 15px; }
+        .tier-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; padding-left: 5px; }
+        .tier-list { display: flex; flex-direction: column; gap: 8px; }
+        .tier-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: white; border: 1px solid transparent; transition: 0.2s; font-size: 0.85rem; color: var(--text-muted); }
+        .tier-item.passed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+        .tier-item.current { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; font-weight: 600; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden; }
+        .tier-item.current::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; background: #3b82f6; width: var(--progress, 0%); transition: width 0.3s; }
+        .tier-item.locked { background: white; border: 1px solid #f1f5f9; }
+
+        .actions { margin-top: auto; padding-top: 10px; }
+        .download-hint { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 500; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
+        .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
 
         /* MAIN */
-        .main { flex: 1; display: flex; flex-direction: column; background: #fff; }
-        .filters { padding: 15px 25px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
+        .main { flex: 1; display: flex; flex-direction: column; background: white; }
+        
+        /* FILTERS (NEW) */
+        .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
+        .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
         
         .geo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; background: white; cursor: pointer; }
-        select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+        .geo-select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: white; width: 100%; cursor: pointer; }
+        .geo-select:disabled { background: #f1f5f9; color: #94a3b8; }
 
-        .tree-head { display: flex; padding: 10px 25px; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; background: #fff; }
-        .col-name { flex: 1; } .col-stat { width: 80px; text-align: center; }
-
-        .tree-body { flex: 1; overflow-y: auto; padding: 0 25px 20px 25px; }
+        .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
-        .node { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
-        .node:hover { background: #f8fafc; }
-        .node.sel { background: #eff6ff; }
-        .node.ind { background: #fff7ed; }
         
-        .tog { width: 20px; text-align: center; color: #94a3b8; margin-right: 5px; cursor: pointer; user-select: none; }
-        input[type="checkbox"] { margin-right: 10px; cursor: pointer; width: 16px; height: 16px; accent-color: var(--primary); }
-        .name { flex: 1; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .stat { width: 80px; text-align: center; font-size: 0.85rem; font-weight: 600; }
+        .table-header { position: sticky; top: 0; z-index: 10; background: white; padding-top: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; }
+        .header-pad { padding-left: 50px; flex: 1; } 
+        .col-fixed { width: 90px; text-align: center; }
+
+        .node-row { display: flex; align-items: center; padding: 8px 0; border-radius: 6px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .node-row:hover { background: #f8fafc; }
+        .node-row.selected { background: #eff6ff; }
+        .node-row.indeterminate { background: #fff7ed; } 
+        .node-row.indeterminate input[type="checkbox"] { opacity: 0.6; }
+
+        .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
+        .row-right { display: flex; gap: 5px; }
+        .toggler { width: 24px; display: flex; justify-content: center; margin-right: 8px; color: #94a3b8; flex-shrink: 0;}
+        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .node-name { font-weight: 500; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge { padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: center; width: 100%; }
+        .b-lines { color: var(--c-lines-text); } .b-phones { color: var(--c-phones-text); } .b-emails { color: var(--c-emails-text); }
         
-        /* Сообщение об ошибке */
-        .error-msg { position:fixed; inset:0; background:rgba(255,255,255,0.95); z-index:99; display:none; justify-content:center; align-items:center; color: #dc2626; font-weight:bold; }
+        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div class="error-msg" id="errorBox">Файл database.js не найден! Запустите python build.py</div>
-
 <div class="sidebar">
-    <div class="sb-content">
-        <div class="price-box">
-            <div style="opacity:0.8; font-size:0.8rem; text-transform:uppercase; margin-bottom:5px">Итого</div>
-            <div class="price-val"><span id="totalPrice">0</span>₽</div>
-            <div style="opacity:0.8; font-size:0.8rem; margin-top:5px">Выбрано строк: <span id="totalLines">0</span></div>
+    <div class="sidebar-content">
+        <div class="total-box">
+            <div class="total-label">К оплате</div>
+            <div class="total-value"><span id="totalPrice">0</span>₽</div>
+            <div class="total-step">Шаг тарифа 500₽</div>
         </div>
-        <div class="tier-list" id="tiers"></div>
-        <div style="margin-top:auto">
-            <button class="btn" onclick="download()">⬇ Скачать заказ</button>
-            <button class="btn btn-reset" onclick="resetAll()">Сброс выбора</button>
+
+        <div class="bonus-box" id="bonusBox">
+            <div class="bonus-header">
+                <span id="bonusTitle">Выберите данные</span>
+                <span id="bonusPercent">0%</span>
+            </div>
+            <div class="bonus-text" id="bonusText">Начните выбирать регионы и категории.</div>
+            <div class="bucket-container">
+                <div class="bucket-progress"><div class="bucket-fill" id="bucketFill"></div></div>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-item"><span class="stat-num" id="selLines" style="color:var(--c-lines-text)">0</span><span class="stat-lbl">Строк</span></div>
+            <div class="stat-item"><span class="stat-num" id="selPhones" style="color:var(--c-phones-text)">0</span><span class="stat-lbl">Тел</span></div>
+            <div class="stat-item"><span class="stat-num" id="selEmails" style="color:var(--c-emails-text)">0</span><span class="stat-lbl">Email</span></div>
+        </div>
+
+        <div class="tier-section">
+            <div class="tier-title">Ваша скидка (от объема)</div>
+            <div class="tier-list" id="tierListContainer"></div>
+        </div>
+
+        <div class="actions">
+            <div class="download-hint">Скачайте файл и просто скиньте мне в чат для заказа 👇</div>
+            <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ</button>
+            <button class="btn btn-reset" onclick="resetAll()">Сброс</button>
         </div>
     </div>
 </div>
 
 <div class="main">
-    <div class="filters">
-        <input type="text" id="search" placeholder="🔍 Поиск категории (например: Логистика)..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px">
+    <div class="toolbar">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск категории...">
         <div class="geo-grid">
-            <select id="sCountry"><option value="">🌍 Страна</option></select>
-            <select id="sRegion" disabled><option value="">🏳️ Регион</option></select>
-            <select id="sDistrict" disabled><option value="">🏙️ Район</option></select>
-            <select id="sCity" disabled><option value="">📍 Город</option></select>
+            <select id="sCountry" class="geo-select"><option value="">🌍 Страна</option></select>
+            <select id="sRegion" class="geo-select" disabled><option value="">🏳️ Регион</option></select>
+            <select id="sDistrict" class="geo-select" disabled><option value="">🏙️ Район</option></select>
+            <select id="sCity" class="geo-select" disabled><option value="">📍 Город</option></select>
         </div>
     </div>
-    <div class="tree-head">
-        <div class="col-name">Название</div>
-        <div class="col-stat">Строк</div>
-        <div class="col-stat" style="color:var(--primary)">Тел</div>
-        <div class="col-stat" style="color:var(--green)">Email</div>
+    
+    <div class="tree-wrapper">
+        <div class="table-header">
+            <div class="header-pad">Категория</div>
+            <div class="col-fixed">Строк</div>
+            <div class="col-fixed" style="color:var(--c-phones-text)">Тел</div>
+            <div class="col-fixed" style="color:var(--c-emails-text)">Email</div>
+        </div>
+        <div id="treeContainer"></div>
     </div>
-    <div class="tree-body" id="tree"></div>
+</div>
+
+<div class="loader" id="loader">
+    <h3 style="color:#475569;">Загрузка...</h3>
+    <div id="loaderStatus" style="color:#94a3b8; font-size:0.8rem"></div>
 </div>
 
 <script>
-    // === ЦЕНЫ ===
     const TIERS = [
-        { l: 1000, r: 0.10, n: "Новичок" }, { l: 5000, r: 0.075, n: "Старт" },
-        { l: 10000, r: 0.06, n: "Активный" }, { l: 50000, r: 0.04, n: "Бизнес" },
-        { l: 100000, r: 0.03, n: "Профи" }, { l: Infinity, r: 0.005, n: "Опт" }
+        { limit: 1000, rate: 0.10, name: "Новичок" }, { limit: 5000, rate: 0.075, name: "Старт" },
+        { limit: 10000, rate: 0.06, name: "Активный" }, { limit: 50000, rate: 0.04, name: "Бизнес" },
+        { limit: 100000, rate: 0.03, name: "Профи" }, { limit: 300000, rate: 0.02, name: "Корпоративный" },
+        { limit: Infinity, rate: 0.005, name: "Опт" }
     ];
-    
-    let geoDB = null;       // Вся база гео
-    let activeTree = [];    // Склеенное дерево категорий для текущего фильтра
-    let selected = new Set();
-    let semi = new Set();   // Частично выбранные
-    let uidCounter = 0;
-    
-    // Элементы
+    const PRICE_STEP = 500;
+
+    let geoDB = null;       // Вся база
+    let treeData = [];      // Текущее дерево (склеенное)
+    let selectedIds = new Set();
+    let indeterminateIds = new Set(); 
+    let idCounter = 0;
+    let debounceTimer;
+
     const S = { c: document.getElementById('sCountry'), r: document.getElementById('sRegion'), d: document.getElementById('sDistrict'), t: document.getElementById('sCity') };
 
     window.onload = () => {
-        if(typeof GEO_DB === 'undefined') {
-            document.getElementById('errorBox').style.display = 'flex';
-            return;
+        document.getElementById('searchInput').addEventListener('input', debounceSearch);
+        
+        if (typeof GEO_DB !== 'undefined') {
+            geoDB = GEO_DB;
+            initGeoSelectors();
+            updateTree(geoDB); // Показываем все
+            document.getElementById('loader').style.display = 'none';
+        } else {
+            document.getElementById('loaderStatus').innerText = "База не найдена. Запустите build.py";
         }
-        geoDB = GEO_DB;
-        
-        // Заполняем страны
-        fillSelect(S.c, geoDB.children);
-        
-        // Показываем всё сразу (или пусто, если база пустая)
-        updateTree(geoDB);
-        
-        document.getElementById('search').oninput = (e) => render(activeTree, document.getElementById('tree'), 0, e.target.value);
     };
 
     // === ГЕО ЛОГИКА ===
-    S.c.onchange = () => {
-        const n = findNode(geoDB.children, S.c.value);
-        resetSelects(['r','d','t']);
-        if(n) { fillSelect(S.r, n.children); S.r.disabled=false; updateTree(n); } else updateTree(geoDB);
-    };
-    S.r.onchange = () => {
-        const c = findNode(geoDB.children, S.c.value);
-        const n = findNode(c.children, S.r.value);
-        resetSelects(['d','t']);
-        if(n) { fillSelect(S.d, n.children); S.d.disabled=false; updateTree(n); }
-    };
-    S.d.onchange = () => {
-        const c = findNode(geoDB.children, S.c.value);
-        const r = findNode(c.children, S.r.value);
-        const n = findNode(r.children, S.d.value);
-        resetSelects(['t']);
-        if(n) { fillSelect(S.t, n.children); S.t.disabled=false; updateTree(n); }
-    };
-    S.t.onchange = () => {
-        const c = findNode(geoDB.children, S.c.value);
-        const r = findNode(c.children, S.r.value);
-        const d = findNode(r.children, S.d.value);
-        const n = findNode(d.children, S.t.value);
-        if(n) updateTree(n);
-    };
+    function initGeoSelectors() {
+        fillSelect(S.c, geoDB.children);
+        S.c.onchange = () => { handleSelect(S.c, S.r, ['r','d','t']); };
+        S.r.onchange = () => { handleSelect(S.r, S.d, ['d','t']); };
+        S.d.onchange = () => { handleSelect(S.d, S.t, ['t']); };
+        S.t.onchange = () => { updateFromSelection(); };
+    }
+
+    function handleSelect(currentEl, nextEl, resetKeys) {
+        // Сброс нижних
+        resetKeys.forEach(k => { S[k].value = ""; S[k].disabled = true; S[k].innerHTML = '<option value="">'+S[k].options[0].text+'</option>'; });
+        
+        updateFromSelection();
+
+        // Заполнение следующего
+        if (currentEl.value && nextEl) {
+            // Ищем текущий узел в дереве
+            let node = geoDB;
+            if (S.c.value) node = findNode(node.children, S.c.value);
+            if (S.r.value && node) node = findNode(node.children, S.r.value);
+            if (S.d.value && node) node = findNode(node.children, S.d.value);
+            
+            if (node && node.children) {
+                fillSelect(nextEl, node.children);
+                nextEl.disabled = false;
+            }
+        }
+    }
+
+    function updateFromSelection() {
+        let node = geoDB;
+        if (S.c.value) node = findNode(node.children, S.c.value);
+        if (S.r.value && node) node = findNode(node.children, S.r.value);
+        if (S.d.value && node) node = findNode(node.children, S.d.value);
+        if (S.t.value && node) node = findNode(node.children, S.t.value);
+        
+        updateTree(node || geoDB);
+    }
 
     function findNode(arr, name) { return arr ? arr.find(x => x.name === name) : null; }
-    function fillSelect(el, arr) {
-        el.innerHTML = '<option value="">'+el.options[0].text+'</option>';
-        if(!arr) return;
-        arr.forEach(x => { if(x.type!=='file_content') el.add(new Option(x.name, x.name)); });
-    }
-    function resetSelects(keys) { keys.forEach(k => { S[k].value=""; S[k].disabled=true; }); }
+    function fillSelect(el, arr) { if(!arr) return; arr.forEach(x => { if(x.type !== 'file') el.add(new Option(x.name, x.name)); }); }
 
-    // === СБОРКА И МЕРДЖ ДЕРЕВА ===
+    // === МЕРДЖ И ПОСТРОЕНИЕ ДЕРЕВА ===
     function updateTree(geoNode) {
-        // 1. Собираем контент всех файлов внутри geoNode
-        let allContents = [];
-        collectFiles(geoNode, allContents);
+        // 1. Собираем содержимое всех файлов
+        let contents = [];
+        collectContents(geoNode, contents);
         
-        // 2. Склеиваем (merge) их в одно дерево
+        // 2. Мержим
         let mergedRoot = [];
-        allContents.forEach(tree => mergeTrees(mergedRoot, tree));
+        contents.forEach(tree => merge(mergedRoot, tree));
         
-        // 3. Раздаем ID для UI
-        uidCounter = 0;
-        selected.clear(); semi.clear();
-        activeTree = assignIds(mergedRoot, null);
+        // 3. ID и родители
+        idCounter = 0; selectedIds.clear(); indeterminateIds.clear();
+        treeData = assignIds(mergedRoot, null);
         
         // 4. Рендер
-        render(activeTree, document.getElementById('tree'), 0);
-        calcPrice();
+        renderTree(treeData, document.getElementById('treeContainer'), 0);
+        recalculate();
     }
 
-    function collectFiles(node, list) {
-        if(node.type === 'file' && node.file_content) list.push(node.file_content);
-        if(node.children) node.children.forEach(c => collectFiles(c, list));
+    function collectContents(node, list) {
+        if (node.type === 'file' && node.file_content) list.push(node.file_content);
+        if (node.children) node.children.forEach(c => collectContents(c, list));
     }
 
-    // Глубокое слияние деревьев (суммируем цифры у одинаковых категорий)
-    function mergeTrees(target, source) {
-        source.forEach(srcNode => {
-            let tgtNode = target.find(x => x.name === srcNode.name);
-            if(!tgtNode) {
-                // Копируем узел
-                tgtNode = JSON.parse(JSON.stringify(srcNode));
-                tgtNode.children = []; // Детей будем мержить отдельно
-                target.push(tgtNode);
+    function merge(target, source) {
+        source.forEach(src => {
+            let tgt = target.find(x => x.name === src.name);
+            if (!tgt) {
+                tgt = JSON.parse(JSON.stringify(src));
+                tgt.children = []; 
+                target.push(tgt);
             } else {
-                // Суммируем стату
-                tgtNode.stats.l += srcNode.stats.l;
-                tgtNode.stats.p += srcNode.stats.p;
-                tgtNode.stats.e += srcNode.stats.e;
+                tgt.stats.l += src.stats.l; tgt.stats.p += src.stats.p; tgt.stats.e += src.stats.e;
             }
-            // Рекурсия для детей
-            if(srcNode.children) mergeTrees(tgtNode.children, srcNode.children);
+            if (src.children) merge(tgt.children, src.children);
         });
     }
 
     function assignIds(nodes, parent) {
-        // Сортируем по имени для красоты
         nodes.sort((a,b) => a.name.localeCompare(b.name));
         return nodes.map(n => {
-            const node = { ...n, id: uidCounter++, parent: parent, expand: false };
-            if(n.children) node.children = assignIds(n.children, node);
+            const node = { ...n, id: idCounter++, parent: parent, expanded: false, visible: true };
+            if (n.children) node.children = assignIds(n.children, node);
             return node;
         });
     }
 
-    // === РЕНДЕР ===
-    function render(nodes, container, depth, filter="") {
-        if(depth===0) container.innerHTML = '';
+    // === UI RENDERING (Твой старый код) ===
+    function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
-        
+        ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
         nodes.forEach(node => {
-            // Фильтр поиска
-            if(filter && !hasMatch(node, filter)) return;
-            // Скрываем пустые (если вдруг 0)
-            if(node.stats.l === 0) return;
-
+            if (!node.visible || node.stats.l === 0) return;
             const li = document.createElement('li');
+            const hasChild = node.children.length > 0;
+            const sel = selectedIds.has(node.id);
+            const ind = indeterminateIds.has(node.id);
+
             const row = document.createElement('div');
+            row.className = `node-row ${sel ? 'selected' : ''} ${ind ? 'indeterminate' : ''}`;
             
-            const isSel = selected.has(node.id);
-            const isSemi = semi.has(node.id);
-            const hasChild = node.children && node.children.length > 0;
-
-            row.className = `node ${isSel?'sel':''} ${isSemi?'ind':''}`;
-            row.style.paddingLeft = (depth*20)+'px';
+            const left = document.createElement('div');
+            left.className = 'row-left'; left.style.paddingLeft = (depth * 20) + 'px';
             
-            // Стрелка
-            const tog = document.createElement('span');
-            tog.className = 'tog';
-            tog.innerHTML = hasChild ? (node.expand || filter ? '▼' : '▶') : '•';
-            tog.style.opacity = hasChild ? 1 : 0.3;
-            tog.onclick = (e) => {
-                e.stopPropagation();
-                if(hasChild) {
-                    node.expand = !node.expand;
-                    render(activeTree, document.getElementById('tree'), 0, filter);
-                }
-            };
-
-            // Чекбокс
-            const chk = document.createElement('input');
-            chk.type = 'checkbox';
-            chk.checked = isSel;
-            chk.indeterminate = isSemi;
-            chk.onclick = (e) => {
-                e.stopPropagation();
-                toggle(node, !isSel);
-                render(activeTree, document.getElementById('tree'), 0, filter);
-                calcPrice();
-            };
-
-            row.append(tog, chk);
-            row.innerHTML += `
-                <div class="name">${node.name}</div>
-                <div class="stat" style="color:#64748b">${node.stats.l}</div>
-                <div class="stat" style="color:var(--primary)">${node.stats.p}</div>
-                <div class="stat" style="color:var(--green)">${node.stats.e}</div>
-            `;
+            const tog = document.createElement('div');
+            tog.className = `toggler ${hasChild ? '' : 'empty'}`;
+            tog.innerHTML = node.expanded ? '▼' : '▶';
             
-            // Клик по строке = клик по стрелке
-            row.onclick = (e) => { if(e.target !== chk) tog.click(); };
-
+            const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = sel; chk.indeterminate = ind;
+            const name = document.createElement('div'); name.className = 'node-name'; name.innerText = node.name;
+            
+            left.append(tog, chk, name);
+            const right = document.createElement('div'); right.className = 'row-right';
+            right.innerHTML = `<div class="col-fixed"><div class="badge b-lines">${node.stats.l}</div></div><div class="col-fixed"><div class="badge b-phones">${node.stats.p}</div></div><div class="col-fixed"><div class="badge b-emails">${node.stats.e}</div></div>`;
+            row.append(left, right);
             li.appendChild(row);
 
-            // Дети
-            if(hasChild && (node.expand || filter)) {
-                const sub = document.createElement('div');
-                li.appendChild(sub);
-                // Рендерим фрагмент (рекурсия)
-                sub.appendChild(renderFragment(node.children, depth+1, filter));
+            const clickTog = (e) => { e.stopPropagation(); if(!hasChild)return; node.expanded=!node.expanded; document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'),0); };
+            const clickChk = (e) => { e.stopPropagation(); toggleSel(node, !sel); document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'),0); recalculate(); };
+            tog.onclick = clickTog; chk.onclick = clickChk; row.onclick = (e) => { if(e.target!==chk && e.target!==tog) clickTog(e); };
+
+            if (node.expanded && hasChild) {
+                renderTree(node.children, li, depth + 1);
+                li.querySelector('ul.nested').style.display = 'block';
             }
             ul.appendChild(li);
         });
-        
-        if(depth===0) container.appendChild(ul);
-        return ul;
+        container.appendChild(ul);
     }
 
-    function renderFragment(nodes, depth, filter) {
-        // Вспомогательная функция для рендера поддеревьев без очистки контейнера
-        const ul = document.createElement('ul');
-        nodes.forEach(node => {
-            if(filter && !hasMatch(node, filter)) return;
-            if(node.stats.l === 0) return;
-
-            const li = document.createElement('li');
-            const row = document.createElement('div');
-            const isSel = selected.has(node.id);
-            const isSemi = semi.has(node.id);
-            const hasChild = node.children && node.children.length > 0;
-
-            row.className = `node ${isSel?'sel':''} ${isSemi?'ind':''}`;
-            row.style.paddingLeft = (depth*20)+'px';
-
-            const tog = document.createElement('span');
-            tog.className = 'tog';
-            tog.innerHTML = hasChild ? (node.expand || filter ? '▼' : '▶') : '•';
-            tog.onclick = (e) => { e.stopPropagation(); node.expand = !node.expand; render(activeTree, document.getElementById('tree'), 0, filter); };
-
-            const chk = document.createElement('input');
-            chk.type = 'checkbox';
-            chk.checked = isSel; chk.indeterminate = isSemi;
-            chk.onclick = (e) => { e.stopPropagation(); toggle(node, !isSel); render(activeTree, document.getElementById('tree'), 0, filter); calcPrice(); };
-
-            row.append(tog, chk);
-            row.innerHTML += `<div class="name">${node.name}</div><div class="stat" style="color:#64748b">${node.stats.l}</div><div class="stat" style="color:var(--primary)">${node.stats.p}</div><div class="stat" style="color:var(--green)">${node.stats.e}</div>`;
-            li.appendChild(row);
-
-            if(hasChild && (node.expand || filter)) {
-                const sub = document.createElement('div');
-                li.appendChild(sub);
-                sub.appendChild(renderFragment(node.children, depth+1, filter));
-            }
-            ul.appendChild(li);
-        });
-        return ul;
-    }
-
-    function hasMatch(node, filter) {
-        if(node.name.toLowerCase().includes(filter.toLowerCase())) return true;
-        return node.children && node.children.some(c => hasMatch(c, filter));
-    }
-
-    // === ВЫДЕЛЕНИЕ ===
-    function toggle(node, state) {
-        // Вниз
-        function setDown(n, s) {
-            if(s) { selected.add(n.id); semi.delete(n.id); } 
-            else { selected.delete(n.id); semi.delete(n.id); }
-            if(n.children) n.children.forEach(c => setDown(c, s));
+    function toggleSel(node, state) {
+        function setAll(n, s) {
+            if(s) { selectedIds.add(n.id); indeterminateIds.delete(n.id); } else { selectedIds.delete(n.id); indeterminateIds.delete(n.id); }
+            if(n.children) n.children.forEach(c => setAll(c, s));
         }
-        setDown(node, state);
-        
-        // Вверх
+        setAll(node, state);
         let curr = node.parent;
-        while(curr) {
-            let all=true, none=true;
-            curr.children.forEach(c => {
-                if(!selected.has(c.id)) all=false;
-                if(selected.has(c.id) || semi.has(c.id)) none=false;
-            });
-            if(all) { selected.add(curr.id); semi.delete(curr.id); }
-            else if(none) { selected.delete(curr.id); semi.delete(curr.id); }
-            else { selected.delete(curr.id); semi.add(curr.id); }
-            curr = curr.parent;
-        }
+        while(curr) { updatePar(curr); curr = curr.parent; }
     }
 
-    // === КАЛЬКУЛЯТОР ===
-    function calcPrice() {
+    function updatePar(node) {
+        if(!node.children) return;
+        let all=true, none=true;
+        node.children.forEach(c => {
+            const s = selectedIds.has(c.id), i = indeterminateIds.has(c.id);
+            if(!s) all=false;
+            if(s||i) none=false;
+        });
+        if(all) { selectedIds.add(node.id); indeterminateIds.delete(node.id); }
+        else if(none) { selectedIds.delete(node.id); indeterminateIds.delete(node.id); }
+        else { selectedIds.delete(node.id); indeterminateIds.add(node.id); }
+    }
+
+    function recalculate() {
         let l=0, p=0, e=0;
-        
-        // Считаем только "верхушки" выбранного, чтобы не дублировать
-        function sum(nodes) {
+        function trav(nodes) {
             nodes.forEach(n => {
-                if(selected.has(n.id)) {
-                    l += n.stats.l; p += n.stats.p; e += n.stats.e;
-                } else if(semi.has(n.id) || !n.parent) {
-                    // Если частично или корень - идем внутрь
-                    if(n.children) sum(n.children);
-                }
+                if (selectedIds.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; }
+                else if (indeterminateIds.has(n.id) || (n.children && n.children.length)) trav(n.children);
             });
         }
-        sum(activeTree);
-
-        document.getElementById('totalLines').innerText = l.toLocaleString();
+        trav(treeData);
         
-        // Тарифы
         const vol = l+p+e;
-        let cur = TIERS[0], idx=0;
-        for(let i=0; i<TIERS.length; i++) if(vol < TIERS[i].l) { cur=TIERS[i]; idx=i; break; }
-        if(vol >= TIERS[5].l) { cur=TIERS[5]; idx=5; } // Опт
+        let cur = TIERS[0], idx = 0;
+        for (let i=0; i<TIERS.length; i++) { if (vol < TIERS[i].limit) { cur=TIERS[i]; idx=i; break; } }
+        if (vol >= TIERS[6].limit) { cur=TIERS[6]; idx=6; }
 
-        let cost = Math.ceil((vol * cur.r) / 500) * 500;
-        if(cost===0 && vol>0) cost=500;
-        
-        document.getElementById('totalPrice').innerText = cost.toLocaleString();
-        
-        // Подсветка тарифа
-        const tBox = document.getElementById('tiers');
-        tBox.innerHTML = TIERS.map((t,i) => 
-            `<div class="tier-row ${i===idx?'active':''}"><span>${t.n}</span><span>${t.r}₽</span></div>`
-        ).join('');
-    }
+        let final = Math.ceil((vol * cur.rate) / PRICE_STEP) * PRICE_STEP;
+        if(final===0 && vol>0) final=PRICE_STEP;
 
-    function resetAll() {
-        selected.clear(); semi.clear();
-        render(activeTree, document.getElementById('tree'), 0);
-        calcPrice();
-    }
+        document.getElementById('selLines').innerText = l.toLocaleString();
+        document.getElementById('selPhones').innerText = p.toLocaleString();
+        document.getElementById('selEmails').innerText = e.toLocaleString();
+        document.getElementById('totalPrice').innerText = final.toLocaleString();
 
-    function download() {
-        if(!selected.size && !semi.size) return alert('Ничего не выбрано!');
-        let txt = `ЗАКАЗ\nРегион: ${S.c.value}/${S.r.value}/${S.t.value}\nСумма: ${document.getElementById('totalPrice').innerText} руб\n---\n`;
-        
-        function write(n) {
-            if(selected.has(n.id)) {
-                // Получаем путь категории
-                let path = n.name;
-                let p = n.parent;
-                while(p && p.parent) { path = p.name + " / " + path; p = p.parent; }
-                txt += `[+] ${path} (${n.stats.l})\n`;
-            } else if(n.children) {
-                n.children.forEach(write);
-            }
+        // Bonus & Tiers UI (Simplified)
+        const bucketFill = document.getElementById('bucketFill');
+        const bonusText = document.getElementById('bonusText');
+        if(vol===0) { bucketFill.style.width='0%'; bonusText.innerText = "Выберите категории"; } 
+        else {
+            const max = Math.floor(final/cur.rate);
+            bucketFill.style.width = Math.round((vol/max)*100) + '%';
+            bonusText.innerHTML = `Доступно еще <b>${(max-vol).toLocaleString()}</b> строк`;
         }
-        activeTree.forEach(write);
-        
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'}));
-        a.download = 'Order.txt';
-        a.click();
+
+        const tCon = document.getElementById('tierListContainer'); tCon.innerHTML='';
+        TIERS.forEach((t, i) => {
+            tCon.innerHTML += `<div class="tier-item ${i===idx?'current':''} ${i<idx?'passed':''}"><div>${t.name}</div><div>${t.rate}₽</div></div>`;
+        });
+    }
+
+    function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
+    function runSearch() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const filter = (n) => {
+            const match = n.name.toLowerCase().includes(q);
+            let childMatch = false;
+            if(n.children) n.children.forEach(c => { if(filter(c)) childMatch=true; });
+            n.visible = match || childMatch;
+            if(q && childMatch) n.expanded=true; else if(!q) n.expanded=false;
+            return n.visible;
+        }
+        treeData.forEach(filter);
+        document.getElementById('treeContainer').innerHTML='';
+        renderTree(treeData, document.getElementById('treeContainer'), 0);
+    }
+
+    function getPath(node) {
+        let path = [node.name], curr = node.parent;
+        while(curr) { path.unshift(curr.name); curr = curr.parent; }
+        return path.join(" / ");
+    }
+
+    function downloadOrder() {
+        if(!selectedIds.size && !indeterminateIds.size) return alert('Пусто');
+        let txt = `ЗАКАЗ\nРегион: ${S.c.value} ${S.r.value} ${S.t.value}\nСумма: ${document.getElementById('totalPrice').innerText}\n---\n`;
+        function w(nodes) {
+            nodes.forEach(n => {
+                if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`;
+                else if(n.children) w(n.children);
+            });
+        }
+        w(treeData);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
     }
 </script>
 
