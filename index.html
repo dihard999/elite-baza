@@ -8,98 +8,158 @@
         :root {
             --bg-body: #f8fafc;       
             --bg-sidebar: #ffffff;    
-            --text-main: #1e293b;     
+            --text-main: #0f172a;     
             --text-muted: #64748b;    
             --border: #e2e8f0;        
             
-            --c-lines-bg: #f1f5f9;    --c-lines-text: #475569; 
-            --c-phones-bg: #dbeafe;   --c-phones-text: #1e40af; 
-            --c-emails-bg: #dcfce7;   --c-emails-text: #166534; 
+            /* Цвета столбцов (для цифр) */
+            --col-lines: #334155; 
+            --col-phones: #2563eb; 
+            --col-emails: #16a34a; 
             
             --primary: #2563eb;
         }
 
         body { 
-            font-family: 'Inter', sans-serif; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
             background: var(--bg-body); 
             color: var(--text-main); 
             margin: 0; display: flex; height: 100vh; overflow: hidden; 
         }
         
-        /* SIDEBAR */
+        /* --- SIDEBAR --- */
         .sidebar { 
-            width: 360px; background: var(--bg-sidebar); border-right: 1px solid var(--border); 
+            width: 340px; background: var(--bg-sidebar); border-right: 1px solid var(--border); 
             display: flex; flex-direction: column; z-index: 20; 
-            box-shadow: 10px 0 30px -10px rgba(0,0,0,0.05);
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
         }
-        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); }
-        .sidebar-header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; }
-        .sidebar-content { padding: 25px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px;}
+        .sidebar-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h2 { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 
-        /* PRICE INPUTS */
-        .price-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
-        .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9rem; }
-        .price-input { width: 70px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; text-align: right; font-weight: 600; background: var(--bg-body); }
+        .sidebar-content { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 24px;}
+
+        /* INPUTS */
+        .price-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.9rem; font-weight: 500;}
+        .price-row:last-child { margin-bottom: 0; }
+        .price-input { 
+            width: 70px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            text-align: right; font-weight: 700; background: #fff; color: var(--text-main);
+        }
         
         /* TOTAL BOX */
         .total-box {
-            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-            color: white; padding: 35px 20px; border-radius: 16px; text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); margin-top: 10px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white; padding: 30px 20px; border-radius: 16px; text-align: center;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.3);
         }
-        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1.1; }
+        .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1; letter-spacing: -1px; margin-top: 5px;}
+        .total-label { font-size: 0.85rem; font-weight: 500; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* BUTTONS */
         .actions { margin-top: auto; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
-        .btn-download { background: #1e293b; color: white; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 8px; transition: 0.2s;}
+        .btn-download { background: #0f172a; color: white; }
+        .btn-download:hover { background: #1e293b; }
         .btn-reset { background: transparent; color: #ef4444; border: 1px solid #fecaca; }
+        .btn-reset:hover { background: #fef2f2; }
 
-        /* MAIN */
-        .main { flex: 1; display: flex; flex-direction: column; }
-        .toolbar { padding: 20px 30px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); }
-        .search-input { width: 100%; padding: 12px 20px; font-size: 1rem; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; }
-        .tree-wrapper { flex: 1; overflow-y: auto; padding: 20px 30px; }
+        /* --- MAIN AREA --- */
+        .main { flex: 1; display: flex; flex-direction: column; background: #fff; }
+        
+        .toolbar { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+        .search-input { 
+            width: 100%; max-width: 400px; padding: 10px 16px; font-size: 0.95rem; 
+            border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc;
+        }
+        .search-input:focus { background: #fff; outline: 2px solid var(--primary); border-color: transparent; }
 
-        /* TREE UI */
-        ul { list-style: none; padding-left: 24px; margin: 0; }
-        ul.root { padding-left: 0; }
-        li { margin-bottom: 6px; }
+        /* --- TABLE HEADER (Sticky) --- */
+        .table-header {
+            display: flex;
+            padding: 12px 0;
+            background: #f1f5f9;
+            border-bottom: 1px solid #cbd5e1;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky; /* Закрепление */
+            top: 0;
+            z-index: 10;
+        }
+        .col-name { flex: 1; padding-left: 24px; } /* Отступ слева */
+        .col-stat { width: 100px; text-align: center; } /* Фикс ширина колонок */
 
+        /* --- TREE LIST --- */
+        .tree-wrapper { flex: 1; overflow-y: auto; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        
+        /* Node Row: Flex Container */
         .node-row { 
-            display: flex; align-items: center; padding: 8px 12px; 
-            background: white; border: 1px solid transparent; border-radius: 8px; 
-            cursor: pointer; transition: 0.1s;
+            display: flex; 
+            align-items: center; 
+            padding: 8px 0; /* Vertical padding only */
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer; 
+            transition: background 0.1s;
         }
-        .node-row:hover { background: #f1f5f9; }
-        .node-row.selected { background: #eff6ff; border-color: #bfdbfe; }
-
-        /* ROOT NODE STYLE */
-        .node-row.is-root-node {
-            background: #f8fafc; border: 1px solid #cbd5e1; font-weight: 700; margin-bottom: 15px;
+        .node-row:hover { background: #f8fafc; }
+        .node-row.selected { background: #eff6ff; }
+        
+        /* Left side (Indentation + Name) */
+        .node-left { 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            padding-right: 10px;
+            overflow: hidden; /* Prevent text overflow */
         }
-        .node-row.is-root-node .node-name { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .node-row.is-root-node.selected { background: #dbeafe; border-color: #2563eb; }
+        
+        /* Right side (Numbers) */
+        .node-stats { display: flex; }
+        .stat-cell { 
+            width: 100px; /* Must match header col-stat */
+            text-align: center; 
+            font-size: 0.95rem; /* Larger font */
+            font-weight: 700;   /* Bolder */
+        }
+        
+        /* Column Colors */
+        .c-lines { color: var(--col-lines); }
+        .c-phones { color: var(--col-phones); }
+        .c-emails { color: var(--col-emails); }
 
-        .toggler { width: 24px; margin-right: 8px; text-align: center; color: var(--text-muted); }
-        .toggler.empty { opacity: 0; }
-        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 15px; cursor: pointer; accent-color: var(--primary); }
-        .node-name { flex: 1; margin-right: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Controls */
+        .toggler { 
+            width: 24px; height: 24px; 
+            display: flex; align-items: center; justify-content: center; 
+            margin-right: 4px; color: #94a3b8; font-size: 0.7rem; flex-shrink: 0;
+        }
+        .toggler:hover { color: var(--text-main); background: #e2e8f0; border-radius: 4px; }
+        .toggler.empty { opacity: 0; pointer-events: none; }
 
-        /* BADGES */
-        .badges { display: flex; gap: 8px; }
-        .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; min-width: 60px; justify-content: space-between;}
-        .b-lines { background: var(--c-lines-bg); color: var(--c-lines-text); }
-        .b-phones { background: var(--c-phones-bg); color: var(--c-phones-text); }
-        .b-emails { background: var(--c-emails-bg); color: var(--c-emails-text); }
-        .b-icon { font-size: 0.7rem; opacity: 0.6; margin-right: 5px; }
+        input[type="checkbox"] { 
+            width: 16px; height: 16px; margin-right: 10px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0;
+        }
+
+        .node-name { 
+            font-weight: 500; font-size: 0.95rem; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ROOT SPECIAL STYLE */
+        .node-row.is-root-node { background: #f1f5f9; border-bottom: 2px solid #cbd5e1; }
+        .node-row.is-root-node .node-name { font-weight: 800; font-size: 1rem; }
+        .node-row.is-root-node.selected { background: #dbeafe; }
 
         ul.nested { display: none; }
-        ul.nested.active { display: block; border-left: 2px solid #f1f5f9; margin-left: 11px; }
+        ul.nested.active { display: block; }
         
-        /* LOADERS */
+        /* Loader */
         .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .error-box { display: none; color: #dc2626; background: #fee2e2; padding: 20px; border-radius: 8px; }
     </style>
@@ -109,35 +169,44 @@
 <div class="sidebar">
     <div class="sidebar-header">
         <h2>📊 Moscow Base</h2>
-        <div style="color: var(--text-muted); font-size: 0.9rem;">Калькулятор заказа</div>
     </div>
     <div class="sidebar-content">
         <div class="total-box">
             <div class="total-label">Итоговая стоимость</div>
             <div class="total-value"><span id="totalPrice">0</span>₽</div>
         </div>
+        
         <div class="price-section">
             <div class="price-row"><label>Строка</label><input type="number" class="price-input" id="pLine" value="0.5" step="0.1"></div>
-            <div class="price-row"><label>Телефон</label><input type="number" class="price-input" id="pPhone" value="2" step="0.1"></div>
-            <div class="price-row"><label>Email</label><input type="number" class="price-input" id="pEmail" value="5" step="0.1"></div>
+            <div class="price-row"><label style="color:var(--col-phones)">Телефон</label><input type="number" class="price-input" id="pPhone" value="2" step="0.1"></div>
+            <div class="price-row"><label style="color:var(--col-emails)">Email</label><input type="number" class="price-input" id="pEmail" value="5" step="0.1"></div>
         </div>
+
         <div class="actions">
-            <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ (.txt)</button>
-            <button class="btn btn-reset" onclick="resetAll()">Сбросить выбор</button>
+            <button class="btn btn-download" onclick="downloadOrder()">Скачать заказ (.txt)</button>
+            <button class="btn btn-reset" onclick="resetAll()">Сбросить всё</button>
         </div>
     </div>
 </div>
 
 <div class="main">
     <div class="toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск...">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Быстрый поиск...">
     </div>
+    
+    <div class="table-header">
+        <div class="col-name">Категория</div>
+        <div class="col-stat">Строк</div>
+        <div class="col-stat" style="color:var(--col-phones)">Телефонов</div>
+        <div class="col-stat" style="color:var(--col-emails)">Email</div>
+    </div>
+
     <div class="tree-wrapper" id="treeContainer"></div>
 </div>
 
 <div class="loader" id="loader">
     <div class="spinner"></div>
-    <h3 style="margin-top:20px;">Загрузка данных...</h3>
+    <h3 style="margin-top:20px; color:#475569;">Обработка базы...</h3>
     <div id="errorText" class="error-box"></div>
 </div>
 
@@ -156,18 +225,15 @@
             if (!resp.ok) throw new Error('File error');
             const text = await resp.text();
             
-            // 1. Парсим
             let rawNodes = parseHierarchy(text);
             
-            // 2. Логика "ВСЯ БАЗА"
-            // Если после чистки осталась только одна папка (например Moscow), используем её как корень
+            // Логика корня "ВСЕ БАЗЫ"
             if (rawNodes.length === 1) {
                 treeData = rawNodes;
-                treeData[0].name = "ВСЯ БАЗА"; 
+                treeData[0].name = "ВСЕ БАЗЫ"; // Новое название
                 treeData[0].isRoot = true;    
                 treeData[0].expanded = true;
             } else if (rawNodes.length > 1) {
-                // Если несколько папок верхнего уровня, создаем обертку
                 const totalStats = rawNodes.reduce((acc, node) => {
                     acc.l += node.stats.l;
                     acc.p += node.stats.p;
@@ -177,7 +243,7 @@
 
                 const rootNode = {
                     id: 'ROOT_WRAPPER', 
-                    name: 'ВСЯ БАЗА',
+                    name: 'ВСЕ БАЗЫ', // Новое название
                     stats: totalStats,
                     children: rawNodes,
                     expanded: true,
@@ -186,11 +252,10 @@
                 };
                 treeData = [rootNode];
             } else {
-                 // Если файл пустой или все строки отфильтровались
                  treeData = [];
             }
 
-            renderTree(treeData, document.getElementById('treeContainer'));
+            renderTree(treeData, document.getElementById('treeContainer'), 0); // Start depth 0
             document.getElementById('loader').style.display = 'none';
         } catch (e) {
             document.querySelector('.spinner').style.display = 'none';
@@ -209,10 +274,6 @@
 
         lines.forEach(line => {
             const cleanLine = line.trim();
-            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
-            // 1. Игнорируем пустые строки
-            // 2. Игнорируем разделители "="
-            // 3. Игнорируем строки, начинающиеся со слова "Всего" (это удалит те 3 панели)
             if (!cleanLine || cleanLine.startsWith('=') || cleanLine.startsWith('Всего')) return;
 
             const level = line.search(/\S/);
@@ -240,9 +301,11 @@
         return root;
     }
 
-    function renderTree(nodes, container) {
+    // Добавили аргумент depth для отступов
+    function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
+        if (depth > 0) ul.classList.add('active'); // Вложенные списки сразу активны в структуре (видимость через JS)
 
         nodes.forEach(node => {
             if (!node.visible) return;
@@ -250,9 +313,17 @@
             const hasChildren = node.children.length > 0;
             const isSelected = selectedIds.has(node.id);
 
+            // Row Wrapper
             const row = document.createElement('div');
             row.className = `node-row ${isSelected ? 'selected' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
             
+            // --- LEFT PART (Name + Indent) ---
+            const leftDiv = document.createElement('div');
+            leftDiv.className = 'node-left';
+            
+            // Расчет отступа: Базовый (24px) + Глубина * 20px
+            leftDiv.style.paddingLeft = (24 + (depth * 20)) + 'px';
+
             const toggler = document.createElement('div');
             toggler.className = `toggler ${hasChildren ? '' : 'empty'}`;
             toggler.innerHTML = node.expanded ? '▼' : '▶';
@@ -264,26 +335,41 @@
             const nameDiv = document.createElement('div');
             nameDiv.className = 'node-name';
             nameDiv.innerText = node.name;
+            
+            leftDiv.append(toggler, checkbox, nameDiv);
 
-            const badgesDiv = document.createElement('div');
-            badgesDiv.className = 'badges';
-            badgesDiv.innerHTML = `
-                <div class="badge b-lines"><span class="b-icon">L</span>${node.stats.l}</div>
-                <div class="badge b-phones"><span class="b-icon">P</span>${node.stats.p}</div>
-                <div class="badge b-emails"><span class="b-icon">E</span>${node.stats.e}</div>
+            // --- RIGHT PART (Stats Columns) ---
+            const statsDiv = document.createElement('div');
+            statsDiv.className = 'node-stats';
+            statsDiv.innerHTML = `
+                <div class="stat-cell c-lines">${node.stats.l > 0 ? node.stats.l.toLocaleString() : '-'}</div>
+                <div class="stat-cell c-phones">${node.stats.p > 0 ? node.stats.p.toLocaleString() : '-'}</div>
+                <div class="stat-cell c-emails">${node.stats.e > 0 ? node.stats.e.toLocaleString() : '-'}</div>
             `;
 
-            row.append(toggler, checkbox, nameDiv, badgesDiv);
+            row.append(leftDiv, statsDiv);
             li.appendChild(row);
 
+            // Logic
             const toggleExpand = (e) => {
                 e.stopPropagation();
                 if (!hasChildren) return;
                 node.expanded = !node.expanded;
                 toggler.innerHTML = node.expanded ? '▼' : '▶';
+                
                 let childUl = li.querySelector('ul.nested');
-                if (!childUl) { renderTree(node.children, li); childUl = li.querySelector('ul.nested'); }
-                node.expanded ? childUl.classList.add('active') : childUl.classList.remove('active');
+                if (!childUl) { 
+                    renderTree(node.children, li, depth + 1); // Pass depth + 1
+                    childUl = li.querySelector('ul.nested'); 
+                }
+                
+                if (node.expanded) {
+                    childUl.classList.add('active');
+                    childUl.style.display = 'block';
+                } else {
+                    childUl.classList.remove('active');
+                    childUl.style.display = 'none';
+                }
             };
 
             const toggleCheck = (e) => {
@@ -294,18 +380,22 @@
                     if (n.children) n.children.forEach(c => setRecursive(c, s));
                 };
                 setRecursive(node, checked);
+                
+                // Полная перерисовка нужна для обновления чекбоксов
                 document.getElementById('treeContainer').innerHTML = '';
-                renderTree(treeData, document.getElementById('treeContainer'));
+                renderTree(treeData, document.getElementById('treeContainer'), 0);
                 recalculate();
             };
 
             toggler.onclick = toggleExpand;
-            nameDiv.onclick = toggleExpand; 
+            row.onclick = (e) => { if(e.target !== checkbox) toggleExpand(e); }; // Click row to expand
             checkbox.onclick = toggleCheck; 
 
             if (node.expanded && hasChildren) {
-                renderTree(node.children, li);
-                li.querySelector('ul.nested').classList.add('active');
+                renderTree(node.children, li, depth + 1);
+                const u = li.querySelector('ul.nested');
+                u.style.display = 'block';
+                u.classList.add('active');
             }
             ul.appendChild(li);
         });
@@ -337,7 +427,7 @@
     function resetAll() {
         selectedIds.clear();
         document.getElementById('treeContainer').innerHTML = '';
-        renderTree(treeData, document.getElementById('treeContainer'));
+        renderTree(treeData, document.getElementById('treeContainer'), 0);
         recalculate();
     }
 
@@ -356,7 +446,7 @@
         };
         treeData.forEach(filter);
         document.getElementById('treeContainer').innerHTML = '';
-        renderTree(treeData, document.getElementById('treeContainer'));
+        renderTree(treeData, document.getElementById('treeContainer'), 0);
     }
 
     function downloadOrder() {
