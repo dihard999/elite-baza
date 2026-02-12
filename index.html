@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор Базы</title>
+    <title>Конструктор Базы</title>
     <style>
         :root {
             --bg-body: #f8fafc;       
@@ -12,12 +12,13 @@
             --text-muted: #64748b;    
             --border: #e2e8f0;        
             
-            /* Цвета */
             --c-lines-bg: #f1f5f9;    --c-lines-text: #475569; 
             --c-phones-bg: #dbeafe;   --c-phones-text: #1e40af; 
             --c-emails-bg: #dcfce7;   --c-emails-text: #166534; 
             
             --primary: #2563eb;
+            --success: #16a34a;
+            --warning: #ca8a04;
         }
 
         body { 
@@ -29,10 +30,10 @@
         
         /* --- SIDEBAR --- */
         .sidebar { 
-            width: 340px; background: var(--bg-sidebar); border-right: 1px solid var(--border); 
+            width: 360px; background: var(--bg-sidebar); border-right: 1px solid var(--border); 
             display: flex; flex-direction: column; z-index: 20; 
             box-shadow: 10px 0 30px -10px rgba(0,0,0,0.05);
-            padding-top: 20px; /* Отступ сверху вместо шапки */
+            padding-top: 20px;
         }
 
         .sidebar-content { padding: 25px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px;}
@@ -40,90 +41,89 @@
         /* TOTAL BOX */
         .total-box {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-            color: white; padding: 35px 20px; border-radius: 16px; text-align: center;
+            color: white; padding: 30px 20px; border-radius: 16px; text-align: center;
             box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            position: relative; overflow: hidden;
         }
-        .total-label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 5px; font-weight: 500; }
-        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1.1; }
+        .total-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; }
+        .tier-badge {
+            background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600; display: inline-block; margin-top: 10px;
+        }
 
-        /* SELECTED STATS (Новая панель) */
-        .stats-summary {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        /* BONUS BLOCK (GAMIFICATION) */
+        .bonus-box {
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px;
+            text-align: center; display: none; /* Hidden by default */
         }
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.95rem;
-            font-weight: 500;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed var(--border);
-        }
-        .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .stat-val { font-weight: 700; font-size: 1.1rem; }
+        .bonus-box.active { display: block; animation: popIn 0.3s ease; }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .bonus-title { color: var(--success); font-weight: 700; font-size: 0.95rem; margin-bottom: 5px; }
+        .bonus-text { font-size: 0.85rem; color: #15803d; margin-bottom: 10px; }
+        
+        /* Progress Bar */
+        .progress-bg { height: 8px; background: #dcfce7; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+
+        /* STATS */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; }
+        .stat-item { background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-num { display: block; font-weight: 700; font-size: 1rem; color: var(--text-main); }
+        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
 
         /* BUTTONS */
         .actions { margin-top: auto; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
         .btn-download { background: #1e293b; color: white; }
+        .btn-download:hover { background: #334155; }
         .btn-reset { background: transparent; color: #ef4444; border: 1px solid #fecaca; }
+        .btn-reset:hover { background: #fef2f2; }
 
         /* --- MAIN AREA --- */
         .main { flex: 1; display: flex; flex-direction: column; }
-        
-        .toolbar { padding: 20px 30px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); }
+        .toolbar { padding: 15px 30px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); }
         .search-input { width: 100%; padding: 12px 20px; font-size: 1rem; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; background: var(--bg-body);}
 
         /* TREE WRAPPER */
-        .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; position: relative; }
+        .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
         
-        /* HEADER & ROW STRUCTURE */
-        .row-structure { display: flex; align-items: center; padding: 8px 0; }
-        .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
-        .row-right { display: flex; gap: 8px; }
-        .col-fixed { width: 80px; display: flex; justify-content: center; } 
-
-        /* Sticky Header */
+        /* TABLE HEADER */
         .table-header {
-            position: sticky; top: 0; z-index: 10;
-            background: var(--bg-body); 
-            padding-top: 20px; padding-bottom: 10px;
-            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 10; background: var(--bg-body); 
+            padding-top: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
             font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;
+            display: flex;
         }
-        .header-pad { padding-left: 58px; } 
+        .header-pad { padding-left: 58px; flex: 1; } 
+        .col-fixed { width: 80px; text-align: center; }
 
-        /* Data Node Row */
+        /* ROWS */
         .node-row { 
-            cursor: pointer; transition: 0.1s; border-radius: 8px; padding-left: 4px; padding-right: 4px;
-            border: 1px solid transparent;
+            display: flex; align-items: center; padding: 6px 0; border-radius: 6px; 
+            cursor: pointer; border: 1px solid transparent; margin-bottom: 2px;
         }
         .node-row:hover { background: #f1f5f9; }
         .node-row.selected { background: #eff6ff; border-color: #bfdbfe; }
         
         .node-row.is-root-node {
-            background: #f8fafc; border-color: #cbd5e1; font-weight: 700; margin-bottom: 10px; margin-top: 10px;
+            background: #f8fafc; border-color: #cbd5e1; font-weight: 700; margin-bottom: 10px; margin-top: 10px; padding: 10px 0;
         }
         .node-row.is-root-node.selected { background: #dbeafe; border-color: #2563eb; }
 
-        .toggler { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0;}
-        .toggler.empty { opacity: 0; }
-        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 15px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
-        .node-name { font-weight: 500; font-size: 1rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
+        .row-right { display: flex; gap: 8px; }
 
-        /* BADGES (Updated: No Icons) */
+        .toggler { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0;}
+        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 15px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .node-name { font-weight: 500; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* BADGES */
         .badge { 
-            padding: 4px 0; /* Center align vertically */
-            border-radius: 6px; font-size: 0.85rem; font-weight: 700; 
-            display: flex; align-items: center; justify-content: center; /* Center content */
-            width: 100%; box-sizing: border-box;
+            padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; 
+            display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box;
         }
         .b-lines { background: var(--c-lines-bg); color: var(--c-lines-text); }
         .b-phones { background: var(--c-phones-bg); color: var(--c-phones-text); }
@@ -131,7 +131,6 @@
 
         ul.nested { display: none; }
         
-        /* Loader */
         .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -143,22 +142,31 @@
 <div class="sidebar">
     <div class="sidebar-content">
         <div class="total-box">
-            <div class="total-label">Итоговая стоимость</div>
+            <div class="total-label">К оплате (Шаг 500₽)</div>
             <div class="total-value"><span id="totalPrice">0</span>₽</div>
+            <div class="tier-badge" id="currentTierBadge">Минимальный заказ</div>
+        </div>
+
+        <div class="bonus-box" id="bonusBox">
+            <div class="bonus-title">🎁 Бонус доступен!</div>
+            <div class="bonus-text">Вы платите за пакет <span id="paidFor">1000</span>₽. <br>Добавьте бесплатно еще <b id="freeCount">0</b> строк!</div>
+            <div class="progress-bg">
+                <div class="progress-fill" id="bonusProgress"></div>
+            </div>
         </div>
         
-        <div class="stats-summary">
-            <div class="stat-row">
-                <span style="color:var(--c-lines-text)">Выбрано строк:</span>
-                <span class="stat-val" style="color:var(--c-lines-text)" id="selLines">0</span>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-num" id="selLines" style="color:var(--c-lines-text)">0</span>
+                <span class="stat-lbl">Строк</span>
             </div>
-            <div class="stat-row">
-                <span style="color:var(--c-phones-text)">Телефонов:</span>
-                <span class="stat-val" style="color:var(--c-phones-text)" id="selPhones">0</span>
+            <div class="stat-item">
+                <span class="stat-num" id="selPhones" style="color:var(--c-phones-text)">0</span>
+                <span class="stat-lbl">Тел</span>
             </div>
-            <div class="stat-row">
-                <span style="color:var(--c-emails-text)">Email:</span>
-                <span class="stat-val" style="color:var(--c-emails-text)" id="selEmails">0</span>
+            <div class="stat-item">
+                <span class="stat-num" id="selEmails" style="color:var(--c-emails-text)">0</span>
+                <span class="stat-lbl">Email</span>
             </div>
         </div>
 
@@ -171,34 +179,37 @@
 
 <div class="main">
     <div class="toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск категории...">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск (регион, категория)...">
     </div>
     
     <div class="tree-wrapper">
-        <div class="table-header row-structure">
-            <div class="row-left header-pad">Категория</div>
-            <div class="row-right">
-                <div class="col-fixed">Строк</div>
-                <div class="col-fixed" style="color:var(--c-phones-text)">Телефонов</div>
-                <div class="col-fixed" style="color:var(--c-emails-text)">Email</div>
-            </div>
+        <div class="table-header">
+            <div class="header-pad">Категория</div>
+            <div class="col-fixed">Строк</div>
+            <div class="col-fixed" style="color:var(--c-phones-text)">Тел</div>
+            <div class="col-fixed" style="color:var(--c-emails-text)">Email</div>
         </div>
-        
         <div id="treeContainer"></div>
     </div>
 </div>
 
 <div class="loader" id="loader">
     <div class="spinner"></div>
-    <h3 style="margin-top:20px; color:#475569;">Загрузка базы...</h3>
+    <h3 style="margin-top:20px; color:#475569;">Загрузка данных...</h3>
     <div id="errorText" class="error-box"></div>
 </div>
 
 <script>
-    // === КОНФИГУРАЦИЯ ЦЕН ===
-    const PRICE_LINE = 0.5;
-    const PRICE_PHONE = 2.0;
-    const PRICE_EMAIL = 5.0;
+    // === МАТРИЦА ЦЕНООБРАЗОВАНИЯ (TIERS) ===
+    const TIERS = [
+        { limit: 1000,   rate: 1.0,  name: "Микро (до 1к)" },
+        { limit: 10000,  rate: 0.40, name: "Малый (до 10к)" },
+        { limit: 100000, rate: 0.20, name: "Средний (до 100к)" },
+        { limit: Infinity, rate: 0.05, name: "Опт (100к+)" }
+    ];
+    
+    // Шаг цены
+    const PRICE_STEP = 500;
 
     const DATA_FILE = 'Moscow.txt';
     let treeData = [];
@@ -215,6 +226,7 @@
             
             let rawNodes = parseHierarchy(text);
             
+            // Логика корня
             if (rawNodes.length === 1) {
                 treeData = rawNodes;
                 treeData[0].name = "ВСЕ БАЗЫ"; 
@@ -222,9 +234,7 @@
                 treeData[0].expanded = true;
             } else if (rawNodes.length > 1) {
                 const totalStats = rawNodes.reduce((acc, node) => {
-                    acc.l += node.stats.l;
-                    acc.p += node.stats.p;
-                    acc.e += node.stats.e;
+                    acc.l += node.stats.l; acc.p += node.stats.p; acc.e += node.stats.e;
                     return acc;
                 }, { l:0, p:0, e:0 });
 
@@ -233,14 +243,10 @@
                     name: 'ВСЕ БАЗЫ',
                     stats: totalStats,
                     children: rawNodes,
-                    expanded: true,
-                    visible: true,
-                    isRoot: true
+                    expanded: true, visible: true, isRoot: true
                 };
                 treeData = [rootNode];
-            } else {
-                 treeData = [];
-            }
+            } else { treeData = []; }
 
             renderTree(treeData, document.getElementById('treeContainer'), 0);
             document.getElementById('loader').style.display = 'none';
@@ -262,25 +268,18 @@
         lines.forEach(line => {
             const cleanLine = line.trim();
             if (!cleanLine || cleanLine.startsWith('=') || cleanLine.startsWith('Всего')) return;
-
             const level = line.search(/\S/);
             if (level === -1) return;
-
             const match = cleanLine.match(regex);
             let name = cleanLine;
             let stats = { l:0, p:0, e:0 };
-
             if (match) {
                 name = cleanLine.substring(0, match.index).trim();
                 if (match[1]) {
-                    stats.l = parseInt(match[1])||0;
-                    stats.p = parseInt(match[2])||0;
-                    stats.e = parseInt(match[3])||0;
+                    stats.l = parseInt(match[1])||0; stats.p = parseInt(match[2])||0; stats.e = parseInt(match[3])||0;
                 }
             }
-            
             const node = { id: idCounter++, name, stats, children: [], expanded: false, visible: true };
-
             while (stack.length > 1 && stack[stack.length-1].level >= level) stack.pop();
             stack[stack.length-1].children.push(node);
             stack.push({ level, children: node.children });
@@ -299,7 +298,7 @@
             const isSelected = selectedIds.has(node.id);
 
             const row = document.createElement('div');
-            row.className = `node-row row-structure ${isSelected ? 'selected' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
+            row.className = `node-row ${isSelected ? 'selected' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
             
             const leftDiv = document.createElement('div');
             leftDiv.className = 'row-left';
@@ -322,15 +321,10 @@
             const rightDiv = document.createElement('div');
             rightDiv.className = 'row-right';
             
-            // Helper: без букв, только цифры
             const createBadge = (type, val) => {
                 const cell = document.createElement('div');
                 cell.className = 'col-fixed';
-                if (val > 0) {
-                    cell.innerHTML = `<div class="badge b-${type}">${val.toLocaleString()}</div>`;
-                } else {
-                     cell.innerHTML = `<span style="opacity:0.3; font-size:0.8rem">—</span>`;
-                }
+                cell.innerHTML = val > 0 ? `<div class="badge b-${type}">${val.toLocaleString()}</div>` : `<span style="opacity:0.3; font-size:0.8rem">—</span>`;
                 return cell;
             }
 
@@ -348,12 +342,9 @@
                 if (!hasChildren) return;
                 node.expanded = !node.expanded;
                 toggler.innerHTML = node.expanded ? '▼' : '▶';
-                
                 let childUl = li.querySelector('ul.nested');
                 if (!childUl) { renderTree(node.children, li, depth + 1); childUl = li.querySelector('ul.nested'); }
-                
-                if (node.expanded) childUl.style.display = 'block';
-                else childUl.style.display = 'none';
+                if (node.expanded) childUl.style.display = 'block'; else childUl.style.display = 'none';
             };
 
             const toggleCheck = (e) => {
@@ -364,7 +355,6 @@
                     if (n.children) n.children.forEach(c => setRecursive(c, s));
                 };
                 setRecursive(node, checked);
-                
                 document.getElementById('treeContainer').innerHTML = '';
                 renderTree(treeData, document.getElementById('treeContainer'), 0);
                 recalculate();
@@ -383,14 +373,13 @@
         container.appendChild(ul);
     }
 
+    // === ГЛАВНАЯ ЛОГИКА РАСЧЕТА ===
     function recalculate() {
         let l=0, p=0, e=0;
         function traverse(nodes) {
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) {
-                    l += n.stats.l;
-                    p += n.stats.p;
-                    e += n.stats.e;
+                    l += n.stats.l; p += n.stats.p; e += n.stats.e;
                 } else {
                     if (n.children.length) traverse(n.children);
                 }
@@ -398,13 +387,57 @@
         }
         traverse(treeData);
 
-        // Обновляем новую панель статистики
+        // 1. Считаем общий объем данных
+        // Вы можете решить, считать ли просто строки, или сумму (строки+тел+email). 
+        // Здесь сумма всех сущностей (volume):
+        const volume = l + p + e;
+
+        // 2. Определяем Тариф (Tier)
+        let currentRate = TIERS[0].rate;
+        let currentTierName = TIERS[0].name;
+
+        for (let tier of TIERS) {
+            if (volume < tier.limit) {
+                currentRate = tier.rate;
+                currentTierName = tier.name;
+                break;
+            }
+            // Если volume больше всех лимитов, останется последний rate (Опт)
+        }
+
+        // 3. Считаем "Сырую" цену
+        const rawPrice = volume * currentRate;
+
+        // 4. Округляем до шага 500 (в большую сторону)
+        // Минимум 500р, даже если выбрано 1 запись
+        let finalPrice = Math.ceil(rawPrice / PRICE_STEP) * PRICE_STEP;
+        if (finalPrice === 0 && volume > 0) finalPrice = PRICE_STEP;
+
+        // 5. Логика бонуса ("Досыпь еще")
+        const maxVolumeForThisPrice = finalPrice / currentRate;
+        const freeVolume = Math.floor(maxVolumeForThisPrice - volume);
+
+        // UI UPDATES
         document.getElementById('selLines').innerText = l.toLocaleString();
         document.getElementById('selPhones').innerText = p.toLocaleString();
         document.getElementById('selEmails').innerText = e.toLocaleString();
+        
+        document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
+        document.getElementById('currentTierBadge').innerText = `${currentTierName} (${currentRate}₽/шт)`;
 
-        const total = (l * PRICE_LINE) + (p * PRICE_PHONE) + (e * PRICE_EMAIL);
-        document.getElementById('totalPrice').innerText = Math.round(total).toLocaleString();
+        // Показываем блок бонуса, если есть что добрать и что-то выбрано
+        const bonusBox = document.getElementById('bonusBox');
+        if (freeVolume > 0 && volume > 0) {
+            bonusBox.classList.add('active');
+            document.getElementById('paidFor').innerText = finalPrice;
+            document.getElementById('freeCount').innerText = freeVolume.toLocaleString();
+            
+            // Прогресс бар заполненности текущего "пакета"
+            const percentFilled = (volume / maxVolumeForThisPrice) * 100;
+            document.getElementById('bonusProgress').style.width = percentFilled + '%';
+        } else {
+            bonusBox.classList.remove('active');
+        }
     }
 
     function resetAll() {
@@ -434,9 +467,14 @@
 
     function downloadOrder() {
         if (selectedIds.size === 0) { alert('Ничего не выбрано!'); return; }
+        const price = document.getElementById('totalPrice').innerText;
+        const tier = document.getElementById('currentTierBadge').innerText;
+        
         let text = `ЗАКАЗ\nДата: ${new Date().toLocaleString()}\n`;
-        text += `Сумма: ${document.getElementById('totalPrice').innerText} руб.\n`;
-        text += `Статистика: Строк: ${document.getElementById('selLines').innerText}, Тел: ${document.getElementById('selPhones').innerText}, Email: ${document.getElementById('selEmails').innerText}\n---\n`;
+        text += `К оплате: ${price} руб.\n`;
+        text += `Тариф: ${tier}\n`;
+        text += `Объем: L:${document.getElementById('selLines').innerText} P:${document.getElementById('selPhones').innerText} E:${document.getElementById('selEmails').innerText}\n`;
+        text += `--------------------------------\n`;
         
         const traverseWrite = (nodes) => {
             nodes.forEach(n => {
@@ -447,7 +485,7 @@
         traverseWrite(treeData);
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
-        link.download = 'Order.txt';
+        link.download = `Order_${price}RUB.txt`;
         link.click();
     }
 </script>
