@@ -13,7 +13,7 @@
             --text-muted: #64748b;    /* Серый текст для второстепенного */
             --border: #e2e8f0;        /* Легкие границы */
             
-            /* Цвета для категорий (НЕ БЕЛЫЕ) */
+            /* Цвета для категорий */
             --c-lines-bg: #f1f5f9;    --c-lines-text: #475569; /* Серый */
             --c-phones-bg: #dbeafe;   --c-phones-text: #1e40af; /* Синий */
             --c-emails-bg: #dcfce7;   --c-emails-text: #166534; /* Зеленый */
@@ -97,7 +97,7 @@
         .total-box {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
             color: white;
-            padding: 35px 20px; /* Больше пространства внутри */
+            padding: 35px 20px;
             border-radius: 16px;
             text-align: center;
             box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
@@ -110,27 +110,12 @@
             font-weight: 500;
         }
         .total-value {
-            font-size: 2.8rem; /* Очень крупно */
+            font-size: 2.8rem;
             font-weight: 800;
             line-height: 1.1;
             letter-spacing: -1px;
         }
         .currency { font-size: 1.2rem; font-weight: 400; opacity: 0.8; }
-
-        /* Статистика (счетчики) */
-        .stats-grid {
-            display: grid;
-            gap: 10px;
-        }
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.95rem;
-            padding: 8px 0;
-            border-bottom: 1px dashed var(--border);
-        }
-        .stat-item:last-child { border-bottom: none; }
-        .stat-num { font-weight: 700; font-variant-numeric: tabular-nums; }
 
         /* Кнопки */
         .actions { margin-top: auto; }
@@ -215,6 +200,17 @@
             background: #eff6ff; 
             border-color: #bfdbfe; 
         }
+        /* Особый стиль для Root Node */
+        .node-row.is-root-node {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            font-weight: bold;
+            margin-bottom: 15px; /* Отступ от остального дерева */
+        }
+        .node-row.is-root-node.selected {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
 
         /* Элементы управления деревом */
         .toggler { 
@@ -258,7 +254,6 @@
             justify-content: space-between;
         }
         
-        /* Стили для конкретных типов данных */
         .b-lines { background: var(--c-lines-bg); color: var(--c-lines-text); }
         .b-phones { background: var(--c-phones-bg); color: var(--c-phones-text); }
         .b-emails { background: var(--c-emails-bg); color: var(--c-emails-text); }
@@ -291,24 +286,6 @@
             <div class="total-label">Итоговая стоимость</div>
             <div class="total-value">
                 <span id="totalPrice">0</span><span class="currency">₽</span>
-            </div>
-        </div>
-
-        <div class="price-section">
-            <div class="price-title">Выбрано в базе</div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span style="color: var(--c-lines-text)">Строк:</span>
-                    <span class="stat-num" id="totalLines">0</span>
-                </div>
-                <div class="stat-item">
-                    <span style="color: var(--c-phones-text)">Телефонов:</span>
-                    <span class="stat-num" id="totalPhones">0</span>
-                </div>
-                <div class="stat-item">
-                    <span style="color: var(--c-emails-text)">Email:</span>
-                    <span class="stat-num" id="totalEmails">0</span>
-                </div>
             </div>
         </div>
 
@@ -355,8 +332,6 @@
 </div>
 
 <script>
-    // === CONFIG ===
-    // Убедитесь, что ваш файл называется именно так!
     const DATA_FILE = 'Moscow.txt';
 
     let treeData = [];
@@ -365,7 +340,6 @@
 
     // === INIT ===
     window.onload = async () => {
-        // Подключаем слушатели на инпуты цен
         ['pLine', 'pPhone', 'pEmail'].forEach(id => {
             document.getElementById(id).addEventListener('input', recalculate);
         });
@@ -376,7 +350,26 @@
             if (!resp.ok) throw new Error('File not found');
             const text = await resp.text();
             
-            treeData = parseHierarchy(text);
+            // 1. Парсим файл
+            const rawNodes = parseHierarchy(text);
+            
+            // 2. Считаем общую статистику всех узлов
+            const globalStats = aggregateStats(rawNodes);
+
+            // 3. Создаем Супер-Root элемент, в который оборачиваем всё
+            const rootNode = {
+                id: 'root_all', // Уникальный ID
+                name: 'ВСЯ БАЗА (Выбрать все категории)',
+                stats: globalStats,
+                children: rawNodes,
+                expanded: true, // Раскрыт по умолчанию
+                visible: true,
+                isRoot: true // Флаг для стилизации
+            };
+
+            // 4. Теперь дерево состоит из одного главного элемента
+            treeData = [rootNode];
+
             renderTree(treeData, document.getElementById('treeContainer'));
             document.getElementById('loader').style.display = 'none';
         } catch (e) {
@@ -384,8 +377,29 @@
             const err = document.getElementById('errorText');
             err.style.display = 'block';
             err.innerHTML = `Ошибка: Не могу найти файл <b>${DATA_FILE}</b>.<br>Проверьте имя файла на GitHub.`;
+            console.error(e);
         }
     };
+
+    // Функция для рекурсивного подсчета статистики (Deep Stats)
+    function aggregateStats(nodes) {
+        let res = { l: 0, p: 0, e: 0 };
+        nodes.forEach(node => {
+            // Берем статистику текущего узла
+            res.l += node.stats.l;
+            res.p += node.stats.p;
+            res.e += node.stats.e;
+            
+            // Если есть дети, прибавляем и их статистику
+            if (node.children && node.children.length > 0) {
+                const childStats = aggregateStats(node.children);
+                res.l += childStats.l;
+                res.p += childStats.p;
+                res.e += childStats.e;
+            }
+        });
+        return res;
+    }
 
     // === PARSING ===
     function parseHierarchy(text) {
@@ -447,7 +461,8 @@
 
             // Row Container
             const row = document.createElement('div');
-            row.className = `node-row ${isSelected ? 'selected' : ''}`;
+            // Добавил класс is-root-node если это наш главный элемент
+            row.className = `node-row ${isSelected ? 'selected' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
             
             // 1. Toggler
             const toggler = document.createElement('div');
@@ -495,23 +510,36 @@
             };
 
             const toggleCheck = (e) => {
-                e.stopPropagation(); // Don't expand when checking
+                e.stopPropagation(); 
                 const checked = e.target.checked;
-                if (checked) {
-                    selectedIds.add(node.id);
-                    row.classList.add('selected');
-                } else {
-                    selectedIds.delete(node.id);
-                    row.classList.remove('selected');
+                
+                // Функция для рекурсивного выбора детей (визуально)
+                // Если мы выбираем "ВСЯ БАЗА", то логично выбрать галочки у всех детей для красоты,
+                // хотя математика и так сработает (потому что мы выбираем родителя).
+                function setRecursive(n, state) {
+                    if (state) selectedIds.add(n.id);
+                    else selectedIds.delete(n.id);
+                    
+                    if (n.children && n.children.length) {
+                        n.children.forEach(c => setRecursive(c, state));
+                    }
                 }
+
+                // Включаем рекурсивное выделение для удобства пользователя
+                setRecursive(node, checked);
+
+                // Перерисовываем весь интерфейс, чтобы обновить классы 'selected' у всех детей
+                // (Это немного затратно, но для <1000 элементов мгновенно)
+                document.getElementById('treeContainer').innerHTML = '';
+                renderTree(treeData, document.getElementById('treeContainer'));
                 recalculate();
             };
 
             toggler.onclick = toggleExpand;
-            nameDiv.onclick = toggleExpand; // Clicking name expands
-            checkbox.onclick = toggleCheck; // Clicking checkbox selects
+            nameDiv.onclick = toggleExpand; 
+            checkbox.onclick = toggleCheck; 
             
-            // Auto-render if expanded (e.g. search)
+            // Auto-render if expanded
             if (node.expanded && hasChildren) {
                 renderTree(node.children, li);
                 li.querySelector('ul.nested').classList.add('active');
@@ -529,21 +557,19 @@
         function traverse(nodes) {
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) {
+                    // Если выбрана эта папка (даже если это Root), берем её цифры
                     l += n.stats.l;
                     p += n.stats.p;
                     e += n.stats.e;
-                    // Don't traverse children if parent selected
+                    // ВАЖНО: Мы не идем в детей (traverse(n.children) НЕ вызывается),
+                    // чтобы не посчитать цифры дважды.
+                    // Так как у Root элемента stats - это сумма всей базы, всё работает верно.
                 } else {
                     if (n.children.length) traverse(n.children);
                 }
             });
         }
         traverse(treeData);
-
-        // Update UI Text
-        document.getElementById('totalLines').innerText = l.toLocaleString();
-        document.getElementById('totalPhones').innerText = p.toLocaleString();
-        document.getElementById('totalEmails').innerText = e.toLocaleString();
 
         // Calculate Price
         const priceL = parseFloat(document.getElementById('pLine').value) || 0;
@@ -552,7 +578,6 @@
 
         const total = (l * priceL) + (p * priceP) + (e * priceE);
         
-        // Animation for Price
         document.getElementById('totalPrice').innerText = Math.round(total).toLocaleString();
     }
 
@@ -581,7 +606,10 @@
             }
             node.visible = match || childMatch;
             if (q && childMatch) node.expanded = true;
-            else if (!q) node.expanded = false;
+            else if (!q) {
+                // Если поиск пустой, сворачиваем всё кроме ROOT элемента
+                node.expanded = (node.isRoot === true); 
+            }
             return node.visible;
         }
 
@@ -603,6 +631,9 @@
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) {
                     text += `[+] ${n.name} (L:${n.stats.l} P:${n.stats.p} E:${n.stats.e})\n`;
+                    // Если выбран Root, мы не пишем всех его детей по отдельности,
+                    // а просто пишем, что выбрана "ВСЯ БАЗА". 
+                    // Если нужно перечислять, можно убрать else ниже.
                 } else {
                     if (n.children.length) traverseWrite(n.children);
                 }
