@@ -2,53 +2,40 @@ import os
 import json
 import re
 
-# Настройки
 BASE_DIR = 'base'
 OUTPUT_FILE = 'database.js'
 
-def parse_txt_file(filepath):
-    """
-    Читает файл и создает дерево категорий.
-    Ожидает формат: Категория [Строк: 10 | Тел: 5 ...]
-    """
+def parse_txt_content(filepath):
+    """Парсит содержимое txt файла в структуру дерева"""
     root = []
-    # Стек для отслеживания вложенности: (уровень отступа, список детей)
     stack = [{"level": -1, "children": root}]
+    
+    # Регулярка под твой формат: "Категория [Строк: 10 | Тел: 5 | Email: 2]"
+    regex = re.compile(r'\[(?:Строк:\s*(\d+)\s*\|\s*Тел:\s*(\d+)\s*\|\s*Email:\s*(\d+)|0)\]')
 
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                raw = line.rstrip()
-                if not raw or raw.startswith('='): continue
+                clean_line = line.rstrip()
+                if not clean_line or clean_line.startswith('=') or clean_line.startswith('Всего'): continue
 
-                # 1. Считаем отступ (уровень вложенности)
-                stripped = raw.lstrip()
-                level = len(raw) - len(stripped)
+                # Считаем отступ
+                stripped = clean_line.lstrip()
+                level = len(clean_line) - len(stripped)
                 
-                # 2. Парсим название и цифры
-                # Пример: "Строительство [Строк: 100 | Тел: 20]"
-                name = stripped
+                # Парсим имя и статистику
+                match = regex.search(stripped)
                 stats = {"l": 0, "p": 0, "e": 0}
-                
-                # Ищем блок статистики [...]
-                match = re.search(r'(.*)\[(.*?)\].*', stripped)
+                name = stripped
+
                 if match:
-                    name = match.group(1).strip()
-                    stat_str = match.group(2)
-                    
-                    # Выдергиваем цифры
-                    l_match = re.search(r'Строк:\s*(\d+)', stat_str)
-                    p_match = re.search(r'Тел:\s*(\d+)', stat_str)
-                    e_match = re.search(r'Email:\s*(\d+)', stat_str)
-                    
-                    if l_match: stats['l'] = int(l_match.group(1))
-                    if p_match: stats['p'] = int(p_match.group(1))
-                    if e_match: stats['e'] = int(e_match.group(1))
+                    # Если нашли скобки со статой
+                    name = stripped[:match.start()].strip()
+                    if match.group(1): stats['l'] = int(match.group(1))
+                    if match.group(2): stats['p'] = int(match.group(2))
+                    if match.group(3): stats['e'] = int(match.group(3))
                 else:
-                    # Если статистики нет в скобках, считаем строку за 1, если это не папка
-                    # Но обычно в таких файлах строки без скобок - это категории
-                    # Давай считать, что если нет [], то это просто категория-папка (стат 0)
-                    # Если нужно считать контакты, можно добавить проверку на @
+                    # Если скобок нет, это просто категория (папка)
                     pass
 
                 node = {
@@ -57,73 +44,54 @@ def parse_txt_file(filepath):
                     "children": []
                 }
 
-                # 3. Вставляем в дерево (ищем родителя)
+                # Строим иерархию
                 while stack[-1]["level"] >= level:
                     stack.pop()
                 
                 stack[-1]["children"].append(node)
                 stack.append({"level": level, "children": node["children"]})
 
-    except Exception as e:
-        print(f"Ошибка файла {filepath}: {e}")
-
+    except Exception: pass
     return root
 
 def scan_folders(path):
-    """Рекурсивно обходит папки и ищет .txt файлы"""
-    folder_name = os.path.basename(path)
+    name = os.path.basename(path)
     node = {
-        "name": folder_name,
+        "name": name,
         "type": "folder",
-        "children": [],     # Подпапки
-        "file_content": []  # Если это файл, тут будет дерево категорий
+        "children": []
     }
 
     try:
-        # Сортируем: сначала папки, потом файлы
-        items = sorted(os.listdir(path), key=lambda x: (not os.path.isdir(os.path.join(path, x)), x))
-        
+        items = sorted(os.listdir(path))
         for item in items:
             if item.startswith('.'): continue
             full_path = os.path.join(path, item)
 
             if os.path.isdir(full_path):
-                # Это папка (Регион, Район и т.д.)
                 child = scan_folders(full_path)
-                # Добавляем, только если внутри что-то есть
-                if child['children'] or child['type'] == 'file': 
-                    node['children'].append(child)
+                if child['children']: node['children'].append(child)
             
             elif os.path.isfile(full_path) and item.endswith('.txt'):
-                # Это файл (Город)
-                content = parse_txt_file(full_path)
+                # Читаем внутрь файла
+                content = parse_txt_content(full_path)
                 if content:
                     file_node = {
                         "name": item.replace('.txt', ''),
                         "type": "file",
-                        "children": [], # У файла нет детей-папок
-                        "file_content": content # У файла есть контент (дерево категорий)
+                        "children": [],
+                        "file_content": content # Сохраняем дерево категорий
                     }
                     node['children'].append(file_node)
-
-    except Exception as e:
-        pass
-
+    except: pass
     return node
 
-print(f"🔄 Сканирую папку '{BASE_DIR}'...")
-
+print("⏳ Сканирую базу...")
 if os.path.exists(BASE_DIR):
-    # Запускаем сканирование
-    full_tree = scan_folders(BASE_DIR)
-    
-    # Оборачиваем в JS переменную
-    js_content = f"const GEO_DB = {json.dumps(full_tree, ensure_ascii=False)};"
-    
+    tree = scan_folders(BASE_DIR)
+    js = f"const GEO_DB = {json.dumps(tree, ensure_ascii=False)};"
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        f.write(js_content)
-        
+        f.write(js)
     print(f"✅ Готово! Файл {OUTPUT_FILE} создан.")
-    print("Теперь открой index.html")
 else:
-    print(f"❌ Ошибка: Папка {BASE_DIR} не найдена!")
+    print(f"❌ Папка {BASE_DIR} не найдена.")
