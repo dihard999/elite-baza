@@ -3,140 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор Базы: PRO Design</title>
+    <title>Калькулятор Базы</title>
     <style>
         :root {
-            /* Строгая палитра */
             --bg-body: #f8fafc;       
             --bg-sidebar: #ffffff;    
             --text-main: #1e293b;     
             --text-muted: #64748b;    
             --border: #e2e8f0;        
             
-            /* Цвета для категорий */
             --c-lines-bg: #f1f5f9;    --c-lines-text: #475569; 
             --c-phones-bg: #dbeafe;   --c-phones-text: #1e40af; 
             --c-emails-bg: #dcfce7;   --c-emails-text: #166534; 
             
-            /* Акцент */
             --primary: #2563eb;
-            --primary-hover: #1d4ed8;
         }
 
         body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-family: 'Inter', sans-serif; 
             background: var(--bg-body); 
             color: var(--text-main); 
-            margin: 0; 
-            display: flex; 
-            height: 100vh; 
-            overflow: hidden; 
+            margin: 0; display: flex; height: 100vh; overflow: hidden; 
         }
         
-        /* --- SIDEBAR --- */
+        /* SIDEBAR */
         .sidebar { 
-            width: 360px; 
-            background: var(--bg-sidebar); 
-            border-right: 1px solid var(--border); 
-            display: flex; 
-            flex-direction: column; 
-            z-index: 20; 
+            width: 360px; background: var(--bg-sidebar); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; z-index: 20; 
             box-shadow: 10px 0 30px -10px rgba(0,0,0,0.05);
         }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; }
+        .sidebar-content { padding: 25px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px;}
 
-        .sidebar-header { 
-            padding: 25px; 
-            border-bottom: 1px solid var(--border); 
-        }
-        .sidebar-header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
-
-        .sidebar-content { 
-            padding: 25px; 
-            overflow-y: auto; 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px;
-        }
-
-        /* Настройки цены */
-        .price-section {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 15px;
-        }
-        .price-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .price-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-        .price-input {
-            width: 70px;
-            padding: 6px 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            text-align: right;
-            font-weight: 600;
-            color: var(--text-main);
-            background: var(--bg-body);
-        }
-        .price-input:focus { outline: 2px solid var(--primary); border-color: transparent; }
-
-        /* ИТОГОВАЯ СУММА */
+        /* PRICE INPUTS */
+        .price-section { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9rem; }
+        .price-input { width: 70px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; text-align: right; font-weight: 600; background: var(--bg-body); }
+        
+        /* TOTAL BOX */
         .total-box {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-            color: white;
-            padding: 35px 20px;
-            border-radius: 16px;
-            text-align: center;
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
-            margin-top: 10px;
+            color: white; padding: 35px 20px; border-radius: 16px; text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); margin-top: 10px;
         }
-        .total-label { font-size: 0.9rem; opacity: 0.8; margin-bottom: 5px; font-weight: 500; }
-        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
-        .currency { font-size: 1.2rem; font-weight: 400; opacity: 0.8; }
+        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1.1; }
 
-        /* Кнопки */
+        /* BUTTONS */
         .actions { margin-top: auto; }
-        .btn {
-            width: 100%; padding: 14px; border: none; border-radius: 10px;
-            font-weight: 600; cursor: pointer; font-size: 0.95rem;
-            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;
-        }
-        .btn-download { background: #1e293b; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .btn-download:hover { background: #0f172a; transform: translateY(-1px); }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .btn-download { background: #1e293b; color: white; }
         .btn-reset { background: transparent; color: #ef4444; border: 1px solid #fecaca; }
-        .btn-reset:hover { background: #fef2f2; }
 
-        /* --- MAIN CONTENT --- */
+        /* MAIN */
         .main { flex: 1; display: flex; flex-direction: column; }
-        
-        .toolbar { 
-            padding: 20px 30px; 
-            background: var(--bg-sidebar); 
-            border-bottom: 1px solid var(--border); 
-        }
-        .search-input {
-            width: 100%; padding: 12px 20px; font-size: 1rem;
-            border: 1px solid var(--border); border-radius: 10px;
-            background: var(--bg-body); transition: 0.2s; box-sizing: border-box;
-        }
-        .search-input:focus { background: white; outline: 2px solid var(--primary); border-color: transparent; }
-
+        .toolbar { padding: 20px 30px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); }
+        .search-input { width: 100%; padding: 12px 20px; font-size: 1rem; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; }
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 20px 30px; }
 
-        /* Дерево */
+        /* TREE UI */
         ul { list-style: none; padding-left: 24px; margin: 0; }
         ul.root { padding-left: 0; }
         li { margin-bottom: 6px; }
@@ -144,56 +69,39 @@
         .node-row { 
             display: flex; align-items: center; padding: 8px 12px; 
             background: white; border: 1px solid transparent; border-radius: 8px; 
-            transition: 0.15s; cursor: pointer;
+            cursor: pointer; transition: 0.1s;
         }
         .node-row:hover { background: #f1f5f9; }
         .node-row.selected { background: #eff6ff; border-color: #bfdbfe; }
 
-        /* СТИЛЬ ГЛАВНОЙ ПАПКИ */
+        /* ROOT NODE STYLE */
         .node-row.is-root-node {
-            background: #f1f5f9; /* Чуть темнее фон */
-            border: 1px solid #cbd5e1;
-            font-weight: 700; /* Жирный текст */
-            margin-bottom: 10px;
+            background: #f8fafc; border: 1px solid #cbd5e1; font-weight: 700; margin-bottom: 15px;
         }
-        .node-row.is-root-node .node-name { font-size: 1.1rem; }
+        .node-row.is-root-node .node-name { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .node-row.is-root-node.selected { background: #dbeafe; border-color: #2563eb; }
 
-        /* Toggler */
-        .toggler { 
-            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; 
-            margin-right: 8px; color: var(--text-muted); border-radius: 4px; font-size: 0.8rem;
-        }
-        .toggler:hover { background: #e2e8f0; color: var(--text-main); }
-        .toggler.empty { opacity: 0; pointer-events: none; }
-
+        .toggler { width: 24px; margin-right: 8px; text-align: center; color: var(--text-muted); }
+        .toggler.empty { opacity: 0; }
         input[type="checkbox"] { width: 18px; height: 18px; margin-right: 15px; cursor: pointer; accent-color: var(--primary); }
+        .node-name { flex: 1; margin-right: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .node-name { 
-            flex: 1; font-weight: 500; font-size: 1rem; color: var(--text-main);
-            margin-right: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
-        /* Badges */
+        /* BADGES */
         .badges { display: flex; gap: 8px; }
-        .badge { 
-            padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; 
-            display: flex; align-items: center; min-width: 70px; justify-content: space-between;
-        }
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; min-width: 60px; justify-content: space-between;}
         .b-lines { background: var(--c-lines-bg); color: var(--c-lines-text); }
         .b-phones { background: var(--c-phones-bg); color: var(--c-phones-text); }
         .b-emails { background: var(--c-emails-bg); color: var(--c-emails-text); }
-        .b-icon { font-size: 0.7rem; opacity: 0.7; margin-right: 6px; font-weight: normal; }
+        .b-icon { font-size: 0.7rem; opacity: 0.6; margin-right: 5px; }
 
         ul.nested { display: none; }
         ul.nested.active { display: block; border-left: 2px solid #f1f5f9; margin-left: 11px; }
-
-        /* Loader */
+        
+        /* LOADERS */
         .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .error-box { display: none; color: #dc2626; background: #fee2e2; padding: 20px; border-radius: 8px; text-align: center; }
-
+        .error-box { display: none; color: #dc2626; background: #fee2e2; padding: 20px; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -201,96 +109,86 @@
 <div class="sidebar">
     <div class="sidebar-header">
         <h2>📊 Moscow Base</h2>
-        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Калькулятор заказа</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem;">Калькулятор заказа</div>
     </div>
-    
     <div class="sidebar-content">
         <div class="total-box">
             <div class="total-label">Итоговая стоимость</div>
-            <div class="total-value">
-                <span id="totalPrice">0</span><span class="currency">₽</span>
-            </div>
+            <div class="total-value"><span id="totalPrice">0</span>₽</div>
         </div>
-
         <div class="price-section">
-            <div class="price-title">Настройка тарифа (₽)</div>
-            <div class="price-row">
-                <label>Строка</label>
-                <input type="number" class="price-input" id="pLine" value="0.5" step="0.1" min="0">
-            </div>
-            <div class="price-row">
-                <label>Телефон</label>
-                <input type="number" class="price-input" id="pPhone" value="2" step="0.1" min="0">
-            </div>
-            <div class="price-row">
-                <label>Email</label>
-                <input type="number" class="price-input" id="pEmail" value="5" step="0.1" min="0">
-            </div>
+            <div class="price-row"><label>Строка</label><input type="number" class="price-input" id="pLine" value="0.5" step="0.1"></div>
+            <div class="price-row"><label>Телефон</label><input type="number" class="price-input" id="pPhone" value="2" step="0.1"></div>
+            <div class="price-row"><label>Email</label><input type="number" class="price-input" id="pEmail" value="5" step="0.1"></div>
         </div>
-
         <div class="actions">
-            <button class="btn btn-download" onclick="downloadOrder()">
-                ⬇ Скачать заказ (.txt)
-            </button>
-            <button class="btn btn-reset" onclick="resetAll()">
-                Сбросить выбор
-            </button>
+            <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ (.txt)</button>
+            <button class="btn btn-reset" onclick="resetAll()">Сбросить выбор</button>
         </div>
     </div>
 </div>
 
 <div class="main">
     <div class="toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск категории...">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск...">
     </div>
-    
     <div class="tree-wrapper" id="treeContainer"></div>
 </div>
 
 <div class="loader" id="loader">
     <div class="spinner"></div>
-    <h3 style="margin-top:20px; color:#334155;">Загрузка данных...</h3>
+    <h3 style="margin-top:20px;">Загрузка данных...</h3>
     <div id="errorText" class="error-box"></div>
 </div>
 
 <script>
     const DATA_FILE = 'Moscow.txt';
-
     let treeData = [];
     let selectedIds = new Set();
     let debounceTimer;
 
-    // === INIT ===
     window.onload = async () => {
-        ['pLine', 'pPhone', 'pEmail'].forEach(id => {
-            document.getElementById(id).addEventListener('input', recalculate);
-        });
+        ['pLine', 'pPhone', 'pEmail'].forEach(id => document.getElementById(id).addEventListener('input', recalculate));
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
 
         try {
             const resp = await fetch(DATA_FILE);
-            if (!resp.ok) throw new Error('File not found');
+            if (!resp.ok) throw new Error('File error');
             const text = await resp.text();
             
-            // 1. Считываем всё дерево из файла
-            const rawNodes = parseHierarchy(text);
+            // 1. Парсим данные как есть
+            let rawNodes = parseHierarchy(text);
             
-            // 2. Считаем сумму всех элементов (чтобы получить точные 393187 строк и т.д.)
-            const globalStats = calculateStats(rawNodes);
+            // 2. ЛОГИКА "УМНОГО КОРНЯ" (Smart Root)
+            if (rawNodes.length === 1) {
+                // ВАРИАНТ А: В файле уже есть 1 главная папка (например "Moscow [stats]")
+                // Мы НЕ создаем обертку, чтобы не было дублей. Мы просто используем её.
+                treeData = rawNodes;
+                treeData[0].name = "ВСЯ БАЗА"; // Переименовываем, как ты просил
+                treeData[0].isRoot = true;     // Включаем жирный дизайн
+                treeData[0].expanded = true;   // Раскрываем
+            } else {
+                // ВАРИАНТ Б: В файле много папок на верхнем уровне (Районы/Типы)
+                // Считаем сумму ТОЛЬКО верхнего уровня (без захода вглубь, чтобы цифры не врали)
+                const totalStats = rawNodes.reduce((acc, node) => {
+                    acc.l += node.stats.l;
+                    acc.p += node.stats.p;
+                    acc.e += node.stats.e;
+                    return acc;
+                }, { l:0, p:0, e:0 });
 
-            // 3. Создаем ОДНУ главную папку "ВСЯ БАЗА", кладем в нее всё остальное
-            const rootNode = {
-                id: 'ROOT_ALL', 
-                name: '📂 ВСЯ БАЗА МОСКВЫ (Полный пакет)',
-                stats: globalStats,
-                children: rawNodes,
-                expanded: true, // Сразу раскрыта
-                visible: true,
-                isRoot: true    // Метка для CSS
-            };
-
-            // Теперь в дереве только 1 элемент верхнего уровня
-            treeData = [rootNode];
+                // Создаем одну общую папку
+                const rootNode = {
+                    id: 'ROOT_WRAPPER', 
+                    name: 'ВСЯ БАЗА',
+                    stats: totalStats,
+                    children: rawNodes,
+                    expanded: true,
+                    visible: true,
+                    isRoot: true
+                };
+                treeData = [rootNode];
+            }
 
             renderTree(treeData, document.getElementById('treeContainer'));
             document.getElementById('loader').style.display = 'none';
@@ -298,42 +196,16 @@
             document.querySelector('.spinner').style.display = 'none';
             const err = document.getElementById('errorText');
             err.style.display = 'block';
-            err.innerHTML = `Ошибка: Не могу найти файл <b>${DATA_FILE}</b>.<br>Проверьте имя файла.`;
+            err.innerHTML = `Ошибка: файл <b>${DATA_FILE}</b> не найден.`;
         }
     };
 
-    // Глубокий подсчет статистики
-    function calculateStats(nodes) {
-        let total = { l: 0, p: 0, e: 0 };
-        nodes.forEach(node => {
-            // Суммируем текущий узел
-            total.l += node.stats.l;
-            total.p += node.stats.p;
-            total.e += node.stats.e;
-            // И его детей (если они не учтены в родителе - но в твоей структуре обычно цифры в папках)
-            // ВАЖНО: Обычно если у папки есть цифры, то это сумма детей.
-            // Но чтобы быть уверенным, мы просто берем node.stats, предполагая, что файл корректен.
-            // Если в файле папки имеют "0", но содержат детей с цифрами, нужно раскомментировать рекурсию:
-            
-            if (node.stats.l === 0 && node.stats.p === 0 && node.children.length > 0) {
-                 const childStats = calculateStats(node.children);
-                 total.l += childStats.l;
-                 total.p += childStats.p;
-                 total.e += childStats.e;
-                 // Обновляем статистику самой папки для красоты
-                 node.stats = childStats; 
-            }
-        });
-        return total;
-    }
-
-    // === PARSING ===
     function parseHierarchy(text) {
         const lines = text.split('\n');
         const root = [];
         const stack = [{ level: -1, children: root }];
         let idCounter = 0;
-        
+        // Regex ищет [Строк: X | Тел: Y | Email: Z]
         const regex = /\[(?:Строк:\s*(\d+)\s*\|\s*Тел:\s*(\d+)\s*\|\s*Email:\s*(\d+)|0)\]\s*$/;
 
         lines.forEach(line => {
@@ -354,15 +226,8 @@
                     stats.e = parseInt(match[3])||0;
                 }
             }
-
-            const node = { 
-                id: idCounter++, 
-                name, 
-                stats, 
-                children: [], 
-                expanded: false,
-                visible: true 
-            };
+            // ID теперь просто число, чтобы было проще
+            const node = { id: idCounter++, name, stats, children: [], expanded: false, visible: true };
 
             while (stack.length > 1 && stack[stack.length-1].level >= level) stack.pop();
             stack[stack.length-1].children.push(node);
@@ -371,14 +236,12 @@
         return root;
     }
 
-    // === RENDERING ===
     function renderTree(nodes, container) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
 
         nodes.forEach(node => {
             if (!node.visible) return;
-
             const li = document.createElement('li');
             const hasChildren = node.children.length > 0;
             const isSelected = selectedIds.has(node.id);
@@ -386,22 +249,18 @@
             const row = document.createElement('div');
             row.className = `node-row ${isSelected ? 'selected' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
             
-            // Toggler
             const toggler = document.createElement('div');
             toggler.className = `toggler ${hasChildren ? '' : 'empty'}`;
             toggler.innerHTML = node.expanded ? '▼' : '▶';
             
-            // Checkbox
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = isSelected;
             
-            // Name
             const nameDiv = document.createElement('div');
             nameDiv.className = 'node-name';
             nameDiv.innerText = node.name;
 
-            // Badges
             const badgesDiv = document.createElement('div');
             badgesDiv.className = 'badges';
             badgesDiv.innerHTML = `
@@ -413,37 +272,27 @@
             row.append(toggler, checkbox, nameDiv, badgesDiv);
             li.appendChild(row);
 
-            // Events
+            // Обработчики
             const toggleExpand = (e) => {
                 e.stopPropagation();
                 if (!hasChildren) return;
                 node.expanded = !node.expanded;
                 toggler.innerHTML = node.expanded ? '▼' : '▶';
-                
                 let childUl = li.querySelector('ul.nested');
-                if (!childUl) {
-                    renderTree(node.children, li);
-                    childUl = li.querySelector('ul.nested');
-                }
-                
-                if (node.expanded) childUl.classList.add('active');
-                else childUl.classList.remove('active');
+                if (!childUl) { renderTree(node.children, li); childUl = li.querySelector('ul.nested'); }
+                node.expanded ? childUl.classList.add('active') : childUl.classList.remove('active');
             };
 
             const toggleCheck = (e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 const checked = e.target.checked;
-                
-                // РЕКУРСИВНОЕ ВЫДЕЛЕНИЕ (визуально и логически)
-                function setRecursive(n, state) {
-                    if (state) selectedIds.add(n.id);
-                    else selectedIds.delete(n.id);
-                    if (n.children && n.children.length) {
-                        n.children.forEach(c => setRecursive(c, state));
-                    }
-                }
+                // Рекурсивно ставим галочки всем детям для визуала
+                const setRecursive = (n, s) => {
+                    s ? selectedIds.add(n.id) : selectedIds.delete(n.id);
+                    if (n.children) n.children.forEach(c => setRecursive(c, s));
+                };
                 setRecursive(node, checked);
-
+                
                 document.getElementById('treeContainer').innerHTML = '';
                 renderTree(treeData, document.getElementById('treeContainer'));
                 recalculate();
@@ -452,7 +301,7 @@
             toggler.onclick = toggleExpand;
             nameDiv.onclick = toggleExpand; 
             checkbox.onclick = toggleCheck; 
-            
+
             if (node.expanded && hasChildren) {
                 renderTree(node.children, li);
                 li.querySelector('ul.nested').classList.add('active');
@@ -462,18 +311,17 @@
         container.appendChild(ul);
     }
 
-    // === CALCULATION ===
     function recalculate() {
         let l=0, p=0, e=0;
         
+        // Функция считает стоимость. 
+        // Если выбрана папка, берем её цифры и НЕ идем внутрь (чтобы не дублировать).
         function traverse(nodes) {
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) {
-                    // Если выбрана папка (например ГЛАВНАЯ), берем её цифры
                     l += n.stats.l;
                     p += n.stats.p;
                     e += n.stats.e;
-                    // И НЕ идем внутрь, чтобы не дублировать
                 } else {
                     if (n.children.length) traverse(n.children);
                 }
@@ -481,11 +329,10 @@
         }
         traverse(treeData);
 
-        const priceL = parseFloat(document.getElementById('pLine').value) || 0;
-        const priceP = parseFloat(document.getElementById('pPhone').value) || 0;
-        const priceE = parseFloat(document.getElementById('pEmail').value) || 0;
-
-        const total = (l * priceL) + (p * priceP) + (e * priceE);
+        const pl = parseFloat(document.getElementById('pLine').value) || 0;
+        const pp = parseFloat(document.getElementById('pPhone').value) || 0;
+        const pe = parseFloat(document.getElementById('pEmail').value) || 0;
+        const total = (l * pl) + (p * pp) + (e * pe);
         document.getElementById('totalPrice').innerText = Math.round(total).toLocaleString();
     }
 
@@ -496,58 +343,38 @@
         recalculate();
     }
 
-    function debounceSearch() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(runSearch, 300);
-    }
+    function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
 
     function runSearch() {
         const q = document.getElementById('searchInput').value.toLowerCase();
-        
-        function filter(node) {
+        const filter = (node) => {
             const match = node.name.toLowerCase().includes(q);
             let childMatch = false;
-            if (node.children.length) {
-                node.children.forEach(c => {
-                    if (filter(c)) childMatch = true;
-                });
-            }
+            if (node.children.length) node.children.forEach(c => { if (filter(c)) childMatch = true; });
             node.visible = match || childMatch;
             if (q && childMatch) node.expanded = true;
-            else if (!q) node.expanded = !!node.isRoot; // Свернуть всё кроме рута при очистке
+            else if (!q) node.expanded = !!node.isRoot; // При сбросе поиска сворачиваем все кроме корня
             return node.visible;
-        }
-
+        };
         treeData.forEach(filter);
         document.getElementById('treeContainer').innerHTML = '';
         renderTree(treeData, document.getElementById('treeContainer'));
     }
 
     function downloadOrder() {
-        if (selectedIds.size === 0) {
-            alert('Сначала выберите категории!');
-            return;
-        }
-        let text = `ЗАКАЗ: MOSCOW BASE\nДата: ${new Date().toLocaleString()}\n`;
-        text += `Сумма: ${document.getElementById('totalPrice').innerText} руб.\n`;
-        text += `--------------------------------\n`;
-        
-        function traverseWrite(nodes) {
+        if (selectedIds.size === 0) { alert('Ничего не выбрано!'); return; }
+        let text = `ЗАКАЗ\nДата: ${new Date().toLocaleString()}\n`;
+        text += `Сумма: ${document.getElementById('totalPrice').innerText} руб.\n---\n`;
+        const traverseWrite = (nodes) => {
             nodes.forEach(n => {
-                if (selectedIds.has(n.id)) {
-                    // Если выбран Рут, пишем просто "Вся база"
-                    text += `[+] ${n.name} (L:${n.stats.l} P:${n.stats.p} E:${n.stats.e})\n`;
-                } else {
-                    if (n.children.length) traverseWrite(n.children);
-                }
+                if (selectedIds.has(n.id)) text += `[+] ${n.name} (L:${n.stats.l} P:${n.stats.p} E:${n.stats.e})\n`;
+                else if (n.children.length) traverseWrite(n.children);
             });
-        }
+        };
         traverseWrite(treeData);
-
-        const blob = new Blob([text], {type: 'text/plain'});
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'Order_Moscow.txt';
+        link.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
+        link.download = 'Order.txt';
         link.click();
     }
 </script>
