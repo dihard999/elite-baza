@@ -156,20 +156,18 @@
             if (!resp.ok) throw new Error('File error');
             const text = await resp.text();
             
-            // 1. Парсим данные как есть
+            // 1. Парсим
             let rawNodes = parseHierarchy(text);
             
-            // 2. ЛОГИКА "УМНОГО КОРНЯ" (Smart Root)
+            // 2. Логика "ВСЯ БАЗА"
+            // Если после чистки осталась только одна папка (например Moscow), используем её как корень
             if (rawNodes.length === 1) {
-                // ВАРИАНТ А: В файле уже есть 1 главная папка (например "Moscow [stats]")
-                // Мы НЕ создаем обертку, чтобы не было дублей. Мы просто используем её.
                 treeData = rawNodes;
-                treeData[0].name = "ВСЯ БАЗА"; // Переименовываем, как ты просил
-                treeData[0].isRoot = true;     // Включаем жирный дизайн
-                treeData[0].expanded = true;   // Раскрываем
-            } else {
-                // ВАРИАНТ Б: В файле много папок на верхнем уровне (Районы/Типы)
-                // Считаем сумму ТОЛЬКО верхнего уровня (без захода вглубь, чтобы цифры не врали)
+                treeData[0].name = "ВСЯ БАЗА"; 
+                treeData[0].isRoot = true;    
+                treeData[0].expanded = true;
+            } else if (rawNodes.length > 1) {
+                // Если несколько папок верхнего уровня, создаем обертку
                 const totalStats = rawNodes.reduce((acc, node) => {
                     acc.l += node.stats.l;
                     acc.p += node.stats.p;
@@ -177,7 +175,6 @@
                     return acc;
                 }, { l:0, p:0, e:0 });
 
-                // Создаем одну общую папку
                 const rootNode = {
                     id: 'ROOT_WRAPPER', 
                     name: 'ВСЯ БАЗА',
@@ -188,6 +185,9 @@
                     isRoot: true
                 };
                 treeData = [rootNode];
+            } else {
+                 // Если файл пустой или все строки отфильтровались
+                 treeData = [];
             }
 
             renderTree(treeData, document.getElementById('treeContainer'));
@@ -205,28 +205,32 @@
         const root = [];
         const stack = [{ level: -1, children: root }];
         let idCounter = 0;
-        // Regex ищет [Строк: X | Тел: Y | Email: Z]
         const regex = /\[(?:Строк:\s*(\d+)\s*\|\s*Тел:\s*(\d+)\s*\|\s*Email:\s*(\d+)|0)\]\s*$/;
 
         lines.forEach(line => {
-            if (!line.trim() || line.startsWith('=')) return;
+            const cleanLine = line.trim();
+            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            // 1. Игнорируем пустые строки
+            // 2. Игнорируем разделители "="
+            // 3. Игнорируем строки, начинающиеся со слова "Всего" (это удалит те 3 панели)
+            if (!cleanLine || cleanLine.startsWith('=') || cleanLine.startsWith('Всего')) return;
+
             const level = line.search(/\S/);
             if (level === -1) return;
 
-            const content = line.trim();
-            const match = content.match(regex);
-            let name = content;
+            const match = cleanLine.match(regex);
+            let name = cleanLine;
             let stats = { l:0, p:0, e:0 };
 
             if (match) {
-                name = content.substring(0, match.index).trim();
+                name = cleanLine.substring(0, match.index).trim();
                 if (match[1]) {
                     stats.l = parseInt(match[1])||0;
                     stats.p = parseInt(match[2])||0;
                     stats.e = parseInt(match[3])||0;
                 }
             }
-            // ID теперь просто число, чтобы было проще
+            
             const node = { id: idCounter++, name, stats, children: [], expanded: false, visible: true };
 
             while (stack.length > 1 && stack[stack.length-1].level >= level) stack.pop();
@@ -272,7 +276,6 @@
             row.append(toggler, checkbox, nameDiv, badgesDiv);
             li.appendChild(row);
 
-            // Обработчики
             const toggleExpand = (e) => {
                 e.stopPropagation();
                 if (!hasChildren) return;
@@ -286,13 +289,11 @@
             const toggleCheck = (e) => {
                 e.stopPropagation();
                 const checked = e.target.checked;
-                // Рекурсивно ставим галочки всем детям для визуала
                 const setRecursive = (n, s) => {
                     s ? selectedIds.add(n.id) : selectedIds.delete(n.id);
                     if (n.children) n.children.forEach(c => setRecursive(c, s));
                 };
                 setRecursive(node, checked);
-                
                 document.getElementById('treeContainer').innerHTML = '';
                 renderTree(treeData, document.getElementById('treeContainer'));
                 recalculate();
@@ -313,9 +314,6 @@
 
     function recalculate() {
         let l=0, p=0, e=0;
-        
-        // Функция считает стоимость. 
-        // Если выбрана папка, берем её цифры и НЕ идем внутрь (чтобы не дублировать).
         function traverse(nodes) {
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) {
@@ -353,7 +351,7 @@
             if (node.children.length) node.children.forEach(c => { if (filter(c)) childMatch = true; });
             node.visible = match || childMatch;
             if (q && childMatch) node.expanded = true;
-            else if (!q) node.expanded = !!node.isRoot; // При сбросе поиска сворачиваем все кроме корня
+            else if (!q) node.expanded = !!node.isRoot; 
             return node.visible;
         };
         treeData.forEach(filter);
