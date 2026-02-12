@@ -1,13 +1,14 @@
-name: Build Database & Deploy
+name: Build & Save Database
 
 on:
-  # 1. Запуск автоматически, когда вы что-то заливаете в ветку main
+  # Запуск при обновлении ветки main
   push:
     branches:
       - main
-  # 2. Добавляем кнопку "Запустить вручную" во вкладке Actions
+  # Кнопка ручного запуска
   workflow_dispatch:
 
+# Даем права на запись в репозиторий (ВАЖНО!)
 permissions:
   contents: write
   pages: write
@@ -17,31 +18,41 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1. Скачиваем код репозитория
+      # 1. Скачиваем код
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем Python
+      # 2. Ставим Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 3. ЗАПУСКАЕМ ВАШ СКРИПТ (САМОЕ ВАЖНОЕ)
-      - name: Run Build Script
+      # 3. Запускаем генератор
+      - name: Generate Database
         run: python build.py
 
-      # 4. Настраиваем Pages
+      # 4. === НОВЫЙ ШАГ: СОХРАНЯЕМ ФАЙЛ В РЕПОЗИТОРИЙ ===
+      - name: Commit and Push database.js
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add database.js
+          # Если файл изменился - сохраняем. Если нет - не ломаемся.
+          git commit -m "🤖 Auto-update database.js" || echo "No changes to commit"
+          git push
+
+      # 5. Настраиваем публикацию сайта
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # 5. Загружаем результат (весь сайт + созданный database.js)
+      # 6. Загружаем сайт
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
 
-      # 6. Публикуем в интернет
+      # 7. Публикуем
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
