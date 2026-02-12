@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Price Calculator</title>
+    <title>Smart Base Calculator</title>
     <style>
         :root {
             --bg-body: #f1f5f9;       
@@ -18,7 +18,8 @@
             
             --primary: #3b82f6;
             --success: #22c55e;
-            --warning: #f59e0b;
+            --success-bg: #ecfdf5;
+            --success-border: #6ee7b7;
         }
 
         body { 
@@ -30,7 +31,7 @@
         
         /* --- SIDEBAR --- */
         .sidebar { 
-            width: 400px; /* Расширил для красоты тарифов */
+            width: 400px; 
             background: var(--bg-sidebar); border-right: 1px solid var(--border); 
             display: flex; flex-direction: column; z-index: 20; 
             box-shadow: 4px 0 24px rgba(0,0,0,0.05);
@@ -38,85 +39,98 @@
 
         .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;}
 
-        /* TOTAL PRICE BOX */
+        /* 1. БЛОК ЦЕНЫ */
         .total-box {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-            color: white; padding: 25px; border-radius: 16px; text-align: center;
+            color: white; padding: 20px; border-radius: 16px; text-align: center;
             box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
-            margin-bottom: 5px;
         }
         .total-label { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
-        .total-value { font-size: 3rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
-        .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; }
+        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
+        .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; background: rgba(0,0,0,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;}
 
-        /* GREEN BONUS BOX */
+        /* 2. БЛОК БОНУСА (ВИДЕН ВСЕГДА) */
         .bonus-box {
-            background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 12px; padding: 12px 16px;
-            display: none; position: relative; overflow: hidden;
+            background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 15px;
+            transition: 0.3s all; position: relative; overflow: hidden;
         }
-        .bonus-box.active { display: block; animation: slideDown 0.3s ease; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .bonus-header { display: flex; align-items: center; gap: 8px; color: #047857; font-weight: 700; font-size: 0.95rem; margin-bottom: 5px;}
-        .bonus-text { font-size: 0.85rem; color: #065f46; line-height: 1.4; }
-        .bonus-highlight { color: #059669; font-weight: 800; background: rgba(255,255,255,0.6); padding: 0 4px; border-radius: 4px;}
+        /* Активное состояние (Зеленое) */
+        .bonus-box.active {
+            background: var(--success-bg); border: 2px solid var(--success-border);
+            box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.2);
+        }
 
-        /* --- TIER LADDER (Визуализация уровней) --- */
-        .tier-list { display: flex; flex-direction: column; gap: 8px; border-radius: 12px; background: #f8fafc; padding: 10px; border: 1px solid var(--border); }
-        .tier-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 5px; padding-left: 5px; }
+        .bonus-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            color: var(--text-muted); font-weight: 700; font-size: 0.9rem; margin-bottom: 8px;
+        }
+        .bonus-box.active .bonus-header { color: #047857; }
+        
+        .bonus-text { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        .bonus-box.active .bonus-text { color: #065f46; }
+        
+        .bonus-highlight { 
+            color: var(--text-main); font-weight: 800; background: rgba(0,0,0,0.05); 
+            padding: 2px 6px; border-radius: 4px; 
+        }
+        .bonus-box.active .bonus-highlight { color: #059669; background: white; }
+
+        /* Прогресс бар "Ведро 500р" */
+        .bucket-progress { height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 10px; overflow: hidden; }
+        .bucket-fill { height: 100%; background: #94a3b8; width: 0%; transition: width 0.3s; }
+        .bonus-box.active .bucket-progress { background: #d1fae5; }
+        .bonus-box.active .bucket-fill { background: #10b981; }
+
+        /* 3. СТАТИСТИКА */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
+        .stat-item { background: white; padding: 10px 5px; border-radius: 10px; border: 1px solid var(--border); }
+        .stat-num { display: block; font-weight: 800; font-size: 1rem; color: var(--text-main); margin-bottom: 2px; }
+        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* 4. ЛЕСТНИЦА ТАРИФОВ */
+        .tier-section { border-top: 1px solid var(--border); padding-top: 15px; }
+        .tier-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; padding-left: 5px; }
+        .tier-list { display: flex; flex-direction: column; gap: 8px; }
         
         .tier-item {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 12px; border-radius: 8px; border: 1px solid transparent;
-            background: white; transition: 0.2s; position: relative;
+            padding: 8px 12px; border-radius: 8px; 
+            background: white; border: 1px solid transparent;
+            transition: 0.2s; font-size: 0.85rem; color: var(--text-muted);
         }
-        /* Пройденные уровни */
-        .tier-item.completed { background: #f1f5f9; color: var(--text-muted); }
-        .tier-item.completed .tier-icon { color: #94a3b8; }
+        /* Пройденные */
+        .tier-item.passed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
         
-        /* Текущий активный уровень */
-        .tier-item.active { 
-            border-color: #3b82f6; background: #eff6ff; 
-            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.15);
-            flex-direction: column; align-items: flex-start; gap: 8px;
+        /* Текущий */
+        .tier-item.current { 
+            background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; 
+            font-weight: 600; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+            position: relative; overflow: hidden;
         }
-        
-        /* Будущие уровни */
-        .tier-item.locked { opacity: 0.8; }
+        /* Индикатор прогресса внутри текущего уровня */
+        .tier-item.current::after {
+            content: ''; position: absolute; bottom: 0; left: 0; height: 3px; background: #3b82f6;
+            width: var(--progress, 0%); transition: width 0.3s;
+        }
 
-        /* Внутренности карточки тарифа */
-        .tier-row-top { display: flex; justify-content: space-between; width: 100%; align-items: center; }
-        .tier-name { font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
-        .tier-rate { font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
-        
-        /* Бейдж экономии */
+        /* Будущие */
+        .tier-item.locked { background: white; border: 1px solid #f1f5f9; }
+
+        .tier-rate { font-weight: 700; }
         .save-badge { 
-            font-size: 0.7rem; font-weight: 800; color: white; background: #10b981; 
-            padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+            font-size: 0.7rem; font-weight: 700; color: white; background: #10b981; 
+            padding: 2px 6px; border-radius: 4px; margin-left: 6px;
         }
-        .tier-item.active .save-badge { background: #2563eb; }
-
-        /* Прогресс бар внутри активного уровня */
-        .tier-progress-container { width: 100%; }
-        .tier-progress-text { font-size: 0.75rem; color: #3b82f6; margin-bottom: 4px; font-weight: 500; display: flex; justify-content: space-between; }
-        .tier-bar-bg { height: 6px; background: #dbeafe; border-radius: 3px; overflow: hidden; }
-        .tier-bar-fill { height: 100%; background: #2563eb; width: 0%; transition: width 0.3s; }
-
-        /* STATS GRID */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
-        .stat-item { background: white; padding: 10px 5px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .stat-num { display: block; font-weight: 800; font-size: 1rem; color: var(--text-main); margin-bottom: 2px; }
-        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* BUTTONS */
         .actions { margin-top: auto; padding-top: 10px; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
-        .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-download:hover { background: #1e293b; transform: translateY(-1px); }
+        .btn-download { background: #0f172a; color: white; }
+        .btn-download:hover { background: #1e293b; }
         .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
         .btn-reset:hover { background: #fef2f2; }
 
-        /* --- MAIN AREA --- */
+        /* MAIN AREA */
         .main { flex: 1; display: flex; flex-direction: column; background: white; }
         .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); }
         .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; }
@@ -161,17 +175,21 @@
 <div class="sidebar">
     <div class="sidebar-content">
         <div class="total-box">
-            <div class="total-label">Итоговая стоимость</div>
+            <div class="total-label">К оплате</div>
             <div class="total-value"><span id="totalPrice">0</span>₽</div>
             <div class="total-step">Шаг тарифа 500₽</div>
         </div>
 
         <div class="bonus-box" id="bonusBox">
             <div class="bonus-header">
-                <span>🎁 Доступен бонус!</span>
+                <span id="bonusTitle">Выберите данные</span>
+                <span id="bonusPercent">0%</span>
             </div>
-            <div class="bonus-text">
-                Пакет оплачен. Вы можете добавить еще <span class="bonus-highlight" id="freeCount">0</span> записей бесплатно!
+            <div class="bonus-text" id="bonusText">
+                Начните выбирать категории, чтобы увидеть расчет стоимости и бонусов.
+            </div>
+            <div class="bucket-progress">
+                <div class="bucket-fill" id="bucketFill"></div>
             </div>
         </div>
         
@@ -190,9 +208,9 @@
             </div>
         </div>
 
-        <div class="tier-list">
-            <div class="tier-title">Ваш уровень и скидки</div>
-            <div id="tierListContainer">
+        <div class="tier-section">
+            <div class="tier-title">Ваша скидка (от объема)</div>
+            <div class="tier-list" id="tierListContainer">
                 </div>
         </div>
 
@@ -226,7 +244,7 @@
 </div>
 
 <script>
-    // === КОНФИГУРАЦИЯ ТАРИФОВ (ДЕЛЕНИЕ НА 2) ===
+    // === ТАРИФНАЯ СЕТКА ===
     const TIERS = [
         { limit: 1000,   rate: 0.10,  name: "Новичок" },
         { limit: 5000,   rate: 0.075, name: "Старт" },
@@ -264,8 +282,7 @@
             } else { treeData = []; }
             renderTree(treeData, document.getElementById('treeContainer'), 0);
             document.getElementById('loader').style.display = 'none';
-            // Инициализация тарифов при старте
-            recalculate();
+            recalculate(); // Инит нулей
         } catch (e) {
             document.querySelector('.spinner').style.display = 'none';
             document.getElementById('errorText').style.display = 'block';
@@ -337,10 +354,8 @@
             li.appendChild(row);
             
             const toggleExpand = (e) => {
-                e.stopPropagation();
-                if (!hasChildren) return;
-                node.expanded = !node.expanded;
-                toggler.innerHTML = node.expanded ? '▼' : '▶';
+                e.stopPropagation(); if (!hasChildren) return;
+                node.expanded = !node.expanded; toggler.innerHTML = node.expanded ? '▼' : '▶';
                 let childUl = li.querySelector('ul.nested');
                 if (!childUl) { renderTree(node.children, li, depth + 1); childUl = li.querySelector('ul.nested'); }
                 if (node.expanded) childUl.style.display = 'block'; else childUl.style.display = 'none';
@@ -373,126 +388,111 @@
         let l=0, p=0, e=0;
         function traverse(nodes) {
             nodes.forEach(n => {
-                if (selectedIds.has(n.id)) {
-                    l += n.stats.l; p += n.stats.p; e += n.stats.e;
-                } else { if (n.children.length) traverse(n.children); }
+                if (selectedIds.has(n.id)) { l += n.stats.l; p += n.stats.p; e += n.stats.e; }
+                else { if (n.children.length) traverse(n.children); }
             });
         }
         traverse(treeData);
         const volume = l + p + e;
 
-        // 1. Определение тарифа
+        // Определяем тариф
         let currentTier = TIERS[0];
         let tierIndex = 0;
         for (let i = 0; i < TIERS.length; i++) {
             if (volume < TIERS[i].limit) {
-                currentTier = TIERS[i];
-                tierIndex = i;
-                break;
+                currentTier = TIERS[i]; tierIndex = i; break;
             }
         }
         if (volume >= TIERS[TIERS.length-1].limit) {
-             currentTier = TIERS[TIERS.length-1];
-             tierIndex = TIERS.length - 1;
+             currentTier = TIERS[TIERS.length-1]; tierIndex = TIERS.length - 1;
         }
 
-        // 2. Расчет Цены
         const rawPrice = volume * currentTier.rate;
         let finalPrice = Math.ceil(rawPrice / PRICE_STEP) * PRICE_STEP;
         if (finalPrice === 0 && volume > 0) finalPrice = PRICE_STEP;
 
-        // 3. Зеленый Бонус (Сколько еще влезает в эти 500/1000/1500 руб)
-        // Пример: Тариф 0.2. Заказ 100 шт. rawPrice = 20 руб. final = 500 руб.
-        // В 500 руб влезает 500 / 0.2 = 2500 шт.
-        // Бонус = 2500 - 100 = 2400 шт.
-        const maxVolumeForThisPrice = Math.floor(finalPrice / currentTier.rate);
-        const freeVolume = maxVolumeForThisPrice - volume;
-
-        // UI Обновления
+        // UI
         document.getElementById('selLines').innerText = l.toLocaleString();
         document.getElementById('selPhones').innerText = p.toLocaleString();
         document.getElementById('selEmails').innerText = e.toLocaleString();
         document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
 
+        // LOGIC FOR BONUS BOX
         const bonusBox = document.getElementById('bonusBox');
-        if (freeVolume > 0 && volume > 0) {
-            bonusBox.classList.add('active');
-            document.getElementById('freeCount').innerText = freeVolume.toLocaleString();
+        const bucketFill = document.getElementById('bucketFill');
+        const bonusTitle = document.getElementById('bonusTitle');
+        const bonusText = document.getElementById('bonusText');
+        const bonusPercent = document.getElementById('bonusPercent');
+
+        if (volume === 0) {
+            bonusBox.className = 'bonus-box'; // Not active
+            bonusTitle.innerText = "Выберите данные";
+            bonusText.innerHTML = "Отмечайте галочками регионы или категории, чтобы увидеть расчет.";
+            bucketFill.style.width = '0%';
+            bonusPercent.innerText = "0%";
         } else {
-            bonusBox.classList.remove('active');
+            bonusBox.className = 'bonus-box active';
+            const maxVolume = Math.floor(finalPrice / currentTier.rate);
+            const freeVolume = maxVolume - volume;
+            const percentUsed = Math.round((volume / maxVolume) * 100);
+            
+            bonusTitle.innerText = "Пакет активен!";
+            bonusPercent.innerText = percentUsed + "%";
+            bucketFill.style.width = percentUsed + '%';
+
+            if (freeVolume > 0) {
+                bonusText.innerHTML = `Пакет на ${finalPrice}₽ заполнен на ${percentUsed}%.<br> Вы можете бесплатно добавить еще <span class="bonus-highlight">${freeVolume.toLocaleString()}</span> записей!`;
+            } else {
+                bonusText.innerHTML = `Пакет на ${finalPrice}₽ заполнен идеально (100%).<br> Следующая запись добавит +500₽ к чеку.`;
+            }
         }
 
-        // 4. ГЕНЕРАЦИЯ ЛЕСТНИЦЫ ТАРИФОВ
         renderTierList(tierIndex, volume, currentTier);
     }
 
-    // === НОВАЯ ФУНКЦИЯ ОТРИСОВКИ ТАРИФОВ ===
-    function renderTierList(currentIndex, currentVolume, currentTier) {
+    function renderTierList(currentIndex, volume, currentTier) {
         const container = document.getElementById('tierListContainer');
         container.innerHTML = '';
-        
-        const baseRate = TIERS[0].rate; // Для расчета % скидки
+        const baseRate = TIERS[0].rate; 
 
         TIERS.forEach((tier, index) => {
             const el = document.createElement('div');
+            const saving = Math.round(((baseRate - tier.rate) / baseRate) * 100);
             
-            // Расчет скидки
-            const savingPercent = Math.round(((baseRate - tier.rate) / baseRate) * 100);
-            
-            // Состояние уровня
-            let stateClass = '';
-            let icon = '';
-            
-            if (index < currentIndex) {
-                stateClass = 'completed';
-                icon = '✅'; // Пройден
-            } else if (index === currentIndex) {
-                stateClass = 'active';
-            } else {
-                stateClass = 'locked';
-            }
+            let statusClass = '';
+            let label = `<span class="save-badge">-${saving}%</span>`;
+            if (saving === 0) label = '';
 
-            el.className = `tier-item ${stateClass}`;
-
-            let html = `
-                <div class="tier-row-top">
-                    <div class="tier-name">
-                        ${icon} ${tier.name}
-                        ${savingPercent > 0 ? `<span class="save-badge">-${savingPercent}%</span>` : ''}
-                    </div>
-                    <div class="tier-rate">${tier.rate}₽</div>
-                </div>
-            `;
-
-            // Если это активный уровень, добавляем прогресс до СЛЕДУЮЩЕГО
+            // PROGRESS BAR LOGIC (Only for active tier)
+            let progressHtml = '';
             if (index === currentIndex) {
+                statusClass = 'current';
+                
+                // Считаем прогресс до следующего уровня
                 const nextTier = TIERS[index + 1];
+                let pct = 0;
                 if (nextTier) {
-                    const diff = nextTier.limit - currentVolume;
-                    // Прогресс внутри текущего диапазона
-                    const prevLimit = (index > 0) ? TIERS[index-1].limit : 0;
+                    const prevLimit = index > 0 ? TIERS[index-1].limit : 0;
                     const range = nextTier.limit - prevLimit;
-                    const val = currentVolume - prevLimit;
-                    let pct = (val / range) * 100;
-                    if(pct < 5) pct = 5;
-
-                    html += `
-                        <div class="tier-progress-container">
-                            <div class="tier-progress-text">
-                                <span>До уровня "${nextTier.name}"</span>
-                                <span>еще ${diff.toLocaleString()} шт</span>
-                            </div>
-                            <div class="tier-bar-bg">
-                                <div class="tier-bar-fill" style="width: ${pct}%"></div>
-                            </div>
-                        </div>
-                    `;
+                    const val = volume - prevLimit;
+                    pct = (val / range) * 100;
+                    if (pct > 100) pct = 100;
+                    el.style.setProperty('--progress', pct + '%');
                 } else {
-                    html += `<div style="font-size:0.75rem; color:#10b981; margin-top:4px;">🚀 Максимальный тариф активен!</div>`;
+                    el.style.setProperty('--progress', '100%');
                 }
+            } else if (index < currentIndex) {
+                statusClass = 'passed';
+            } else {
+                statusClass = 'locked';
             }
 
-            el.innerHTML = html;
+            el.className = `tier-item ${statusClass}`;
+            
+            el.innerHTML = `
+                <div>${tier.name} ${label}</div>
+                <div class="tier-rate">${tier.rate}₽</div>
+            `;
             container.appendChild(el);
         });
     }
@@ -511,8 +511,7 @@
             let childMatch = false;
             if (node.children.length) node.children.forEach(c => { if (filter(c)) childMatch = true; });
             node.visible = match || childMatch;
-            if (q && childMatch) node.expanded = true;
-            else if (!q) node.expanded = !!node.isRoot; 
+            if (q && childMatch) node.expanded = true; else if (!q) node.expanded = !!node.isRoot;
             return node.visible;
         };
         treeData.forEach(filter);
