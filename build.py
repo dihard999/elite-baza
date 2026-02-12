@@ -1,69 +1,86 @@
 import os
 import json
+import re
 
+# Настройки
 BASE_DIR = 'base'
 OUTPUT_FILE = 'database.js'
 
-def parse_txt_content(filepath):
+def parse_txt_file(filepath):
     """
-    Читает файл и строит дерево категорий на основе отступов.
-    Пример:
-    Строительство
-      Бетон
+    Читает файл и создает дерево категорий.
+    Ожидает формат: Категория [Строк: 10 | Тел: 5 ...]
     """
     root = []
-    # Стек хранит путь к текущему родителю: {level: -1, children: root}
+    # Стек для отслеживания вложенности: (уровень отступа, список детей)
     stack = [{"level": -1, "children": root}]
 
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                raw_line = line.rstrip()
-                if not raw_line or raw_line.startswith('='): continue
+                raw = line.rstrip()
+                if not raw or raw.startswith('='): continue
 
-                # Считаем отступы (пробелы в начале)
-                stripped = raw_line.lstrip()
-                level = len(raw_line) - len(stripped)
-                name = stripped
-
-                # Простая статистика для узла (если это конечная строка)
-                stats = {"l": 1, "p": 0, "e": 0}
-                if '@' in name: stats['e'] = 1
-                if sum(c.isdigit() for c in name) > 7: stats['p'] = 1
+                # 1. Считаем отступ (уровень вложенности)
+                stripped = raw.lstrip()
+                level = len(raw) - len(stripped)
                 
-                # Создаем узел
+                # 2. Парсим название и цифры
+                # Пример: "Строительство [Строк: 100 | Тел: 20]"
+                name = stripped
+                stats = {"l": 0, "p": 0, "e": 0}
+                
+                # Ищем блок статистики [...]
+                match = re.search(r'(.*)\[(.*?)\].*', stripped)
+                if match:
+                    name = match.group(1).strip()
+                    stat_str = match.group(2)
+                    
+                    # Выдергиваем цифры
+                    l_match = re.search(r'Строк:\s*(\d+)', stat_str)
+                    p_match = re.search(r'Тел:\s*(\d+)', stat_str)
+                    e_match = re.search(r'Email:\s*(\d+)', stat_str)
+                    
+                    if l_match: stats['l'] = int(l_match.group(1))
+                    if p_match: stats['p'] = int(p_match.group(1))
+                    if e_match: stats['e'] = int(e_match.group(1))
+                else:
+                    # Если статистики нет в скобках, считаем строку за 1, если это не папка
+                    # Но обычно в таких файлах строки без скобок - это категории
+                    # Давай считать, что если нет [], то это просто категория-папка (стат 0)
+                    # Если нужно считать контакты, можно добавить проверку на @
+                    pass
+
                 node = {
                     "name": name,
                     "stats": stats,
                     "children": []
                 }
 
-                # Ищем родителя с уровнем меньше текущего
+                # 3. Вставляем в дерево (ищем родителя)
                 while stack[-1]["level"] >= level:
                     stack.pop()
                 
-                # Добавляем к найденному родителю
                 stack[-1]["children"].append(node)
-                
-                # Добавляем текущий узел в стек (он может стать родителем)
                 stack.append({"level": level, "children": node["children"]})
 
     except Exception as e:
-        print(f"Ошибка чтения {filepath}: {e}")
-    
+        print(f"Ошибка файла {filepath}: {e}")
+
     return root
 
-def scan_recursive(path):
-    name = os.path.basename(path)
+def scan_folders(path):
+    """Рекурсивно обходит папки и ищет .txt файлы"""
+    folder_name = os.path.basename(path)
     node = {
-        "name": name,
+        "name": folder_name,
         "type": "folder",
-        "children": [],
-        "file_content": [] # Если это файл, тут будет дерево категорий
+        "children": [],     # Подпапки
+        "file_content": []  # Если это файл, тут будет дерево категорий
     }
 
     try:
-        # Сортировка: папки сверху
+        # Сортируем: сначала папки, потом файлы
         items = sorted(os.listdir(path), key=lambda x: (not os.path.isdir(os.path.join(path, x)), x))
         
         for item in items:
@@ -71,62 +88,42 @@ def scan_recursive(path):
             full_path = os.path.join(path, item)
 
             if os.path.isdir(full_path):
-                child = scan_recursive(full_path)
-                # Добавляем папку, если она не пустая
-                if child['children'] or child['file_content']:
+                # Это папка (Регион, Район и т.д.)
+                child = scan_folders(full_path)
+                # Добавляем, только если внутри что-то есть
+                if child['children'] or child['type'] == 'file': 
                     node['children'].append(child)
             
             elif os.path.isfile(full_path) and item.endswith('.txt'):
-                # Парсим структуру файла
-                content_tree = parse_txt_content(full_path)
-                if content_tree:
+                # Это файл (Город)
+                content = parse_txt_file(full_path)
+                if content:
                     file_node = {
                         "name": item.replace('.txt', ''),
                         "type": "file",
-                        "children": [], 
-                        "file_content": content_tree # ВАЖНО: сохраняем дерево
+                        "children": [], # У файла нет детей-папок
+                        "file_content": content # У файла есть контент (дерево категорий)
                     }
                     node['children'].append(file_node)
 
     except Exception as e:
-        print(f"Error scanning {path}: {e}")
+        pass
 
     return node
 
-print("🚀 Генерация базы с категориями...")
+print(f"🔄 Сканирую папку '{BASE_DIR}'...")
 
 if os.path.exists(BASE_DIR):
-    # Сканируем
-    geo_tree = scan_recursive(BASE_DIR)
+    # Запускаем сканирование
+    full_tree = scan_folders(BASE_DIR)
     
-    # Рекурсивный подсчет статистики снизу вверх (чтобы папки знали сумму цифр)
-    def aggregate_stats(n):
-        l, p, e = 0, 0, 0
-        
-        # Если это файл с контентом
-        if n.get('file_content'):
-            for cat in n['file_content']:
-                # Тут рекурсия внутри контента файла (если нужно), пока просто сумму
-                # Для простоты считаем сумму 1-го уровня, но лучше пройтись глубже
-                pass 
-            # Упрощение: для навигации по папкам стата не критична, она считается в JS
-            # Но для красоты можно добавить.
-        
-        if n.get('children'):
-            for child in n['children']:
-                stats = aggregate_stats(child)
-                l += stats['l']
-                p += stats['p']
-                e += stats['e']
-        
-        n['stats'] = {'l': l, 'p': p, 'e': e}
-        return n['stats']
-
-    # Сохраняем
-    js_content = f"const GEO_DB = {json.dumps(geo_tree, ensure_ascii=False)};"
+    # Оборачиваем в JS переменную
+    js_content = f"const GEO_DB = {json.dumps(full_tree, ensure_ascii=False)};"
+    
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write(js_content)
-    
-    print(f"✅ Готово! База сохранена.")
+        
+    print(f"✅ Готово! Файл {OUTPUT_FILE} создан.")
+    print("Теперь открой index.html")
 else:
-    print(f"❌ Папка {BASE_DIR} не найдена.")
+    print(f"❌ Ошибка: Папка {BASE_DIR} не найдена!")
