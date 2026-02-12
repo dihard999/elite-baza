@@ -3,327 +3,422 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Explorer</title>
+    <title>Base Manager</title>
     <script src="database.js"></script>
     <style>
-        :root { --bg: #f8fafc; --white: #fff; --text: #0f172a; --border: #e2e8f0; --primary: #2563eb; --accent: #16a34a; }
+        :root { --bg: #f8fafc; --text: #0f172a; --border: #e2e8f0; --primary: #2563eb; --green: #16a34a; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        .sidebar { width: 360px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; }
-        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        /* SIDEBAR */
+        .sidebar { width: 360px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; box-shadow: 4px 0 20px rgba(0,0,0,0.05); }
+        .sb-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
         
-        .total-card { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; padding: 20px; border-radius: 12px; text-align: center; }
-        .total-price { font-size: 2.5rem; font-weight: 800; line-height: 1; }
-        .total-step { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;}
-
-        .tier-list { border-top: 1px solid var(--border); padding-top: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .price-box { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 20px; border-radius: 12px; text-align: center; }
+        .price-val { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+        .tier-list { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 5px; }
         .tier-row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; color: #64748b; }
-        .tier-row.active { background: #eff6ff; color: var(--primary); font-weight: 700; }
+        .tier-row.active { background: #eff6ff; color: var(--primary); font-weight: 700; border: 1px solid #bfdbfe; }
 
-        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: auto; }
-        
-        .main { flex: 1; display: flex; flex-direction: column; background: var(--white); }
-        .top-bar { padding: 15px 25px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
-        
-        .geo-selects { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; background: white; }
-        select:disabled { background: #f1f5f9; color: #94a3b8; }
+        .btn { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; margin-top: 10px; }
 
-        .tree-header { display: flex; padding: 10px 25px; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; background: #fff; }
+        /* MAIN */
+        .main { flex: 1; display: flex; flex-direction: column; background: #fff; }
+        .filters { padding: 15px 25px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
+        
+        .geo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; background: white; cursor: pointer; }
+        select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+        .tree-head { display: flex; padding: 10px 25px; border-bottom: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; background: #fff; }
         .col-name { flex: 1; } .col-stat { width: 80px; text-align: center; }
 
-        .tree-view { flex: 1; overflow-y: auto; padding: 0 25px 20px 25px; }
+        .tree-body { flex: 1; overflow-y: auto; padding: 0 25px 20px 25px; }
         ul { list-style: none; padding: 0; margin: 0; }
         .node { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
         .node:hover { background: #f8fafc; }
-        .node.selected { background: #eff6ff; }
-        .node.partly { background: #fff7ed; }
+        .node.sel { background: #eff6ff; }
+        .node.ind { background: #fff7ed; }
         
-        .toggler { width: 20px; text-align: center; color: #94a3b8; margin-right: 5px; }
-        input[type="checkbox"] { margin-right: 10px; cursor: pointer; }
-        .name { flex: 1; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tog { width: 20px; text-align: center; color: #94a3b8; margin-right: 5px; cursor: pointer; user-select: none; }
+        input[type="checkbox"] { margin-right: 10px; cursor: pointer; width: 16px; height: 16px; accent-color: var(--primary); }
+        .name { flex: 1; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .stat { width: 80px; text-align: center; font-size: 0.85rem; font-weight: 600; }
+        
+        /* Сообщение об ошибке */
+        .error-msg { position:fixed; inset:0; background:rgba(255,255,255,0.95); z-index:99; display:none; justify-content:center; align-items:center; color: #dc2626; font-weight:bold; }
     </style>
 </head>
 <body>
 
+<div class="error-msg" id="errorBox">Файл database.js не найден! Запустите python build.py</div>
+
 <div class="sidebar">
-    <div class="sidebar-content">
-        <div class="total-card">
-            <div style="font-size:0.75rem; text-transform:uppercase; opacity:0.8; margin-bottom:5px">К оплате</div>
-            <div class="total-price"><span id="price">0</span>₽</div>
-            <div class="total-step">Шаг 500₽</div>
+    <div class="sb-content">
+        <div class="price-box">
+            <div style="opacity:0.8; font-size:0.8rem; text-transform:uppercase; margin-bottom:5px">Итого</div>
+            <div class="price-val"><span id="totalPrice">0</span>₽</div>
+            <div style="opacity:0.8; font-size:0.8rem; margin-top:5px">Выбрано строк: <span id="totalLines">0</span></div>
         </div>
         <div class="tier-list" id="tiers"></div>
-        <div class="actions">
+        <div style="margin-top:auto">
             <button class="btn" onclick="download()">⬇ Скачать заказ</button>
-            <button class="btn" style="background:white; color:#ef4444; border:1px solid #fecaca; margin-top:10px" onclick="reset()">Сброс</button>
+            <button class="btn btn-reset" onclick="resetAll()">Сброс выбора</button>
         </div>
     </div>
 </div>
 
 <div class="main">
-    <div class="top-bar">
-        <input type="text" id="search" placeholder="🔍 Поиск категории..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px">
-        <div class="geo-selects">
+    <div class="filters">
+        <input type="text" id="search" placeholder="🔍 Поиск категории (например: Логистика)..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px">
+        <div class="geo-grid">
             <select id="sCountry"><option value="">🌍 Страна</option></select>
             <select id="sRegion" disabled><option value="">🏳️ Регион</option></select>
             <select id="sDistrict" disabled><option value="">🏙️ Район</option></select>
             <select id="sCity" disabled><option value="">📍 Город</option></select>
         </div>
     </div>
-    <div class="tree-header">
-        <div class="col-name">Категория</div>
+    <div class="tree-head">
+        <div class="col-name">Название</div>
         <div class="col-stat">Строк</div>
         <div class="col-stat" style="color:var(--primary)">Тел</div>
-        <div class="col-stat" style="color:var(--accent)">Email</div>
+        <div class="col-stat" style="color:var(--green)">Email</div>
     </div>
-    <div class="tree-view" id="tree"></div>
+    <div class="tree-body" id="tree"></div>
 </div>
 
 <script>
+    // === ЦЕНЫ ===
     const TIERS = [
         { l: 1000, r: 0.10, n: "Новичок" }, { l: 5000, r: 0.075, n: "Старт" },
         { l: 10000, r: 0.06, n: "Активный" }, { l: 50000, r: 0.04, n: "Бизнес" },
-        { l: Infinity, r: 0.005, n: "Опт" }
+        { l: 100000, r: 0.03, n: "Профи" }, { l: Infinity, r: 0.005, n: "Опт" }
     ];
-    let fullDB = null, activeTree = [], selected = new Set(), semi = new Set(), uid = 0;
+    
+    let geoDB = null;       // Вся база гео
+    let activeTree = [];    // Склеенное дерево категорий для текущего фильтра
+    let selected = new Set();
+    let semi = new Set();   // Частично выбранные
+    let uidCounter = 0;
+    
+    // Элементы
     const S = { c: document.getElementById('sCountry'), r: document.getElementById('sRegion'), d: document.getElementById('sDistrict'), t: document.getElementById('sCity') };
 
     window.onload = () => {
-        if(typeof GEO_DB !== 'undefined') {
-            fullDB = GEO_DB;
-            fill(S.c, fullDB.children);
-            updateTree(fullDB); // Показываем всё сразу
-        } else alert('database.js не найден');
+        if(typeof GEO_DB === 'undefined') {
+            document.getElementById('errorBox').style.display = 'flex';
+            return;
+        }
+        geoDB = GEO_DB;
+        
+        // Заполняем страны
+        fillSelect(S.c, geoDB.children);
+        
+        // Показываем всё сразу (или пусто, если база пустая)
+        updateTree(geoDB);
         
         document.getElementById('search').oninput = (e) => render(activeTree, document.getElementById('tree'), 0, e.target.value);
     };
 
-    // --- GEO LOGIC ---
-    S.c.onchange = () => { 
-        const n = find(fullDB.children, S.c.value); 
-        reset(['r','d','t']); 
-        if(n) { fill(S.r, n.children); S.r.disabled=false; updateTree(n); } else updateTree(fullDB); 
+    // === ГЕО ЛОГИКА ===
+    S.c.onchange = () => {
+        const n = findNode(geoDB.children, S.c.value);
+        resetSelects(['r','d','t']);
+        if(n) { fillSelect(S.r, n.children); S.r.disabled=false; updateTree(n); } else updateTree(geoDB);
     };
     S.r.onchange = () => {
-        const c = find(fullDB.children, S.c.value);
-        const n = find(c.children, S.r.value);
-        reset(['d','t']);
-        if(n) { fill(S.d, n.children); S.d.disabled=false; updateTree(n); }
+        const c = findNode(geoDB.children, S.c.value);
+        const n = findNode(c.children, S.r.value);
+        resetSelects(['d','t']);
+        if(n) { fillSelect(S.d, n.children); S.d.disabled=false; updateTree(n); }
     };
     S.d.onchange = () => {
-        const c = find(fullDB.children, S.c.value);
-        const r = find(c.children, S.r.value);
-        const n = find(r.children, S.d.value);
-        reset(['t']);
-        if(n) { fill(S.t, n.children); S.t.disabled=false; updateTree(n); }
+        const c = findNode(geoDB.children, S.c.value);
+        const r = findNode(c.children, S.r.value);
+        const n = findNode(r.children, S.d.value);
+        resetSelects(['t']);
+        if(n) { fillSelect(S.t, n.children); S.t.disabled=false; updateTree(n); }
     };
     S.t.onchange = () => {
-        const c = find(fullDB.children, S.c.value);
-        const r = find(c.children, S.r.value);
-        const d = find(r.children, S.d.value);
-        const n = find(d.children, S.t.value);
+        const c = findNode(geoDB.children, S.c.value);
+        const r = findNode(c.children, S.r.value);
+        const d = findNode(r.children, S.d.value);
+        const n = findNode(d.children, S.t.value);
         if(n) updateTree(n);
     };
 
-    function find(arr, name) { return arr ? arr.find(x => x.name === name) : null; }
-    function fill(el, arr) { 
+    function findNode(arr, name) { return arr ? arr.find(x => x.name === name) : null; }
+    function fillSelect(el, arr) {
         el.innerHTML = '<option value="">'+el.options[0].text+'</option>';
-        if(arr) arr.forEach(x => { if(x.type==='folder' || x.type==='file') el.add(new Option(x.name, x.name)); });
+        if(!arr) return;
+        arr.forEach(x => { if(x.type!=='file_content') el.add(new Option(x.name, x.name)); });
     }
-    function reset(keys) { keys.forEach(k => { S[k].value=""; S[k].disabled=true; S[k].innerHTML='<option value="">'+S[k].options[0].text+'</option>'; }); }
+    function resetSelects(keys) { keys.forEach(k => { S[k].value=""; S[k].disabled=true; }); }
 
-    // --- TREE AGGREGATION ---
+    // === СБОРКА И МЕРДЖ ДЕРЕВА ===
     function updateTree(geoNode) {
-        // 1. Находим все "file_content" внутри выбранной папки
-        let contents = [];
-        collect(geoNode, contents);
-        // 2. Мержим их в одно дерево
-        let merged = [];
-        contents.forEach(tree => merge(merged, tree));
-        // 3. Добавляем ID
-        uid = 0; selected.clear(); semi.clear();
-        activeTree = mapIds(merged, null);
+        // 1. Собираем контент всех файлов внутри geoNode
+        let allContents = [];
+        collectFiles(geoNode, allContents);
+        
+        // 2. Склеиваем (merge) их в одно дерево
+        let mergedRoot = [];
+        allContents.forEach(tree => mergeTrees(mergedRoot, tree));
+        
+        // 3. Раздаем ID для UI
+        uidCounter = 0;
+        selected.clear(); semi.clear();
+        activeTree = assignIds(mergedRoot, null);
+        
+        // 4. Рендер
         render(activeTree, document.getElementById('tree'), 0);
-        calc();
+        calcPrice();
     }
 
-    function collect(node, list) {
-        if(node.file_content) list.push(node.file_content);
-        if(node.children) node.children.forEach(c => collect(c, list));
+    function collectFiles(node, list) {
+        if(node.type === 'file' && node.file_content) list.push(node.file_content);
+        if(node.children) node.children.forEach(c => collectFiles(c, list));
     }
 
-    function merge(target, source) {
-        source.forEach(sNode => {
-            let tNode = target.find(x => x.name === sNode.name);
-            if(!tNode) {
-                tNode = JSON.parse(JSON.stringify(sNode));
-                tNode.children = []; // Детей мержим отдельно
-                tNode.stats = {...sNode.stats}; // Копия
-                target.push(tNode);
+    // Глубокое слияние деревьев (суммируем цифры у одинаковых категорий)
+    function mergeTrees(target, source) {
+        source.forEach(srcNode => {
+            let tgtNode = target.find(x => x.name === srcNode.name);
+            if(!tgtNode) {
+                // Копируем узел
+                tgtNode = JSON.parse(JSON.stringify(srcNode));
+                tgtNode.children = []; // Детей будем мержить отдельно
+                target.push(tgtNode);
             } else {
-                tNode.stats.l += sNode.stats.l;
-                tNode.stats.p += sNode.stats.p;
-                tNode.stats.e += sNode.stats.e;
+                // Суммируем стату
+                tgtNode.stats.l += srcNode.stats.l;
+                tgtNode.stats.p += srcNode.stats.p;
+                tgtNode.stats.e += srcNode.stats.e;
             }
-            if(sNode.children) merge(tNode.children, sNode.children);
+            // Рекурсия для детей
+            if(srcNode.children) mergeTrees(tgtNode.children, srcNode.children);
         });
     }
 
-    function mapIds(nodes, parent) {
+    function assignIds(nodes, parent) {
+        // Сортируем по имени для красоты
+        nodes.sort((a,b) => a.name.localeCompare(b.name));
         return nodes.map(n => {
-            const node = { ...n, id: uid++, parent: parent };
-            if(n.children) node.children = mapIds(n.children, node);
+            const node = { ...n, id: uidCounter++, parent: parent, expand: false };
+            if(n.children) node.children = assignIds(n.children, node);
             return node;
         });
     }
 
-    // --- RENDER & LOGIC ---
-    function render(nodes, box, depth, filter="") {
-        if(depth===0) box.innerHTML = '';
+    // === РЕНДЕР ===
+    function render(nodes, container, depth, filter="") {
+        if(depth===0) container.innerHTML = '';
         const ul = document.createElement('ul');
-        nodes.forEach(n => {
-            if(filter && !n.name.toLowerCase().includes(filter.toLowerCase()) && !hasMatch(n, filter)) return;
-            if(n.stats.l === 0) return;
+        
+        nodes.forEach(node => {
+            // Фильтр поиска
+            if(filter && !hasMatch(node, filter)) return;
+            // Скрываем пустые (если вдруг 0)
+            if(node.stats.l === 0) return;
 
             const li = document.createElement('li');
             const row = document.createElement('div');
-            const isSel = selected.has(n.id);
-            const isSemi = semi.has(n.id);
             
-            row.className = `node ${isSel?'selected':''} ${isSemi?'partly':''}`;
-            row.style.paddingLeft = (depth*20) + 'px';
+            const isSel = selected.has(node.id);
+            const isSemi = semi.has(node.id);
+            const hasChild = node.children && node.children.length > 0;
+
+            row.className = `node ${isSel?'sel':''} ${isSemi?'ind':''}`;
+            row.style.paddingLeft = (depth*20)+'px';
             
+            // Стрелка
             const tog = document.createElement('span');
-            tog.className = 'toggler';
-            tog.innerHTML = n.children.length ? (n.expand ? '▼' : '▶') : '';
-            tog.onclick = (e) => { e.stopPropagation(); n.expand = !n.expand; render(activeTree, box, 0, filter); };
+            tog.className = 'tog';
+            tog.innerHTML = hasChild ? (node.expand || filter ? '▼' : '▶') : '•';
+            tog.style.opacity = hasChild ? 1 : 0.3;
+            tog.onclick = (e) => {
+                e.stopPropagation();
+                if(hasChild) {
+                    node.expand = !node.expand;
+                    render(activeTree, document.getElementById('tree'), 0, filter);
+                }
+            };
+
+            // Чекбокс
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.checked = isSel;
+            chk.indeterminate = isSemi;
+            chk.onclick = (e) => {
+                e.stopPropagation();
+                toggle(node, !isSel);
+                render(activeTree, document.getElementById('tree'), 0, filter);
+                calcPrice();
+            };
+
+            row.append(tog, chk);
+            row.innerHTML += `
+                <div class="name">${node.name}</div>
+                <div class="stat" style="color:#64748b">${node.stats.l}</div>
+                <div class="stat" style="color:var(--primary)">${node.stats.p}</div>
+                <div class="stat" style="color:var(--green)">${node.stats.e}</div>
+            `;
+            
+            // Клик по строке = клик по стрелке
+            row.onclick = (e) => { if(e.target !== chk) tog.click(); };
+
+            li.appendChild(row);
+
+            // Дети
+            if(hasChild && (node.expand || filter)) {
+                const sub = document.createElement('div');
+                li.appendChild(sub);
+                // Рендерим фрагмент (рекурсия)
+                sub.appendChild(renderFragment(node.children, depth+1, filter));
+            }
+            ul.appendChild(li);
+        });
+        
+        if(depth===0) container.appendChild(ul);
+        return ul;
+    }
+
+    function renderFragment(nodes, depth, filter) {
+        // Вспомогательная функция для рендера поддеревьев без очистки контейнера
+        const ul = document.createElement('ul');
+        nodes.forEach(node => {
+            if(filter && !hasMatch(node, filter)) return;
+            if(node.stats.l === 0) return;
+
+            const li = document.createElement('li');
+            const row = document.createElement('div');
+            const isSel = selected.has(node.id);
+            const isSemi = semi.has(node.id);
+            const hasChild = node.children && node.children.length > 0;
+
+            row.className = `node ${isSel?'sel':''} ${isSemi?'ind':''}`;
+            row.style.paddingLeft = (depth*20)+'px';
+
+            const tog = document.createElement('span');
+            tog.className = 'tog';
+            tog.innerHTML = hasChild ? (node.expand || filter ? '▼' : '▶') : '•';
+            tog.onclick = (e) => { e.stopPropagation(); node.expand = !node.expand; render(activeTree, document.getElementById('tree'), 0, filter); };
 
             const chk = document.createElement('input');
             chk.type = 'checkbox';
             chk.checked = isSel; chk.indeterminate = isSemi;
-            chk.onclick = (e) => { e.stopPropagation(); toggle(n, !isSel); render(activeTree, box, 0, filter); calc(); };
+            chk.onclick = (e) => { e.stopPropagation(); toggle(node, !isSel); render(activeTree, document.getElementById('tree'), 0, filter); calcPrice(); };
 
             row.append(tog, chk);
-            row.innerHTML += `<div class="name">${n.name}</div>
-                <div class="stat" style="color:#475569">${n.stats.l}</div>
-                <div class="stat" style="color:var(--primary)">${n.stats.p}</div>
-                <div class="stat" style="color:var(--accent)">${n.stats.e}</div>`;
-            
-            row.onclick = (e) => { if(e.target.tagName!=='INPUT') tog.click(); };
-            
+            row.innerHTML += `<div class="name">${node.name}</div><div class="stat" style="color:#64748b">${node.stats.l}</div><div class="stat" style="color:var(--primary)">${node.stats.p}</div><div class="stat" style="color:var(--green)">${node.stats.e}</div>`;
             li.appendChild(row);
-            if(n.children.length && (n.expand || filter)) {
+
+            if(hasChild && (node.expand || filter)) {
                 const sub = document.createElement('div');
                 li.appendChild(sub);
-                // Рендерим детей в sub, но так как render чистит box при depth=0, тут хитрость:
-                // Мы используем рекурсию для DOM
-                // Проще: renderTreeFragment
-                renderFragment(n.children, sub, depth+1, filter);
+                sub.appendChild(renderFragment(node.children, depth+1, filter));
             }
             ul.appendChild(li);
         });
-        box.appendChild(ul);
+        return ul;
     }
 
-    function renderFragment(nodes, box, depth, filter) {
-        // Тот же код, только без очистки
-        const ul = document.createElement('ul');
-        nodes.forEach(n => {
-            if(filter && !n.name.toLowerCase().includes(filter.toLowerCase()) && !hasMatch(n, filter)) return;
-            if(n.stats.l === 0) return;
-            const li = document.createElement('li');
-            const row = document.createElement('div');
-            const isSel = selected.has(n.id);
-            const isSemi = semi.has(n.id);
-            row.className = `node ${isSel?'selected':''} ${isSemi?'partly':''}`;
-            row.style.paddingLeft = (depth*20) + 'px';
-            
-            const tog = document.createElement('span');
-            tog.className = 'toggler';
-            tog.innerHTML = n.children.length ? (n.expand ? '▼' : '▶') : '';
-            tog.onclick = (e) => { e.stopPropagation(); n.expand = !n.expand; render(activeTree, document.getElementById('tree'), 0, filter); };
-
-            const chk = document.createElement('input');
-            chk.type = 'checkbox';
-            chk.checked = isSel; chk.indeterminate = isSemi;
-            chk.onclick = (e) => { e.stopPropagation(); toggle(n, !isSel); render(activeTree, document.getElementById('tree'), 0, filter); calc(); };
-
-            row.append(tog, chk);
-            row.innerHTML += `<div class="name">${n.name}</div><div class="stat" style="color:#475569">${n.stats.l}</div><div class="stat" style="color:var(--primary)">${n.stats.p}</div><div class="stat" style="color:var(--accent)">${n.stats.e}</div>`;
-            li.appendChild(row);
-            
-            if(n.children.length && (n.expand || filter)) {
-                const sub = document.createElement('div');
-                li.appendChild(sub);
-                renderFragment(n.children, sub, depth+1, filter);
-            }
-            ul.appendChild(li);
-        });
-        box.appendChild(ul);
+    function hasMatch(node, filter) {
+        if(node.name.toLowerCase().includes(filter.toLowerCase())) return true;
+        return node.children && node.children.some(c => hasMatch(c, filter));
     }
 
-    function hasMatch(n, f) {
-        if(n.name.toLowerCase().includes(f.toLowerCase())) return true;
-        return n.children && n.children.some(c => hasMatch(c, f));
-    }
-
-    function toggle(n, s) {
-        if(s) { selected.add(n.id); semi.delete(n.id); } else { selected.delete(n.id); semi.delete(n.id); }
-        if(n.children) n.children.forEach(c => toggle(c, s));
-        updateUp(n.parent);
-    }
-    function updateUp(n) {
-        if(!n) return;
-        let all=true, none=true;
-        n.children.forEach(c => {
-            if(!selected.has(c.id)) all=false;
-            if(selected.has(c.id) || semi.has(c.id)) none=false;
-        });
-        if(all) { selected.add(n.id); semi.delete(n.id); }
-        else if(none) { selected.delete(n.id); semi.delete(n.id); }
-        else { selected.delete(n.id); semi.add(n.id); }
-        updateUp(n.parent);
-    }
-
-    function calc() {
-        let l=0,p=0,e=0;
-        function trav(n) {
-            if(selected.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; }
-            else if(semi.has(n.id) || !n.parent) { if(n.children) n.children.forEach(trav); }
+    // === ВЫДЕЛЕНИЕ ===
+    function toggle(node, state) {
+        // Вниз
+        function setDown(n, s) {
+            if(s) { selected.add(n.id); semi.delete(n.id); } 
+            else { selected.delete(n.id); semi.delete(n.id); }
+            if(n.children) n.children.forEach(c => setDown(c, s));
         }
-        activeTree.forEach(trav); // start from roots
+        setDown(node, state);
         
-        let cur = TIERS[0], idx=0;
+        // Вверх
+        let curr = node.parent;
+        while(curr) {
+            let all=true, none=true;
+            curr.children.forEach(c => {
+                if(!selected.has(c.id)) all=false;
+                if(selected.has(c.id) || semi.has(c.id)) none=false;
+            });
+            if(all) { selected.add(curr.id); semi.delete(curr.id); }
+            else if(none) { selected.delete(curr.id); semi.delete(curr.id); }
+            else { selected.delete(curr.id); semi.add(curr.id); }
+            curr = curr.parent;
+        }
+    }
+
+    // === КАЛЬКУЛЯТОР ===
+    function calcPrice() {
+        let l=0, p=0, e=0;
+        
+        // Считаем только "верхушки" выбранного, чтобы не дублировать
+        function sum(nodes) {
+            nodes.forEach(n => {
+                if(selected.has(n.id)) {
+                    l += n.stats.l; p += n.stats.p; e += n.stats.e;
+                } else if(semi.has(n.id) || !n.parent) {
+                    // Если частично или корень - идем внутрь
+                    if(n.children) sum(n.children);
+                }
+            });
+        }
+        sum(activeTree);
+
+        document.getElementById('totalLines').innerText = l.toLocaleString();
+        
+        // Тарифы
         const vol = l+p+e;
+        let cur = TIERS[0], idx=0;
         for(let i=0; i<TIERS.length; i++) if(vol < TIERS[i].l) { cur=TIERS[i]; idx=i; break; }
-        if(vol >= TIERS[TIERS.length-1].l) { cur=TIERS[TIERS.length-1]; idx=TIERS.length-1; }
+        if(vol >= TIERS[5].l) { cur=TIERS[5]; idx=5; } // Опт
+
+        let cost = Math.ceil((vol * cur.r) / 500) * 500;
+        if(cost===0 && vol>0) cost=500;
         
-        let final = Math.ceil((vol * cur.r) / PRICE_STEP) * PRICE_STEP;
-        if(final===0 && vol>0) final=PRICE_STEP;
+        document.getElementById('totalPrice').innerText = cost.toLocaleString();
         
-        document.getElementById('price').innerText = final.toLocaleString();
-        document.getElementById('tiers').innerHTML = TIERS.map((t,i) => 
+        // Подсветка тарифа
+        const tBox = document.getElementById('tiers');
+        tBox.innerHTML = TIERS.map((t,i) => 
             `<div class="tier-row ${i===idx?'active':''}"><span>${t.n}</span><span>${t.r}₽</span></div>`
         ).join('');
     }
 
-    function reset() { selected.clear(); semi.clear(); render(activeTree, document.getElementById('tree'), 0); calc(); }
-    
+    function resetAll() {
+        selected.clear(); semi.clear();
+        render(activeTree, document.getElementById('tree'), 0);
+        calcPrice();
+    }
+
     function download() {
-        if(!selected.size && !semi.size) return alert('Пусто');
-        let txt = `ЗАКАЗ\nРегион: ${S.c.value}/${S.r.value}/${S.t.value}\nЦена: ${document.getElementById('price').innerText}\n---\n`;
-        function w(n) {
-            if(selected.has(n.id)) txt += `[+] ${n.name} (${n.stats.l})\n`;
-            else if(n.children) n.children.forEach(w);
+        if(!selected.size && !semi.size) return alert('Ничего не выбрано!');
+        let txt = `ЗАКАЗ\nРегион: ${S.c.value}/${S.r.value}/${S.t.value}\nСумма: ${document.getElementById('totalPrice').innerText} руб\n---\n`;
+        
+        function write(n) {
+            if(selected.has(n.id)) {
+                // Получаем путь категории
+                let path = n.name;
+                let p = n.parent;
+                while(p && p.parent) { path = p.name + " / " + path; p = p.parent; }
+                txt += `[+] ${path} (${n.stats.l})\n`;
+            } else if(n.children) {
+                n.children.forEach(write);
+            }
         }
-        activeTree.forEach(w);
+        activeTree.forEach(write);
+        
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'}));
         a.download = 'Order.txt';
         a.click();
     }
 </script>
+
 </body>
 </html>
