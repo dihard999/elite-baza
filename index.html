@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Конструктор Базы: 7 Уровней</title>
+    <title>Конструктор Базы: Level Up</title>
     <style>
         :root {
             --bg-body: #f8fafc;       
@@ -18,6 +18,7 @@
             
             --primary: #2563eb;
             --success: #16a34a;
+            --level: #6366f1; /* Indigo для уровней */
         }
 
         body { 
@@ -29,67 +30,76 @@
         
         /* --- SIDEBAR --- */
         .sidebar { 
-            width: 360px; background: var(--bg-sidebar); border-right: 1px solid var(--border); 
+            width: 380px; /* Чуть шире для шкал */
+            background: var(--bg-sidebar); border-right: 1px solid var(--border); 
             display: flex; flex-direction: column; z-index: 20; 
             box-shadow: 10px 0 30px -10px rgba(0,0,0,0.05);
             padding-top: 20px;
         }
 
-        .sidebar-content { padding: 25px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px;}
+        .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;}
 
         /* TOTAL BOX */
         .total-box {
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-            color: white; padding: 30px 20px; border-radius: 16px; text-align: center;
+            color: white; padding: 25px 20px; border-radius: 16px; text-align: center;
             box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
-            position: relative; overflow: hidden;
         }
-        .total-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
-        .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; }
+        .total-label { font-size: 0.8rem; opacity: 0.9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1; }
         .tier-badge {
-            background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;
-            font-size: 0.8rem; font-weight: 600; display: inline-block; margin-top: 10px;
+            background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 700; display: inline-block; margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
-        /* BONUS BLOCK (GAMIFICATION) */
+        /* LEVEL UP BOX (NEW) */
+        .level-box {
+            background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 12px 15px;
+            display: none; /* Hidden if max level */
+        }
+        .level-box.active { display: block; }
+        .level-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600; color: #4338ca; }
+        .level-info { font-size: 0.8rem; color: #6366f1; margin-bottom: 8px; }
+        
+        .level-bar-bg { height: 8px; background: #c7d2fe; border-radius: 4px; overflow: hidden; }
+        .level-bar-fill { height: 100%; background: #4f46e5; width: 0%; transition: width 0.4s ease; }
+
+        /* BONUS BOX */
         .bonus-box {
-            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px;
-            text-align: center; display: none; /* Hidden by default */
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 15px;
+            text-align: center; display: none;
         }
         .bonus-box.active { display: block; animation: popIn 0.3s ease; }
         @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
-        .bonus-title { color: var(--success); font-weight: 700; font-size: 0.95rem; margin-bottom: 5px; }
-        .bonus-text { font-size: 0.85rem; color: #15803d; margin-bottom: 10px; }
-        
-        /* Progress Bar */
-        .progress-bg { height: 8px; background: #dcfce7; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .bonus-title { color: var(--success); font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
+        .bonus-text { font-size: 0.8rem; color: #15803d; margin-bottom: 8px; }
+        .progress-bg { height: 8px; background: #dcfce7; border-radius: 4px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
 
         /* STATS */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; text-align: center; margin-top: 5px; }
         .stat-item { background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
-        .stat-num { display: block; font-weight: 700; font-size: 1rem; color: var(--text-main); }
+        .stat-num { display: block; font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
         .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
 
         /* BUTTONS */
         .actions { margin-top: auto; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-size: 0.9rem;}
         .btn-download { background: #1e293b; color: white; }
         .btn-download:hover { background: #334155; }
         .btn-reset { background: transparent; color: #ef4444; border: 1px solid #fecaca; }
         .btn-reset:hover { background: #fef2f2; }
 
-        /* --- MAIN AREA --- */
+        /* MAIN AREA */
         .main { flex: 1; display: flex; flex-direction: column; }
         .toolbar { padding: 15px 30px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); }
-        .search-input { width: 100%; padding: 12px 20px; font-size: 1rem; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; background: var(--bg-body);}
+        .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; background: var(--bg-body);}
 
-        /* TREE WRAPPER */
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
         
-        /* TABLE HEADER */
         .table-header {
             position: sticky; top: 0; z-index: 10; background: var(--bg-body); 
             padding-top: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
@@ -99,36 +109,22 @@
         .header-pad { padding-left: 58px; flex: 1; } 
         .col-fixed { width: 80px; text-align: center; }
 
-        /* ROWS */
-        .node-row { 
-            display: flex; align-items: center; padding: 6px 0; border-radius: 6px; 
-            cursor: pointer; border: 1px solid transparent; margin-bottom: 2px;
-        }
+        .node-row { display: flex; align-items: center; padding: 6px 0; border-radius: 6px; cursor: pointer; border: 1px solid transparent; margin-bottom: 2px; }
         .node-row:hover { background: #f1f5f9; }
         .node-row.selected { background: #eff6ff; border-color: #bfdbfe; }
-        
-        .node-row.is-root-node {
-            background: #f8fafc; border-color: #cbd5e1; font-weight: 700; margin-bottom: 10px; margin-top: 10px; padding: 10px 0;
-        }
+        .node-row.is-root-node { background: #f8fafc; border-color: #cbd5e1; font-weight: 700; margin-bottom: 10px; margin-top: 10px; padding: 10px 0; }
         .node-row.is-root-node.selected { background: #dbeafe; border-color: #2563eb; }
 
         .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
         .row-right { display: flex; gap: 8px; }
+        .toggler { width: 24px; display: flex; justify-content: center; margin-right: 8px; color: var(--text-muted); flex-shrink: 0;}
+        input[type="checkbox"] { width: 16px; height: 16px; margin-right: 15px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .node-name { font-weight: 500; font-size: 0.9rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .toggler { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0;}
-        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 15px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
-        .node-name { font-weight: 500; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* BADGES */
-        .badge { 
-            padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; 
-            display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box;
-        }
+        .badge { padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: center; width: 100%; }
         .b-lines { background: var(--c-lines-bg); color: var(--c-lines-text); }
         .b-phones { background: var(--c-phones-bg); color: var(--c-phones-text); }
         .b-emails { background: var(--c-emails-bg); color: var(--c-emails-text); }
-
-        ul.nested { display: none; }
         
         .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -143,12 +139,25 @@
         <div class="total-box">
             <div class="total-label">К оплате (Шаг 500₽)</div>
             <div class="total-value"><span id="totalPrice">0</span>₽</div>
-            <div class="tier-badge" id="currentTierBadge">Минимальный заказ</div>
+            <div class="tier-badge" id="currentTierBadge">Новичок</div>
+        </div>
+
+        <div class="level-box" id="levelBox">
+            <div class="level-header">
+                <span>Следующий уровень</span>
+                <span id="nextTierRate">0.075₽</span>
+            </div>
+            <div class="level-info">
+                Соберите еще <b id="toNextLevel">0</b> записей, чтобы снизить цену!
+            </div>
+            <div class="level-bar-bg">
+                <div class="level-bar-fill" id="levelProgress"></div>
+            </div>
         </div>
 
         <div class="bonus-box" id="bonusBox">
-            <div class="bonus-title">🎁 Бонус доступен!</div>
-            <div class="bonus-text">Вы платите за <span id="paidFor">500</span>₽. <br>Можно добавить бесплатно еще <b id="freeCount">0</b> записей!</div>
+            <div class="bonus-title">🎁 Бонус к текущему пакету</div>
+            <div class="bonus-text">В эту цену (500₽) влезает еще <b id="freeCount">0</b> записей. Берите, это бесплатно!</div>
             <div class="progress-bg">
                 <div class="progress-fill" id="bonusProgress"></div>
             </div>
@@ -199,63 +208,48 @@
 </div>
 
 <script>
-    // === НОВАЯ МАТРИЦА ЦЕН (7 КАТЕГОРИЙ) ===
+    // === МАТРИЦА ЦЕН (ДЕЛЕНИЕ НА 2) ===
     const TIERS = [
-        { limit: 1000,   rate: 0.20, name: "Новичок" },
-        { limit: 5000,   rate: 0.15, name: "Старт" },
-        { limit: 10000,  rate: 0.12, name: "Активный" },
-        { limit: 50000,  rate: 0.08, name: "Бизнес" },
-        { limit: 100000, rate: 0.06, name: "Профи" },
-        { limit: 300000, rate: 0.04, name: "Корпоративный" },
-        { limit: Infinity, rate: 0.01, name: "Партнер" }
+        { limit: 1000,   rate: 0.10,  name: "Новичок" },
+        { limit: 5000,   rate: 0.075, name: "Старт" },
+        { limit: 10000,  rate: 0.06,  name: "Активный" },
+        { limit: 50000,  rate: 0.04,  name: "Бизнес" },
+        { limit: 100000, rate: 0.03,  name: "Профи" },
+        { limit: 300000, rate: 0.02,  name: "Корпоративный" },
+        { limit: Infinity, rate: 0.005, name: "Опт" }
     ];
     
-    // Шаг цены 500 руб
     const PRICE_STEP = 500;
-
     const DATA_FILE = 'Moscow.txt';
+
     let treeData = [];
     let selectedIds = new Set();
     let debounceTimer;
 
     window.onload = async () => {
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
-
         try {
             const resp = await fetch(DATA_FILE);
             if (!resp.ok) throw new Error('File error');
             const text = await resp.text();
-            
             let rawNodes = parseHierarchy(text);
-            
             if (rawNodes.length === 1) {
                 treeData = rawNodes;
-                treeData[0].name = "ВСЕ БАЗЫ"; 
-                treeData[0].isRoot = true;    
-                treeData[0].expanded = true;
+                treeData[0].name = "ВСЕ БАЗЫ"; treeData[0].isRoot = true; treeData[0].expanded = true;
             } else if (rawNodes.length > 1) {
                 const totalStats = rawNodes.reduce((acc, node) => {
                     acc.l += node.stats.l; acc.p += node.stats.p; acc.e += node.stats.e;
                     return acc;
                 }, { l:0, p:0, e:0 });
-
-                const rootNode = {
-                    id: 'ROOT_WRAPPER', 
-                    name: 'ВСЕ БАЗЫ',
-                    stats: totalStats,
-                    children: rawNodes,
-                    expanded: true, visible: true, isRoot: true
-                };
+                const rootNode = { id: 'ROOT_WRAPPER', name: 'ВСЕ БАЗЫ', stats: totalStats, children: rawNodes, expanded: true, visible: true, isRoot: true };
                 treeData = [rootNode];
             } else { treeData = []; }
-
             renderTree(treeData, document.getElementById('treeContainer'), 0);
             document.getElementById('loader').style.display = 'none';
         } catch (e) {
             document.querySelector('.spinner').style.display = 'none';
-            const err = document.getElementById('errorText');
-            err.style.display = 'block';
-            err.innerHTML = `Ошибка: файл <b>${DATA_FILE}</b> не найден.`;
+            document.getElementById('errorText').style.display = 'block';
+            document.getElementById('errorText').innerHTML = `Ошибка: файл <b>${DATA_FILE}</b> не найден.`;
         }
     };
 
@@ -265,7 +259,6 @@
         const stack = [{ level: -1, children: root }];
         let idCounter = 0;
         const regex = /\[(?:Строк:\s*(\d+)\s*\|\s*Тел:\s*(\d+)\s*\|\s*Email:\s*(\d+)|0)\]\s*$/;
-
         lines.forEach(line => {
             const cleanLine = line.trim();
             if (!cleanLine || cleanLine.startsWith('=') || cleanLine.startsWith('Всего')) return;
@@ -291,50 +284,37 @@
     function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
-
         nodes.forEach(node => {
             if (!node.visible) return;
             const li = document.createElement('li');
             const hasChildren = node.children.length > 0;
             const isSelected = selectedIds.has(node.id);
-
             const row = document.createElement('div');
             row.className = `node-row ${isSelected ? 'selected' : ''} ${node.isRoot ? 'is-root-node' : ''}`;
             
             const leftDiv = document.createElement('div');
             leftDiv.className = 'row-left';
             leftDiv.style.paddingLeft = (depth * 20) + 'px'; 
-
             const toggler = document.createElement('div');
             toggler.className = `toggler ${hasChildren ? '' : 'empty'}`;
             toggler.innerHTML = node.expanded ? '▼' : '▶';
-            
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = isSelected;
-            
             const nameDiv = document.createElement('div');
             nameDiv.className = 'node-name';
             nameDiv.innerText = node.name;
-            
             leftDiv.append(toggler, checkbox, nameDiv);
 
             const rightDiv = document.createElement('div');
             rightDiv.className = 'row-right';
-            
             const createBadge = (type, val) => {
                 const cell = document.createElement('div');
                 cell.className = 'col-fixed';
                 cell.innerHTML = val > 0 ? `<div class="badge b-${type}">${val.toLocaleString()}</div>` : `<span style="opacity:0.3; font-size:0.8rem">—</span>`;
                 return cell;
             }
-
-            rightDiv.append(
-                createBadge('lines', node.stats.l),
-                createBadge('phones', node.stats.p),
-                createBadge('emails', node.stats.e)
-            );
-
+            rightDiv.append(createBadge('lines', node.stats.l), createBadge('phones', node.stats.p), createBadge('emails', node.stats.e));
             row.append(leftDiv, rightDiv);
             li.appendChild(row);
 
@@ -347,7 +327,6 @@
                 if (!childUl) { renderTree(node.children, li, depth + 1); childUl = li.querySelector('ul.nested'); }
                 if (node.expanded) childUl.style.display = 'block'; else childUl.style.display = 'none';
             };
-
             const toggleCheck = (e) => {
                 e.stopPropagation();
                 const checked = e.target.checked;
@@ -360,11 +339,9 @@
                 renderTree(treeData, document.getElementById('treeContainer'), 0);
                 recalculate();
             };
-
             toggler.onclick = toggleExpand;
             row.onclick = (e) => { if(e.target !== checkbox && !e.target.closest('.toggler')) toggleCheck(e); }; 
             checkbox.onclick = toggleCheck; 
-
             if (node.expanded && hasChildren) {
                 renderTree(node.children, li, depth + 1);
                 li.querySelector('ul.nested').style.display = 'block';
@@ -374,61 +351,91 @@
         container.appendChild(ul);
     }
 
-    // === ГЛАВНАЯ ЛОГИКА РАСЧЕТА ===
+    // === ЛОГИКА РАСЧЕТА + ШКАЛЫ ===
     function recalculate() {
         let l=0, p=0, e=0;
         function traverse(nodes) {
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) {
                     l += n.stats.l; p += n.stats.p; e += n.stats.e;
-                } else {
-                    if (n.children.length) traverse(n.children);
-                }
+                } else { if (n.children.length) traverse(n.children); }
             });
         }
         traverse(treeData);
-
-        // Объем = сумма всех сущностей
         const volume = l + p + e;
 
-        // Поиск тарифа
-        let currentRate = TIERS[0].rate;
-        let currentTierName = TIERS[0].name;
+        // 1. Находим текущий уровень и следующий
+        let currentTier = TIERS[0];
+        let nextTier = TIERS[1];
+        let tierIndex = 0;
 
-        for (let tier of TIERS) {
-            if (volume < tier.limit) {
-                currentRate = tier.rate;
-                currentTierName = tier.name;
+        for (let i = 0; i < TIERS.length; i++) {
+            if (volume < TIERS[i].limit) {
+                currentTier = TIERS[i];
+                tierIndex = i;
+                nextTier = TIERS[i+1] || null; // Может быть null если это последний уровень
                 break;
             }
         }
+        // Если volume больше последнего лимита
+        if (volume >= TIERS[TIERS.length-1].limit) {
+             currentTier = TIERS[TIERS.length-1];
+             tierIndex = TIERS.length - 1;
+             nextTier = null;
+        }
 
-        const rawPrice = volume * currentRate;
-
-        // Округляем до шага 500
+        // 2. Расчет цены
+        const rawPrice = volume * currentTier.rate;
         let finalPrice = Math.ceil(rawPrice / PRICE_STEP) * PRICE_STEP;
-        // Если что-то выбрано, но цена < 500, то минимум 500
         if (finalPrice === 0 && volume > 0) finalPrice = PRICE_STEP;
 
-        // Логика бонуса
-        // Сколько всего можно купить за эту "округленную цену" по текущему тарифу?
-        const maxVolumeForThisPrice = Math.floor(finalPrice / currentRate);
-        const freeVolume = maxVolumeForThisPrice - volume;
-
+        // 3. Обновляем UI
         document.getElementById('selLines').innerText = l.toLocaleString();
         document.getElementById('selPhones').innerText = p.toLocaleString();
         document.getElementById('selEmails').innerText = e.toLocaleString();
-        
         document.getElementById('totalPrice').innerText = finalPrice.toLocaleString();
-        document.getElementById('currentTierBadge').innerText = `${currentTierName} (${currentRate}₽/шт)`;
+        document.getElementById('currentTierBadge').innerText = `${currentTier.name} (${currentTier.rate}₽/шт)`;
 
+        // 4. Логика Шкалы "Следующий уровень" (Blue)
+        const levelBox = document.getElementById('levelBox');
+        if (nextTier) {
+            levelBox.classList.add('active');
+            const diff = nextTier.limit - volume;
+            document.getElementById('nextTierRate').innerText = `до ${nextTier.rate}₽`;
+            document.getElementById('toNextLevel').innerText = diff.toLocaleString();
+            
+            // Прогресс: от limit предыдущего уровня до limit текущего
+            // Чтобы шкала была красивой, считаем прогресс внутри текущего отрезка
+            const prevLimit = (tierIndex > 0) ? TIERS[tierIndex-1].limit : 0;
+            const range = nextTier.limit - prevLimit;
+            const currentVal = volume - prevLimit;
+            let percent = (currentVal / range) * 100;
+            if(percent < 5) percent = 5; // Минимум, чтобы было видно
+            document.getElementById('levelProgress').style.width = percent + '%';
+        } else {
+            // Максимальный уровень
+            levelBox.classList.remove('active');
+        }
+
+        // 5. Логика Шкалы "Бонус" (Green)
         const bonusBox = document.getElementById('bonusBox');
+        const maxVolumeForThisPrice = Math.floor(finalPrice / currentTier.rate);
+        const freeVolume = maxVolumeForThisPrice - volume;
+        
         if (freeVolume > 0 && volume > 0) {
             bonusBox.classList.add('active');
             document.getElementById('paidFor').innerText = finalPrice;
             document.getElementById('freeCount').innerText = freeVolume.toLocaleString();
+            // Прогресс заполнения "ведёрка" в 500р
+            // Объем "пакета 500р" в штуках = PRICE_STEP / currentTier.rate
+            const bucketSize = PRICE_STEP / currentTier.rate;
+            // Остаток от деления объема на размер ведра = сколько занято в текущем ведре
+            const filledInBucket = volume % bucketSize;
+            // Если filledInBucket == 0 и volume > 0, значит ведро полно (100%), но мы уже округлили цену вверх
+            // Визуально сделаем % заполнения
+            let percentFilled = (filledInBucket / bucketSize) * 100;
+            if (percentFilled === 0 && volume > 0) percentFilled = 100;
             
-            const percentFilled = (volume / maxVolumeForThisPrice) * 100;
             document.getElementById('bonusProgress').style.width = percentFilled + '%';
         } else {
             bonusBox.classList.remove('active');
@@ -441,9 +448,7 @@
         renderTree(treeData, document.getElementById('treeContainer'), 0);
         recalculate();
     }
-
     function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
-
     function runSearch() {
         const q = document.getElementById('searchInput').value.toLowerCase();
         const filter = (node) => {
@@ -459,18 +464,15 @@
         document.getElementById('treeContainer').innerHTML = '';
         renderTree(treeData, document.getElementById('treeContainer'), 0);
     }
-
     function downloadOrder() {
         if (selectedIds.size === 0) { alert('Ничего не выбрано!'); return; }
         const price = document.getElementById('totalPrice').innerText;
         const tier = document.getElementById('currentTierBadge').innerText;
-        
         let text = `ЗАКАЗ\nДата: ${new Date().toLocaleString()}\n`;
         text += `К оплате: ${price} руб.\n`;
         text += `Тариф: ${tier}\n`;
         text += `Объем: L:${document.getElementById('selLines').innerText} P:${document.getElementById('selPhones').innerText} E:${document.getElementById('selEmails').innerText}\n`;
         text += `--------------------------------\n`;
-        
         const traverseWrite = (nodes) => {
             nodes.forEach(n => {
                 if (selectedIds.has(n.id)) text += `[+] ${n.name} (L:${n.stats.l} P:${n.stats.p} E:${n.stats.e})\n`;
