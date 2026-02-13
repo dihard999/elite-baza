@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Base Calculator: Final</title>
+    <title>Smart Base Calculator: Multi-Select</title>
     <script src="database.js"></script>
     <style>
         :root {
@@ -60,12 +60,51 @@
         .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
         .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
         
+        /* CUSTOM MULTI-SELECT STYLES */
         .geo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         
-        /* Стили для селектов: обычный и "фиксированный" */
-        .geo-select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: white; width: 100%; cursor: pointer; }
-        .geo-select:disabled { background: #f1f5f9; color: #475569; border-color: #e2e8f0; opacity: 1; font-weight: 600; cursor: default; -webkit-text-fill-color: #475569; }
-        .geo-select.empty { opacity: 0.5; cursor: not-allowed; }
+        .custom-select-container { position: relative; width: 100%; }
+        
+        /* Кнопка открытия списка */
+        .select-trigger {
+            padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            font-size: 0.9rem; background: white; width: 100%; cursor: pointer;
+            text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: flex; justify-content: space-between; align-items: center;
+            user-select: none;
+            box-sizing: border-box; /* Важно! */
+        }
+        .select-trigger::after { content: '▼'; font-size: 0.7rem; color: #94a3b8; margin-left: 8px;}
+        .select-trigger.disabled { background: #f1f5f9; color: #94a3b8; cursor: default; border-color: #e2e8f0; pointer-events: none; }
+        .select-trigger:hover:not(.disabled) { border-color: #94a3b8; }
+
+        /* Выпадающий список */
+        .select-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+            background: white; border: 1px solid #cbd5e1; border-radius: 6px;
+            margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-height: 300px; overflow-y: auto; display: none;
+        }
+        .select-dropdown.show { display: block; }
+        
+        /* Опции в списке */
+        .select-option {
+            padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-main);
+            border-bottom: 1px solid #f1f5f9; display: flex; align-items: center;
+        }
+        .select-option:last-child { border-bottom: none; }
+        .select-option:hover { background: #f8fafc; }
+        .select-option.selected { background: #eff6ff; color: var(--primary); font-weight: 500; }
+        
+        .select-checkbox {
+            width: 16px; height: 16px; margin-right: 10px; border: 1px solid #cbd5e1; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .select-option.selected .select-checkbox { background: var(--primary); border-color: var(--primary); }
+        .select-option.selected .select-checkbox::after { content: '✔'; color: white; font-size: 0.7rem; }
+
+        .select-all-opt { font-weight: 700; border-bottom: 2px solid #e2e8f0; background: #fafafa; }
+
 
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
@@ -134,12 +173,8 @@
 <div class="main">
     <div class="toolbar">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск...">
-        <div class="geo-grid">
-            <select id="sel0" class="geo-select"></select>
-            <select id="sel1" class="geo-select"></select>
-            <select id="sel2" class="geo-select"></select>
-            <select id="sel3" class="geo-select"></select>
-        </div>
+        <div class="geo-grid" id="geoFilters">
+            </div>
     </div>
     
     <div class="tree-wrapper">
@@ -167,6 +202,7 @@
     ];
     const PRICE_STEP = 100;
     const MIN_PRICE = 500;
+    const LEVEL_LABELS = ["Все страны", "Все регионы", "Все районы", "Все города"];
 
     let geoDB = null;       
     let treeData = [];      
@@ -175,130 +211,248 @@
     let idCounter = 0;
     let debounceTimer;
 
-    // Массив селектов для удобства цикла
-    const SELECTORS = [
-        document.getElementById('sel0'),
-        document.getElementById('sel1'),
-        document.getElementById('sel2'),
-        document.getElementById('sel3')
-    ];
+    // Хранилище состояния фильтров: индекс уровня -> Set выбранных имен
+    let filterState = [new Set(), new Set(), new Set(), new Set()];
 
     window.onload = () => {
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
         
-        // Навешиваем обработчики один раз
-        SELECTORS.forEach(sel => {
-            sel.addEventListener('change', () => runSelectorChain());
+        // Закрываем дропдауны при клике вне их
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select-container')) {
+                document.querySelectorAll('.select-dropdown').forEach(d => d.classList.remove('show'));
+            }
         });
 
         if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB;
-            runSelectorChain(); // Запуск первоначальной цепочки
+            initFiltersUI();
+            runSelectorChain(true); // true = init run
             document.getElementById('loader').style.display = 'none';
         } else {
             document.getElementById('loaderStatus').innerText = "База не найдена.";
         }
     };
 
-    // === НОВАЯ ЛОГИКА АВТО-ЦЕПОЧКИ (ГЛАВНАЯ ФУНКЦИЯ) ===
-    function runSelectorChain() {
-        let currentNode = geoDB; // Начинаем с корня
-        
-        // Проходим по каждому селекту (0..3)
-        for (let i = 0; i < SELECTORS.length; i++) {
-            const sel = SELECTORS[i];
-            
-            // 1. Получаем список папок на текущем уровне
-            const folders = (currentNode && currentNode.children) 
-                ? currentNode.children.filter(x => x.type !== 'file') 
-                : [];
-            
-            // Сохраняем текущее значение, чтобы попробовать восстановить его после перерисовки
-            const previousVal = sel.value; 
-            
-            // 2. Очищаем селект
-            sel.innerHTML = '';
-            sel.className = 'geo-select';
-
-            // Если папок нет вообще - выключаем и идем дальше
-            if (folders.length === 0) {
-                sel.disabled = true;
-                sel.classList.add('empty');
-                sel.add(new Option("—", ""));
-                currentNode = null; // Цепочка обрывается
-                continue;
-            }
-
-            // 3. Логика 1 vs Много
-            if (folders.length === 1) {
-                // ВАРИАНТ А: Только одна папка (напр. "Россия")
-                // Мы выбираем её ПРИНУДИТЕЛЬНО
-                const folder = folders[0];
-                sel.add(new Option(folder.name, folder.name));
-                sel.value = folder.name;
-                sel.disabled = true; // Блокируем, выбора нет
-                
-                // Сразу спускаемся внутрь этой папки для следующей итерации цикла
-                currentNode = folder;
-            } 
-            else {
-                // ВАРИАНТ Б: Много папок
-                sel.disabled = false;
-                
-                // Добавляем дефолтную опцию
-                sel.add(new Option("Выберите...", ""));
-                
-                // Заполняем список
-                folders.forEach(f => {
-                    const opt = new Option(f.name, f.name);
-                    sel.add(opt);
-                });
-
-                // Пытаемся восстановить выбор пользователя
-                if (previousVal && folders.some(f => f.name === previousVal)) {
-                    sel.value = previousVal;
-                    // Если выбрано, спускаемся внутрь выбранной папки
-                    currentNode = folders.find(f => f.name === previousVal);
-                } else {
-                    // Если ничего не выбрано, цепочка обрывается здесь (покажем содержимое текущего уровня, но глубже не пойдем)
-                    sel.value = "";
-                    // Важный момент: если пользователь ничего не выбрал в списке регионов,
-                    // мы должны показать дерево ВСЕХ этих регионов (то есть остаемся на currentNode)
-                    // Но для следующего селекта данных нет.
-                    // currentNode остается тем же для рендера дерева, но для следующего шага цикла i+1 он должен быть null?
-                    // Нет, для рендера дерева нам нужен currentNode. А вот для select[i+1] нужен null.
-                    
-                    // Фикс: сохраняем currentNode для рендера дерева, но прерываем цикл наполнения следующих селектов
-                    // через временную переменную
-                    // Но проще просто сказать: currentNode для следующего шага = null.
-                    // А дерево обновим в конце по "последнему активному узлу".
-                }
-            }
+    function initFiltersUI() {
+        const container = document.getElementById('geoFilters');
+        container.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+            const wrap = document.createElement('div');
+            wrap.className = 'custom-select-container';
+            wrap.id = `filter-wrap-${i}`;
+            wrap.innerHTML = `
+                <div class="select-trigger disabled" id="trigger-${i}" onclick="toggleDropdown(${i})">${LEVEL_LABELS[i]}</div>
+                <div class="select-dropdown" id="dropdown-${i}"></div>
+            `;
+            container.appendChild(wrap);
         }
-
-        // 4. После того как все селекты заполнены или отключены, определяем, что рисовать в дереве.
-        // Нам нужно найти "самый глубокий" выбранный узел.
-        let treeNode = geoDB;
-        for (let i = 0; i < SELECTORS.length; i++) {
-            const val = SELECTORS[i].value;
-            if (val && treeNode && treeNode.children) {
-                const found = treeNode.children.find(x => x.name === val);
-                if (found) treeNode = found;
-            }
-        }
-        
-        updateTree(treeNode);
     }
 
-    // === ДАЛЬШЕ СТАРЫЙ КОД ФУНКЦИОНАЛА ===
+    function toggleDropdown(idx) {
+        // Закрыть остальные
+        for(let i=0; i<4; i++) {
+            if(i !== idx) document.getElementById(`dropdown-${i}`).classList.remove('show');
+        }
+        document.getElementById(`dropdown-${idx}`).classList.toggle('show');
+    }
 
-    function updateTree(geoNode) {
+    // === ГЛАВНАЯ ЛОГИКА МУЛЬТИ-СЕЛЕКТА ===
+    function runSelectorChain(isInit = false) {
+        // Начинаем с корня базы
+        // Нам нужно собрать доступные узлы для каждого уровня
+        
+        // Уровень 0: Дети корня (Страны)
+        let level0Opts = geoDB.children ? geoDB.children.filter(x => x.type !== 'file') : [];
+        updateFilterUI(0, level0Opts);
+
+        // Получаем выбранные объекты уровня 0
+        let selectedLevel0 = getSelectedNodes(level0Opts, 0);
+
+        // Уровень 1: Дети ВСЕХ выбранных стран
+        let level1Opts = getChildrenFromMultiple(selectedLevel0);
+        updateFilterUI(1, level1Opts);
+        
+        // Получаем выбранные объекты уровня 1
+        let selectedLevel1 = getSelectedNodes(level1Opts, 1);
+
+        // Уровень 2: Дети ВСЕХ выбранных регионов
+        let level2Opts = getChildrenFromMultiple(selectedLevel1);
+        updateFilterUI(2, level2Opts);
+
+        let selectedLevel2 = getSelectedNodes(level2Opts, 2);
+
+        // Уровень 3: Города
+        let level3Opts = getChildrenFromMultiple(selectedLevel2);
+        updateFilterUI(3, level3Opts);
+
+        let selectedLevel3 = getSelectedNodes(level3Opts, 3);
+
+        // Финальный сбор данных для дерева
+        // Дерево строится из объединения всех выбранных на САМОМ ГЛУБОКОМ активном уровне
+        let nodesToShow = [];
+        
+        // Логика: если на уровне 3 что-то есть - берем его. Если нет - берем уровень 2...
+        // Но при "Все" мы берем всё.
+        
+        // Проще: мы всегда собираем дерево на основе "последнего уровня, где есть опции".
+        // Если выбрано "Все", то берем все опции этого уровня.
+        
+        if (selectedLevel3.length > 0) nodesToShow = selectedLevel3;
+        else if (selectedLevel2.length > 0) nodesToShow = selectedLevel2;
+        else if (selectedLevel1.length > 0) nodesToShow = selectedLevel1;
+        else if (selectedLevel0.length > 0) nodesToShow = selectedLevel0;
+        else nodesToShow = [geoDB]; // Fallback
+
+        // Строим дерево из массива узлов (виртуальный корень)
+        updateTreeFromNodes(nodesToShow);
+    }
+
+    // Возвращает массив узлов, которые сейчас выбраны в фильтре idx
+    function getSelectedNodes(options, idx) {
+        if (!options || options.length === 0) return [];
+        const selectedNames = filterState[idx];
+        
+        // Если ничего не выбрано (пустой Set) -> значит выбрано "Всё" (по умолчанию)
+        if (selectedNames.size === 0) return options;
+
+        return options.filter(o => selectedNames.has(o.name));
+    }
+
+    // Собирает детей из нескольких родителей в один плоский список
+    function getChildrenFromMultiple(parents) {
+        let allChildren = [];
+        parents.forEach(p => {
+            if (p.children) {
+                // Берем только папки
+                const folders = p.children.filter(x => x.type !== 'file');
+                allChildren = allChildren.concat(folders);
+            }
+        });
+        // Уникальность имен не проверяем, так как могут быть одинаковые имена в разных регионах, 
+        // но здесь для простоты UI считаем что они различаются по context. 
+        // В селекте они будут просто списком.
+        return allChildren;
+    }
+
+    function updateFilterUI(idx, options) {
+        const trigger = document.getElementById(`trigger-${idx}`);
+        const dropdown = document.getElementById(`dropdown-${idx}`);
+        
+        // 1. Проверяем валидность текущего выбора
+        // Если мы выбрали регион, которого больше нет в списке (потому что сменили страну), удаляем его
+        let currentSet = filterState[idx];
+        const validNames = new Set(options.map(o => o.name));
+        
+        // Очистка мертвых выборов
+        for (let name of currentSet) {
+            if (!validNames.has(name)) currentSet.delete(name);
+        }
+
+        // 2. Если опций нет -> дизейбл
+        if (options.length === 0) {
+            trigger.innerText = "—";
+            trigger.classList.add('disabled');
+            dropdown.innerHTML = '';
+            return;
+        }
+
+        // 3. Если опция ОДНА -> автовыбор и лок
+        if (options.length === 1) {
+            trigger.innerText = options[0].name;
+            trigger.classList.add('disabled');
+            dropdown.innerHTML = '';
+            // Важно: мы НЕ добавляем в set, чтобы логика считала "пустой set = все". 
+            // А так как "все" это и есть этот единственный элемент, всё сходится.
+            return;
+        }
+
+        // 4. Опций много -> рендер списка
+        trigger.classList.remove('disabled');
+        
+        // Текст кнопки
+        if (currentSet.size === 0 || currentSet.size === options.length) {
+            trigger.innerText = LEVEL_LABELS[idx]; // "Все страны"
+        } else {
+            // Перечисляем выбранные
+            const arr = Array.from(currentSet);
+            trigger.innerText = arr.join(', ');
+        }
+
+        // Рендер внутренностей
+        let html = ``;
+        
+        // Кнопка "Все"
+        const isAll = (currentSet.size === 0 || currentSet.size === options.length);
+        html += `
+            <div class="select-option select-all-opt ${isAll ? 'selected' : ''}" onclick="clickOption(${idx}, 'ALL')">
+                <div class="select-checkbox"></div>
+                <div>${LEVEL_LABELS[idx]}</div>
+            </div>
+        `;
+
+        options.forEach(opt => {
+            const isSel = currentSet.has(opt.name);
+            html += `
+                <div class="select-option ${isSel ? 'selected' : ''}" onclick="clickOption(${idx}, '${opt.name}')">
+                    <div class="select-checkbox"></div>
+                    <div>${opt.name}</div>
+                </div>
+            `;
+        });
+        
+        dropdown.innerHTML = html;
+    }
+
+    // Обработка клика по опции
+    window.clickOption = function(levelIdx, val) {
+        const currentSet = filterState[levelIdx];
+        
+        // Получаем текущие опции (немного костыльно, но быстро: читаем из DOM или пересчитываем?)
+        // Лучше пересчитать для надежности, но мы уже знаем их из runSelectorChain.
+        // Чтобы не усложнять, мы просто возьмем их из dropdown DOM элементов.
+        const dropdown = document.getElementById(`dropdown-${levelIdx}`);
+        const allOptionDivs = dropdown.querySelectorAll('.select-option:not(.select-all-opt)');
+        const allNames = Array.from(allOptionDivs).map(div => div.querySelector('div:last-child').innerText);
+
+        if (val === 'ALL') {
+            // Если кликнули "Все":
+            if (currentSet.size === 0) {
+                // Если было "Все" (пусто), то ничего не меняем или можно сбросить? 
+                // Обычно клик по "Все" сбрасывает выбор в "Все"
+            } else {
+                currentSet.clear(); // Очистить = выбрать всё
+            }
+        } else {
+            // Кликнули конкретный
+            if (currentSet.has(val)) {
+                currentSet.delete(val);
+            } else {
+                currentSet.add(val);
+            }
+            
+            // Если выбрали руками ВСЕ галочки -> сбросить в "Все" (пустой сет)
+            if (currentSet.size === allNames.length) {
+                currentSet.clear();
+            }
+        }
+
+        // Перезапуск цепочки (обновит следующие списки и дерево)
+        runSelectorChain();
+    };
+
+    // === СБОРКА ДЕРЕВА (МЕРДЖ) ===
+    function updateTreeFromNodes(nodesList) {
         document.getElementById('treeContainer').innerHTML = '';
-        if(!geoNode) return;
+        if(!nodesList || nodesList.length === 0) return;
 
         let contents = [];
-        collectContents(geoNode, contents);
+        // Собираем контент из всех переданных узлов
+        nodesList.forEach(node => {
+            collectContents(node, contents);
+        });
         
+        // Мержим
         let mergedRoot = [];
         contents.forEach(tree => merge(mergedRoot, tree));
         
@@ -337,6 +491,7 @@
         });
     }
 
+    // === UI RENDERING ===
     function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
@@ -486,8 +641,14 @@
 
     function downloadOrder() {
         if(!selectedIds.size && !indeterminateIds.size) return alert('Пусто');
-        let selValues = SELECTORS.map(s => s.value).filter(v => v).join(" ");
-        let txt = `ЗАКАЗ\nРегион: ${selValues}\nСумма: ${document.getElementById('totalPrice').innerText}\n---\n`;
+        // Собираем текст фильтров
+        let filtersTxt = "";
+        for(let i=0; i<4; i++) {
+            const tr = document.getElementById(`trigger-${i}`);
+            if(!tr.classList.contains('disabled')) filtersTxt += `[${LEVEL_LABELS[i]}: ${tr.innerText}] `;
+        }
+
+        let txt = `ЗАКАЗ\nФильтры: ${filtersTxt}\nСумма: ${document.getElementById('totalPrice').innerText}\n---\n`;
         function w(nodes) {
             nodes.forEach(n => {
                 if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`;
