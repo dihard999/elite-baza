@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Base Calculator: Fixed Checkboxes</title>
+    <title>Smart Base Calculator: Responsive</title>
     <script src="database.js"></script>
     <style>
         :root {
@@ -40,7 +40,6 @@
         .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
         .tier-section { border-top: 1px solid var(--border); padding-top: 15px; }
-        .tier-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; padding-left: 5px; }
         .tier-list { display: flex; flex-direction: column; gap: 8px; }
         .tier-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: white; border: 1px solid transparent; transition: 0.2s; font-size: 0.85rem; color: var(--text-muted); }
         .tier-item.passed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
@@ -56,26 +55,41 @@
         .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
         .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
         
-        /* === ИСПРАВЛЕННЫЕ ЧЕКБОКСЫ И ВЫПАДАШКИ === */
-        .geo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        /* === ИСПРАВЛЕННЫЕ ФИЛЬТРЫ (FLEX + WRAP) === */
+        .geo-grid { 
+            display: flex; 
+            flex-wrap: wrap; /* Разрешаем перенос на след строку */
+            gap: 10px; 
+            width: 100%;
+        }
         
-        .custom-select-container { position: relative; width: 100%; }
+        .custom-select-container { 
+            position: relative; 
+            flex: 1; /* Растягиваться, если есть место */
+            min-width: 200px; /* Минимальная ширина, чтобы не сплющивались */
+        }
         
+        /* Активный контейнер (когда открыт) поднимаем выше всех */
+        .custom-select-container.is-open {
+            z-index: 101;
+        }
+
         .select-trigger {
-            padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
             font-size: 0.9rem; background: white; width: 100%; cursor: pointer;
             text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             display: flex; justify-content: space-between; align-items: center;
-            user-select: none;
+            user-select: none; box-sizing: border-box;
         }
         .select-trigger::after { content: '▼'; font-size: 0.7rem; color: #94a3b8; margin-left: 8px;}
-        .select-trigger.disabled { background: #f1f5f9; color: #94a3b8; pointer-events: none; opacity: 0.7; }
+        .select-trigger.disabled { background: #f1f5f9; color: #94a3b8; pointer-events: none; opacity: 0.8; }
 
         .select-dropdown {
-            position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+            position: absolute; top: 100%; left: 0; right: 0; 
             background: white; border: 1px solid #cbd5e1; border-radius: 6px;
-            margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
             max-height: 350px; overflow-y: auto; display: none;
+            z-index: 999; /* Очень высокий z-index */
         }
         .select-dropdown.show { display: block; }
         
@@ -87,13 +101,12 @@
         .select-option:hover { background: #f8fafc; }
         .select-option.selected { background: #eff6ff; color: var(--primary); font-weight: 600; }
         
-        /* Реальный чекбокс для надежности */
         .select-real-checkbox {
             width: 18px; height: 18px; margin-right: 10px; cursor: pointer;
-            accent-color: var(--primary); transform: scale(1.1);
+            accent-color: var(--primary); transform: scale(1.1); flex-shrink: 0;
         }
 
-        .select-all-opt { font-weight: 700; border-bottom: 2px solid #e2e8f0; background: #fafafa; }
+        .select-all-opt { font-weight: 700; border-bottom: 2px solid #e2e8f0; background: #fafafa; position: sticky; top: 0; z-index: 2; }
 
         /* TREE */
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
@@ -194,17 +207,14 @@
     let indeterminateIds = new Set(); 
     let idCounter = 0;
     let debounceTimer;
-
-    // Хранилище состояния фильтров
     let filterState = [new Set(), new Set(), new Set(), new Set()];
 
     window.onload = () => {
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
         
-        // Закрываем дропдауны при клике вне их
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.custom-select-container')) {
-                document.querySelectorAll('.select-dropdown').forEach(d => d.classList.remove('show'));
+                closeAllDropdowns();
             }
         });
 
@@ -233,13 +243,23 @@
         }
     }
 
+    function closeAllDropdowns() {
+        document.querySelectorAll('.select-dropdown').forEach(d => d.classList.remove('show'));
+        document.querySelectorAll('.custom-select-container').forEach(c => c.classList.remove('is-open'));
+    }
+
     function toggleDropdown(e, idx) {
-        // e.stopPropagation(); // Отменил, чтобы работало закрытие при клике вовне
-        // Закрыть остальные
-        for(let i=0; i<4; i++) {
-            if(i !== idx) document.getElementById(`dropdown-${i}`).classList.remove('show');
+        // Если уже открыт этот - закрываем
+        const drop = document.getElementById(`dropdown-${idx}`);
+        const wrap = document.getElementById(`filter-wrap-${idx}`);
+        const isOpen = drop.classList.contains('show');
+        
+        closeAllDropdowns(); // Сначала закрыть все
+        
+        if (!isOpen) {
+            drop.classList.add('show');
+            wrap.classList.add('is-open'); // Для z-index
         }
-        document.getElementById(`dropdown-${idx}`).classList.toggle('show');
     }
 
     // === ГЛАВНАЯ ЛОГИКА ===
@@ -273,7 +293,7 @@
     function getSelectedNodes(options, idx) {
         if (!options || options.length === 0) return [];
         const selectedNames = filterState[idx];
-        if (selectedNames.size === 0) return options; // Если пусто = все
+        if (selectedNames.size === 0) return options;
         return options.filter(o => selectedNames.has(o.name));
     }
 
@@ -291,7 +311,6 @@
         let currentSet = filterState[idx];
         const validNames = new Set(options.map(o => o.name));
         
-        // Очистка мертвых
         for (let name of currentSet) {
             if (!validNames.has(name)) currentSet.delete(name);
         }
@@ -317,7 +336,6 @@
         else trigger.innerText = Array.from(currentSet).join(', ');
 
         let html = ``;
-        // Опция ВСЕ
         html += `
             <div class="select-option select-all-opt ${isAll ? 'selected' : ''}" onclick="clickOption(event, ${idx}, 'ALL')">
                 <input type="checkbox" class="select-real-checkbox" ${isAll ? 'checked' : ''} onclick="this.parentElement.click(); event.stopPropagation();">
@@ -338,30 +356,23 @@
     }
 
     window.clickOption = function(e, levelIdx, val) {
-        // ВАЖНО: Останавливаем всплытие, чтобы меню не закрылось
         if(e) e.stopPropagation();
-
         const currentSet = filterState[levelIdx];
         const dropdown = document.getElementById(`dropdown-${levelIdx}`);
         const allOptionDivs = dropdown.querySelectorAll('.select-option:not(.select-all-opt)');
         const allNames = Array.from(allOptionDivs).map(div => div.querySelector('div:last-child').innerText);
 
         if (val === 'ALL') {
-             // Если кликнули ВСЕ, сбрасываем сет (что значит "все")
-             // Если сет уже пустой, то ничего не делаем, он и так "все"
              if(currentSet.size > 0) currentSet.clear();
         } else {
             if (currentSet.has(val)) currentSet.delete(val);
             else currentSet.add(val);
-            
-            // Если выбрали все галочки руками -> сброс в "Все"
             if (currentSet.size === allNames.length) currentSet.clear();
         }
-
         runSelectorChain();
     };
 
-    // === ДЕРЕВО И РАСЧЕТЫ (Без изменений логики) ===
+    // === ДЕРЕВО (Без изменений) ===
     function updateTreeFromNodes(nodesList) {
         document.getElementById('treeContainer').innerHTML = '';
         if(!nodesList || nodesList.length === 0) return;
