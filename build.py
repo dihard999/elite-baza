@@ -1,138 +1,169 @@
 import os
 import json
 import re
+import time
+import sys
 
+# === НАСТРОЙКИ ===
 BASE_DIR = 'base'
 OUTPUT_FILE = 'database.js'
+CHECK_INTERVAL = 1.0  # Проверять изменения каждую секунду
 
-def parse_txt_content(filepath):
-    """Парсит содержимое txt файла в структуру дерева"""
-    root = []
-    # Стек для отслеживания уровней отступов
-    stack = [{"level": -1, "children": root}]
+def parse_txt_to_tree(filepath):
+    """
+    Парсит содержимое файла.
+    Поддерживает форматы:
+    1. [Строк: 100 | Тел: 50 | Email: 10]
+    2. (1000) или [1000] - просто строки
+    """
+    root_children = []
+    stack = [{"level": -1, "children": root_children}]
     
-    # Регулярка 1: Полный формат [Строк: 10 | Тел: 5 | Email: 2]
     regex_full = re.compile(r'\[(?:Строк:\s*(\d+)\s*\|\s*Тел:\s*(\d+)\s*\|\s*Email:\s*(\d+)|0)\]', re.IGNORECASE)
-    # Регулярка 2: Простой формат (1000 строк) или [1000]
     regex_simple = re.compile(r'[\(\[]\s*(\d+)\s*[\)\]]')
 
-    has_data = False
+    lines_found = 0
 
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
-                clean_line = line.rstrip()
-                # Пропускаем служебные строки
-                if not clean_line or clean_line.startswith('=') or clean_line.startswith('Всего'): 
-                    continue
-
-                # Считаем отступ (количество пробелов в начале)
-                stripped = clean_line.lstrip()
-                level = len(clean_line) - len(stripped)
+                raw_line = line.rstrip()
+                if not raw_line or raw_line.startswith('='): continue
                 
-                stats = {"l": 0, "p": 0, "e": 0}
+                stripped = raw_line.lstrip()
+                indent = len(raw_line) - len(stripped)
                 name = stripped
-
-                # Пытаемся найти статистику
+                stats = {"l": 0, "p": 0, "e": 0}
+                
                 match_full = regex_full.search(stripped)
                 match_simple = regex_simple.search(stripped)
 
                 if match_full:
-                    # Нашли полные данные
                     name = stripped[:match_full.start()].strip()
                     if match_full.group(1): stats['l'] = int(match_full.group(1))
                     if match_full.group(2): stats['p'] = int(match_full.group(2))
                     if match_full.group(3): stats['e'] = int(match_full.group(3))
-                    has_data = True
                 elif match_simple:
-                    # Нашли просто число (считаем это строками)
                     name = stripped[:match_simple.start()].strip()
-                    val = int(match_simple.group(1))
-                    stats['l'] = val
-                    has_data = True
-                
-                # Если имя пустое (была только стата), пропускаем
+                    stats['l'] = int(match_simple.group(1))
+
                 if not name: continue
 
-                node = {
-                    "name": name,
-                    "stats": stats,
-                    "children": []
-                }
+                node = {"name": name, "stats": stats, "children": []}
 
-                # Логика вложенности по отступам
-                while stack[-1]["level"] >= level:
+                while stack[-1]["level"] >= indent:
                     stack.pop()
                 
                 stack[-1]["children"].append(node)
-                stack.append({"level": level, "children": node["children"]})
+                stack.append({"level": indent, "children": node["children"]})
+                
+                if stats['l'] > 0: lines_found += 1
 
-    except Exception as e: 
-        print(f"⚠️ Ошибка чтения файла {filepath}: {e}")
-    
-    return root if has_data else None
+    except Exception:
+        pass
 
-def scan_folders(path, level=0):
-    name = os.path.basename(path)
-    # Определяем тип: если уровень 0 (base) - это корень, иначе папка
-    node_type = "root" if level == 0 else "folder"
-    
-    node = {
-        "name": name,
-        "type": node_type,
-        "children": []
-    }
+    return root_children if (root_children or lines_found > 0) else None
+
+def scan_directory(path):
+    folder_name = os.path.basename(path)
+    node = {"name": folder_name, "type": "folder", "children": []}
 
     try:
+        if not os.path.exists(path): return node
         items = sorted(os.listdir(path))
-        has_content = False
-
+        
         for item in items:
-            if item.startswith('.') or item == '__pycache__': continue
             full_path = os.path.join(path, item)
+            if item.startswith('.') or item == '__pycache__' or item.endswith('.py'): continue
 
             if os.path.isdir(full_path):
-                child = scan_folders(full_path, level + 1)
-                # Добавляем папку только если в ней что-то есть
-                if child and child['children']: 
-                    node['children'].append(child)
-                    has_content = True
+                child_node = scan_directory(full_path)
+                if child_node and child_node['children']:
+                    node['children'].append(child_node)
             
             elif os.path.isfile(full_path) and item.endswith('.txt'):
-                content = parse_txt_content(full_path)
-                if content:
-                    print(f"   📄 Файл обработан: {item}")
+                file_tree = parse_txt_to_tree(full_path)
+                if file_tree:
                     file_node = {
                         "name": item.replace('.txt', ''),
                         "type": "file",
                         "children": [],
-                        "file_content": content
+                        "file_content": file_tree
                     }
                     node['children'].append(file_node)
-                    has_content = True
-                else:
-                    print(f"   ❌ Файл пропущен (нет данных или формат не тот): {item}")
 
     except Exception as e:
-        print(f"Ошибка сканирования папки {path}: {e}")
-        return None
-        
+        print(f"Ошибка доступа: {e}")
+    
     return node
 
-print("⏳ Сканирую базу...")
-
-if os.path.exists(BASE_DIR):
-    tree = scan_folders(BASE_DIR)
+def build_database():
+    """Функция сборки базы"""
+    print(f"\n🔄 Обнаружены изменения! Пересборка...")
     
-    # Проверка, не пустая ли база
-    if tree and tree['children']:
-        js = f"const GEO_DB = {json.dumps(tree, ensure_ascii=False)};"
-        with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-            f.write(js)
-        print("-" * 30)
-        print(f"✅ УСПЕХ! Файл {OUTPUT_FILE} обновлен.")
-        print(f"Найдено корневых папок: {len(tree['children'])}")
+    if not os.path.exists(BASE_DIR):
+        print(f"❌ Папка '{BASE_DIR}' не найдена!")
+        return
+
+    full_tree = scan_directory(BASE_DIR)
+    
+    # Берем только детей корневой папки, чтобы не было "base" в начале
+    if full_tree and full_tree['children']:
+        js_content = f"const GEO_DB = {json.dumps(full_tree, ensure_ascii=False)};"
+        try:
+            with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+                f.write(js_content)
+            print(f"✅ Готово! Файл {OUTPUT_FILE} обновлен.")
+            print(f"📁 Корневых папок: {len(full_tree['children'])}")
+        except Exception as e:
+            print(f"❌ Ошибка записи файла: {e}")
     else:
-        print("❌ ОШИБКА: База пустая. Проверь, что в папке 'base' есть папки с .txt файлами внутри.")
-else:
-    print(f"❌ Папка {BASE_DIR} не найдена. Создай папку 'base' рядом со скриптом.")
+        print("⚠️ База пустая или файлы не распознаны.")
+
+def get_snapshot(path):
+    """Создает 'снэпшот' папки: список файлов и время их изменения"""
+    snapshot = {}
+    if not os.path.exists(path): return snapshot
+    
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith('.txt'):
+                filepath = os.path.join(root, file)
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    snapshot[filepath] = mtime
+                except: pass
+        # Также следим за созданием папок
+        for d in dirs:
+            dirpath = os.path.join(root, d)
+            try:
+                mtime = os.path.getmtime(dirpath)
+                snapshot[dirpath] = mtime
+            except: pass
+    return snapshot
+
+# === MAIN LOOP ===
+if __name__ == "__main__":
+    print(f"🚀 Запущен авто-сборщик.")
+    print(f"👀 Наблюдаю за папкой '{BASE_DIR}'... (Не закрывай это окно)")
+    
+    # Первая сборка при запуске
+    build_database()
+    
+    # Запоминаем текущее состояние файлов
+    last_snapshot = get_snapshot(BASE_DIR)
+
+    try:
+        while True:
+            time.sleep(CHECK_INTERVAL)
+            current_snapshot = get_snapshot(BASE_DIR)
+            
+            # Если что-то изменилось (файлы добавились, удалились или изменилось время)
+            if current_snapshot != last_snapshot:
+                build_database()
+                last_snapshot = current_snapshot
+                print(f"👀 Продолжаю наблюдение...")
+
+    except KeyboardInterrupt:
+        print("\n🛑 Остановка скрипта.")
+        sys.exit()
