@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Base Calculator: Summary Panel</title>
+    <title>Smart Base Calculator: Bi-Directional</title>
     <script src="database.js"></script>
     <style>
         :root {
@@ -93,7 +93,6 @@
         .summary-label { font-weight: 700; color: #475569; margin-right: 6px; min-width: 60px; }
         .summary-value { color: #334155; word-break: break-word; }
 
-
         /* TREE */
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
@@ -109,9 +108,8 @@
         .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
         .row-right { display: flex; gap: 5px; }
         
-        /* Исправленный тогглер */
         .toggler { width: 24px; display: flex; justify-content: center; margin-right: 8px; color: #94a3b8; flex-shrink: 0; font-size: 0.8rem;}
-        .toggler.empty { opacity: 0; pointer-events: none; } /* Скрываем стрелку, но оставляем отступ */
+        .toggler.empty { opacity: 0; pointer-events: none; } 
 
         .node-checkbox { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
         .node-name { font-weight: 500; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -160,9 +158,7 @@
 <div class="main">
     <div class="toolbar">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск...">
-        
         <div class="geo-grid" id="geoFilters"></div>
-        
         <div class="summary-panel" id="summaryPanel"></div>
     </div>
     
@@ -204,13 +200,11 @@
 
     window.onload = () => {
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
-        
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.custom-select-container')) {
                 closeAllDropdowns();
             }
         });
-
         if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB;
             initFiltersUI();
@@ -234,8 +228,6 @@
             `;
             container.appendChild(wrap);
         }
-        
-        // Init Summary Panel placeholders
         const sumPanel = document.getElementById('summaryPanel');
         let sumHtml = '';
         for(let i=0; i<4; i++) {
@@ -260,7 +252,47 @@
         }
     }
 
-    // === ГЛАВНАЯ ЛОГИКА ===
+    // === ЛОГИКА СИНХРОНИЗАЦИИ ВВЕРХ (REVERSE SYNC) ===
+    function syncFiltersUp(changedLevel) {
+        if (changedLevel === 0) return; 
+
+        const selectedNames = filterState[changedLevel];
+        if (selectedNames.size === 0) return; // Если выбрано "ВСЕ", вверх не меняем
+
+        // Ищем пути ко всем выбранным элементам
+        let paths = [];
+        if (geoDB.children) {
+            geoDB.children.filter(x => x.type !== 'file').forEach(c => {
+                 findDepthMatch(c, [], changedLevel, paths, selectedNames);
+            });
+        }
+
+        // Обновляем фильтры выше
+        for (let l = changedLevel - 1; l >= 0; l--) {
+            const newSet = new Set();
+            paths.forEach(path => {
+                newSet.add(path[l]);
+            });
+            filterState[l] = newSet;
+        }
+    }
+
+    function findDepthMatch(node, parents, targetLevel, resultPaths, targetNames) {
+        const currentDepth = parents.length;
+        if (currentDepth === targetLevel) {
+            if (targetNames.has(node.name)) {
+                resultPaths.push([...parents, node.name]);
+            }
+            return;
+        }
+        if (node.children) {
+             node.children.filter(x => x.type !== 'file').forEach(child => {
+                 findDepthMatch(child, [...parents, node.name], targetLevel, resultPaths, targetNames);
+             });
+        }
+    }
+
+    // === ГЛАВНАЯ ЦЕПОЧКА (DOWN SYNC) ===
     function runSelectorChain() {
         let level0Opts = geoDB.children ? geoDB.children.filter(x => x.type !== 'file') : [];
         updateFilterUI(0, level0Opts);
@@ -295,24 +327,15 @@
             const row = document.getElementById(`sum-row-${i}`);
             const val = document.getElementById(`sum-val-${i}`);
             const trigger = document.getElementById(`trigger-${i}`);
-            
-            // Если кнопка задизейблена (нет данных на этом уровне), скрываем строку
             if(trigger.classList.contains('disabled') && trigger.innerText === "—") {
                 row.style.display = 'none';
                 continue;
             }
             row.style.display = 'flex';
-
             const set = filterState[i];
             if (set.size === 0) {
-                // Если сет пустой, но уровень активен, значит выбрано "ВСЕ"
-                // Но надо проверить, а есть ли вообще там что-то.
-                // Берем текст с триггера, если там "Все страны", то пишем "Все"
-                if(trigger.innerText.includes("Все")) {
-                     val.innerText = "Все";
-                } else {
-                     val.innerText = trigger.innerText; // Например единственная "Россия"
-                }
+                if(trigger.innerText.includes("Все")) val.innerText = "Все";
+                else val.innerText = trigger.innerText;
             } else {
                 val.innerText = Array.from(set).join(', ');
             }
@@ -361,14 +384,12 @@
         trigger.classList.remove('disabled');
         const isAll = (currentSet.size === 0 || currentSet.size === options.length);
         
-        // Умный текст на кнопке
         if (isAll) {
             trigger.innerText = LEVEL_PLURALS[idx];
         } else {
             if (currentSet.size <= 2) {
                 trigger.innerText = Array.from(currentSet).join(', ');
             } else {
-                // Если больше 2, пишем "Москва, Тула (+2)"
                 const arr = Array.from(currentSet);
                 trigger.innerText = `${arr[0]}, ${arr[1]} (+${arr.length - 2})`;
             }
@@ -408,6 +429,10 @@
             else currentSet.add(val);
             if (currentSet.size === allNames.length) currentSet.clear();
         }
+        
+        // Сначала синхронизируем вверх (если выбрали ребенка, выберем и родителя)
+        syncFiltersUp(levelIdx);
+        // Потом обновляем всё вниз
         runSelectorChain();
     };
 
@@ -444,15 +469,13 @@
             return node;
         });
     }
-
-    // === RENDER TREE (ИСПРАВЛЕНА СТРЕЛОЧКА) ===
     function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
         nodes.forEach(node => {
             if (!node.visible || node.stats.l === 0) return;
             const li = document.createElement('li');
-            const hasChild = node.children && node.children.length > 0; // Строгая проверка
+            const hasChild = node.children && node.children.length > 0;
             const sel = selectedIds.has(node.id);
             const ind = indeterminateIds.has(node.id);
             
@@ -462,16 +485,9 @@
             const left = document.createElement('div');
             left.className = 'row-left'; left.style.paddingLeft = (depth * 20) + 'px';
             
-            // Логика стрелки: если детей нет - ставим класс empty и не пишем символ
             const tog = document.createElement('div'); 
-            
-            if (!hasChild) {
-                tog.className = 'toggler empty';
-                tog.innerHTML = ''; 
-            } else {
-                tog.className = 'toggler';
-                tog.innerHTML = node.expanded ? '▼' : '▶';
-            }
+            if (!hasChild) { tog.className = 'toggler empty'; tog.innerHTML = ''; } 
+            else { tog.className = 'toggler'; tog.innerHTML = node.expanded ? '▼' : '▶'; }
             
             const chk = document.createElement('input'); chk.type = 'checkbox'; chk.className='node-checkbox'; chk.checked = sel; chk.indeterminate = ind;
             const name = document.createElement('div'); name.className = 'node-name'; name.innerText = node.name;
@@ -484,10 +500,7 @@
             const clickTog = (e) => { e.stopPropagation(); if(!hasChild)return; node.expanded=!node.expanded; document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'),0); };
             const clickChk = (e) => { e.stopPropagation(); toggleSel(node, !sel); document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'),0); recalculate(); };
             
-            tog.onclick = clickTog; 
-            chk.onclick = clickChk; 
-            row.onclick = (e) => { if(e.target!==chk && e.target!==tog) clickTog(e); };
-            
+            tog.onclick = clickTog; chk.onclick = clickChk; row.onclick = (e) => { if(e.target!==chk && e.target!==tog) clickTog(e); };
             if (node.expanded && hasChild) { renderTree(node.children, li, depth + 1); li.querySelector('ul.nested').style.display = 'block'; }
             ul.appendChild(li);
         });
@@ -546,7 +559,6 @@
     function getPath(node) { let path = [node.name], curr = node.parent; while(curr) { path.unshift(curr.name); curr = curr.parent; } return path.join(" / "); }
     function downloadOrder() {
         if(!selectedIds.size && !indeterminateIds.size) return alert('Пусто');
-        // Собираем текст из панели саммари для файла заказа
         let filtersTxt = "";
         for(let i=0; i<4; i++) {
              const row = document.getElementById(`sum-row-${i}`);
@@ -555,7 +567,6 @@
                  filtersTxt += `[${LEVEL_LABELS[i]}: ${val.innerText}] `;
              }
         }
-
         let txt = `ЗАКАЗ\nФильтры: ${filtersTxt}\nСумма: ${document.getElementById('totalPrice').innerText}\n---\n`;
         function w(nodes) { nodes.forEach(n => { if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`; else if(n.children) w(n.children); }); }
         w(treeData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
