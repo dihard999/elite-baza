@@ -1,13 +1,10 @@
 import os
 import json
 import re
-import time
-import sys
 
 # === НАСТРОЙКИ ===
 BASE_DIR = 'base'
 OUTPUT_FILE = 'database.js'
-CHECK_INTERVAL = 1.0  # Проверять изменения каждую секунду
 
 def parse_txt_to_tree(filepath):
     """
@@ -45,7 +42,8 @@ def parse_txt_to_tree(filepath):
                     if match_full.group(3): stats['e'] = int(match_full.group(3))
                 elif match_simple:
                     name = stripped[:match_simple.start()].strip()
-                    stats['l'] = int(match_simple.group(1))
+                    val = int(match_simple.group(1))
+                    stats['l'] = val
 
                 if not name: continue
 
@@ -74,10 +72,12 @@ def scan_directory(path):
         
         for item in items:
             full_path = os.path.join(path, item)
+            # Игнорируем скрытые файлы и скрипты
             if item.startswith('.') or item == '__pycache__' or item.endswith('.py'): continue
 
             if os.path.isdir(full_path):
                 child_node = scan_directory(full_path)
+                # Добавляем папку только если в ней что-то есть (рекурсивно)
                 if child_node and child_node['children']:
                     node['children'].append(child_node)
             
@@ -97,9 +97,8 @@ def scan_directory(path):
     
     return node
 
-def build_database():
-    """Функция сборки базы"""
-    print(f"\n🔄 Обнаружены изменения! Пересборка...")
+def main():
+    print(f"🚀 Запуск одноразовой сборки базы...")
     
     if not os.path.exists(BASE_DIR):
         print(f"❌ Папка '{BASE_DIR}' не найдена!")
@@ -107,63 +106,18 @@ def build_database():
 
     full_tree = scan_directory(BASE_DIR)
     
-    # Берем только детей корневой папки, чтобы не было "base" в начале
     if full_tree and full_tree['children']:
+        # Оборачиваем в JS переменную
         js_content = f"const GEO_DB = {json.dumps(full_tree, ensure_ascii=False)};"
         try:
             with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
                 f.write(js_content)
-            print(f"✅ Готово! Файл {OUTPUT_FILE} обновлен.")
-            print(f"📁 Корневых папок: {len(full_tree['children'])}")
+            print(f"✅ Успех! Файл {OUTPUT_FILE} создан.")
+            print(f"📁 Обработано корневых элементов: {len(full_tree['children'])}")
         except Exception as e:
             print(f"❌ Ошибка записи файла: {e}")
     else:
-        print("⚠️ База пустая или файлы не распознаны.")
+        print("⚠️ База пустая или файлы не найдены.")
 
-def get_snapshot(path):
-    """Создает 'снэпшот' папки: список файлов и время их изменения"""
-    snapshot = {}
-    if not os.path.exists(path): return snapshot
-    
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if file.endswith('.txt'):
-                filepath = os.path.join(root, file)
-                try:
-                    mtime = os.path.getmtime(filepath)
-                    snapshot[filepath] = mtime
-                except: pass
-        # Также следим за созданием папок
-        for d in dirs:
-            dirpath = os.path.join(root, d)
-            try:
-                mtime = os.path.getmtime(dirpath)
-                snapshot[dirpath] = mtime
-            except: pass
-    return snapshot
-
-# === MAIN LOOP ===
 if __name__ == "__main__":
-    print(f"🚀 Запущен авто-сборщик.")
-    print(f"👀 Наблюдаю за папкой '{BASE_DIR}'... (Не закрывай это окно)")
-    
-    # Первая сборка при запуске
-    build_database()
-    
-    # Запоминаем текущее состояние файлов
-    last_snapshot = get_snapshot(BASE_DIR)
-
-    try:
-        while True:
-            time.sleep(CHECK_INTERVAL)
-            current_snapshot = get_snapshot(BASE_DIR)
-            
-            # Если что-то изменилось (файлы добавились, удалились или изменилось время)
-            if current_snapshot != last_snapshot:
-                build_database()
-                last_snapshot = current_snapshot
-                print(f"👀 Продолжаю наблюдение...")
-
-    except KeyboardInterrupt:
-        print("\n🛑 Остановка скрипта.")
-        sys.exit()
+    main()
