@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Base Calculator: Final</title>
+    <title>Smart Base Calculator: Fixed</title>
     <script src="database.js"></script>
     <style>
         :root {
@@ -23,16 +23,19 @@
         .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
         .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; background: rgba(0,0,0,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;}
 
-        .bonus-box { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; transition: 0.3s all; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
-        .bonus-box.active { background: var(--success-bg); border: 2px solid var(--success-border); box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.2); }
-        .bonus-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-weight: 700; font-size: 0.95rem; }
+        /* BONUS BOX - IMPROVED */
+        .bonus-box { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; transition: 0.3s all; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+        .bonus-box.active { background: var(--success-bg); border-color: var(--success-border); box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.2); }
+        
+        .bonus-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-weight: 700; font-size: 0.9rem; }
         .bonus-box.active .bonus-header { color: #047857; }
-        .bonus-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+        
+        .bonus-text { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
         .bonus-box.active .bonus-text { color: #065f46; }
-        .bucket-container { width: 100%; display: flex; flex-direction: column; gap: 4px; }
-        .bucket-progress { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 100%; }
-        .bucket-fill { height: 100%; background: #94a3b8; width: 0%; transition: width 0.3s; }
-        .bonus-box.active .bucket-progress { background: #d1fae5; }
+        
+        .bucket-container { width: 100%; display: flex; flex-direction: column; gap: 4px; background: rgba(0,0,0,0.05); border-radius: 4px; overflow: hidden;}
+        .bucket-progress { height: 10px; width: 100%; position: relative; }
+        .bucket-fill { height: 100%; background: #94a3b8; width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .bonus-box.active .bucket-fill { background: #10b981; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; flex-shrink: 0;}
@@ -46,7 +49,6 @@
         .tier-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: white; border: 1px solid transparent; transition: 0.2s; font-size: 0.85rem; color: var(--text-muted); }
         .tier-item.passed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
         .tier-item.current { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; font-weight: 600; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden; }
-        .tier-item.current::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; background: #3b82f6; width: var(--progress, 0%); transition: width 0.3s; }
         .tier-item.locked { background: white; border: 1px solid #f1f5f9; }
 
         .actions { margin-top: auto; padding-top: 10px; }
@@ -58,13 +60,12 @@
         /* MAIN */
         .main { flex: 1; display: flex; flex-direction: column; background: white; }
         
-        /* FILTERS (NEW) */
         .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
         .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
         
         .geo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         .geo-select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background: white; width: 100%; cursor: pointer; }
-        .geo-select:disabled { background: #f1f5f9; color: #94a3b8; }
+        .geo-select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
 
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
@@ -97,15 +98,15 @@
         <div class="total-box">
             <div class="total-label">К оплате</div>
             <div class="total-value"><span id="totalPrice">0</span>₽</div>
-            <div class="total-step">Шаг тарифа 500₽</div>
+            <div class="total-step">Мин. заказ 500₽ | Шаг 100₽</div>
         </div>
 
         <div class="bonus-box" id="bonusBox">
             <div class="bonus-header">
-                <span id="bonusTitle">Выберите данные</span>
+                <span id="bonusTitle">Следующая скидка</span>
                 <span id="bonusPercent">0%</span>
             </div>
-            <div class="bonus-text" id="bonusText">Начните выбирать регионы и категории.</div>
+            <div class="bonus-text" id="bonusText">Начните выбирать регионы и категории, чтобы увидеть прогресс.</div>
             <div class="bucket-container">
                 <div class="bucket-progress"><div class="bucket-fill" id="bucketFill"></div></div>
             </div>
@@ -118,7 +119,7 @@
         </div>
 
         <div class="tier-section">
-            <div class="tier-title">Ваша скидка (от объема)</div>
+            <div class="tier-title">Тарифная сетка (за строку)</div>
             <div class="tier-list" id="tierListContainer"></div>
         </div>
 
@@ -164,10 +165,12 @@
         { limit: 100000, rate: 0.03, name: "Профи" }, { limit: 300000, rate: 0.02, name: "Корпоративный" },
         { limit: Infinity, rate: 0.005, name: "Опт" }
     ];
-    const PRICE_STEP = 500;
+    // ИСПРАВЛЕНИЕ: Шаг 100р
+    const PRICE_STEP = 100;
+    const MIN_PRICE = 500;
 
-    let geoDB = null;       // Вся база
-    let treeData = [];      // Текущее дерево (склеенное)
+    let geoDB = null;       
+    let treeData = [];      
     let selectedIds = new Set();
     let indeterminateIds = new Set(); 
     let idCounter = 0;
@@ -181,16 +184,17 @@
         if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB;
             initGeoSelectors();
-            updateTree(geoDB); // Показываем все
+            updateTree(geoDB); 
             document.getElementById('loader').style.display = 'none';
         } else {
             document.getElementById('loaderStatus').innerText = "База не найдена. Запустите build.py";
         }
     };
 
-    // === ГЕО ЛОГИКА ===
+    // === ГЕО ЛОГИКА (ИСПРАВЛЕНА АВТО-ВЫБОРКА) ===
     function initGeoSelectors() {
         fillSelect(S.c, geoDB.children);
+        // События
         S.c.onchange = () => { handleSelect(S.c, S.r, ['r','d','t']); };
         S.r.onchange = () => { handleSelect(S.r, S.d, ['d','t']); };
         S.d.onchange = () => { handleSelect(S.d, S.t, ['t']); };
@@ -199,53 +203,89 @@
 
     function handleSelect(currentEl, nextEl, resetKeys) {
         // Сброс нижних
-        resetKeys.forEach(k => { S[k].value = ""; S[k].disabled = true; S[k].innerHTML = '<option value="">'+S[k].options[0].text+'</option>'; });
+        resetKeys.forEach(k => { 
+            S[k].value = ""; 
+            S[k].disabled = true; 
+            S[k].innerHTML = '<option value="">'+getPlaceholder(k)+'</option>'; 
+        });
         
         updateFromSelection();
 
-        // Заполнение следующего
         if (currentEl.value && nextEl) {
-            // Ищем текущий узел в дереве
-            let node = geoDB;
-            if (S.c.value) node = findNode(node.children, S.c.value);
-            if (S.r.value && node) node = findNode(node.children, S.r.value);
-            if (S.d.value && node) node = findNode(node.children, S.d.value);
+            let node = getNodeBySelection();
             
+            // Если узел найден и у него есть дети
             if (node && node.children) {
-                fillSelect(nextEl, node.children);
-                nextEl.disabled = false;
+                // Фильтруем только папки для селекта
+                const folders = node.children.filter(x => x.type !== 'file');
+                if(folders.length > 0) {
+                    fillSelect(nextEl, folders);
+                    nextEl.disabled = false;
+                }
             }
         }
     }
 
-    function updateFromSelection() {
+    function getPlaceholder(key) {
+        if(key==='c') return '🌍 Страна';
+        if(key==='r') return '🏳️ Регион';
+        if(key==='d') return '🏙️ Район';
+        if(key==='t') return '📍 Город';
+    }
+
+    // ИСПРАВЛЕНИЕ: Автовыбор если 1 вариант
+    function fillSelect(el, arr) { 
+        if(!arr) return; 
+        
+        // Очищаем, оставляя плейсхолдер
+        const placeholder = el.options[0].text;
+        el.innerHTML = `<option value="">${placeholder}</option>`;
+
+        arr.forEach(x => { 
+            // В селекты добавляем только папки
+            if(x.type !== 'file') el.add(new Option(x.name, x.name)); 
+        });
+
+        // ЛОГИКА АВТО-ВЫБОРА
+        // Если всего 1 вариант (плюс плейсхолдер = 2 опции), выбираем его сразу
+        if (el.options.length === 2) {
+            el.selectedIndex = 1; // Выбираем первый реальный элемент
+            el.dispatchEvent(new Event('change')); // Триггерим событие change
+        }
+    }
+
+    function getNodeBySelection() {
         let node = geoDB;
         if (S.c.value) node = findNode(node.children, S.c.value);
         if (S.r.value && node) node = findNode(node.children, S.r.value);
         if (S.d.value && node) node = findNode(node.children, S.d.value);
         if (S.t.value && node) node = findNode(node.children, S.t.value);
-        
+        return node;
+    }
+
+    function updateFromSelection() {
+        let node = getNodeBySelection();
         updateTree(node || geoDB);
     }
 
     function findNode(arr, name) { return arr ? arr.find(x => x.name === name) : null; }
-    function fillSelect(el, arr) { if(!arr) return; arr.forEach(x => { if(x.type !== 'file') el.add(new Option(x.name, x.name)); }); }
 
     // === МЕРДЖ И ПОСТРОЕНИЕ ДЕРЕВА ===
     function updateTree(geoNode) {
-        // 1. Собираем содержимое всех файлов
+        // ИСПРАВЛЕНИЕ: Очищаем контейнер, чтобы не дублировалось
+        document.getElementById('treeContainer').innerHTML = '';
+
+        if(!geoNode) return;
+
         let contents = [];
         collectContents(geoNode, contents);
         
-        // 2. Мержим
         let mergedRoot = [];
         contents.forEach(tree => merge(mergedRoot, tree));
         
-        // 3. ID и родители
         idCounter = 0; selectedIds.clear(); indeterminateIds.clear();
         treeData = assignIds(mergedRoot, null);
         
-        // 4. Рендер
         renderTree(treeData, document.getElementById('treeContainer'), 0);
         recalculate();
     }
@@ -278,7 +318,6 @@
         });
     }
 
-    // === UI RENDERING (Твой старый код) ===
     function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
@@ -359,27 +398,54 @@
         for (let i=0; i<TIERS.length; i++) { if (vol < TIERS[i].limit) { cur=TIERS[i]; idx=i; break; } }
         if (vol >= TIERS[6].limit) { cur=TIERS[6]; idx=6; }
 
+        // ИСПРАВЛЕНИЕ: Шаг 100р и мин 500р
         let final = Math.ceil((vol * cur.rate) / PRICE_STEP) * PRICE_STEP;
-        if(final===0 && vol>0) final=PRICE_STEP;
+        if(vol > 0 && final < MIN_PRICE) final = MIN_PRICE;
 
         document.getElementById('selLines').innerText = l.toLocaleString();
         document.getElementById('selPhones').innerText = p.toLocaleString();
         document.getElementById('selEmails').innerText = e.toLocaleString();
         document.getElementById('totalPrice').innerText = final.toLocaleString();
 
-        // Bonus & Tiers UI (Simplified)
+        // ИСПРАВЛЕНИЕ: Логика бонусов (Прогресс бар)
+        const box = document.getElementById('bonusBox');
         const bucketFill = document.getElementById('bucketFill');
         const bonusText = document.getElementById('bonusText');
-        if(vol===0) { bucketFill.style.width='0%'; bonusText.innerText = "Выберите категории"; } 
-        else {
-            const max = Math.floor(final/cur.rate);
-            bucketFill.style.width = Math.round((vol/max)*100) + '%';
-            bonusText.innerHTML = `Доступно еще <b>${(max-vol).toLocaleString()}</b> строк`;
+        const bonusTitle = document.getElementById('bonusTitle');
+        const bonusPercent = document.getElementById('bonusPercent');
+
+        if(vol===0) { 
+            box.classList.remove('active');
+            bucketFill.style.width='0%'; 
+            bonusText.innerText = "Начните выбирать данные."; 
+            bonusTitle.innerText = "Скидки";
+            bonusPercent.innerText = "0%";
+        } else {
+            box.classList.add('active');
+            // Находим следующий тир
+            const nextTier = TIERS[idx + 1];
+            
+            if (nextTier) {
+                const needed = nextTier.limit - vol;
+                const percent = Math.min(100, Math.round((vol / nextTier.limit) * 100));
+                
+                bonusTitle.innerText = "До тарифа " + nextTier.name;
+                bonusPercent.innerText = percent + "%";
+                bucketFill.style.width = percent + '%';
+                bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена стала <b>${nextTier.rate}₽</b> за строку.`;
+            } else {
+                // Максимальный уровень
+                bonusTitle.innerText = "Максимум";
+                bonusPercent.innerText = "100%";
+                bucketFill.style.width = '100%';
+                bonusText.innerHTML = `Вы достигли максимальной оптовой скидки! Цена <b>${cur.rate}₽</b> за строку.`;
+            }
         }
 
         const tCon = document.getElementById('tierListContainer'); tCon.innerHTML='';
         TIERS.forEach((t, i) => {
-            tCon.innerHTML += `<div class="tier-item ${i===idx?'current':''} ${i<idx?'passed':''}"><div>${t.name}</div><div>${t.rate}₽</div></div>`;
+            let label = (t.limit === Infinity) ? "∞" : t.limit.toLocaleString();
+            tCon.innerHTML += `<div class="tier-item ${i===idx?'current':''} ${i<idx?'passed':''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(до ${label})</small></div><div>${t.rate}₽</div></div>`;
         });
     }
 
@@ -416,6 +482,10 @@
         }
         w(treeData);
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
+    }
+    
+    function resetAll() {
+        location.reload();
     }
 </script>
 
