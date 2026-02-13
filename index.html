@@ -3,23 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Base Calculator: Multi-Select</title>
+    <title>Smart Base Calculator: Fixed Checkboxes</title>
     <script src="database.js"></script>
     <style>
         :root {
             --bg-body: #f1f5f9; --bg-sidebar: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-            --c-lines-bg: #f8fafc; --c-lines-text: #475569; --c-phones-bg: #eff6ff; --c-phones-text: #1d4ed8; --c-emails-bg: #f0fdf4; --c-emails-text: #15803d;
             --primary: #3b82f6; --success: #22c55e; --success-bg: #ecfdf5; --success-border: #6ee7b7;
+            --c-lines-text: #475569; --c-phones-text: #1d4ed8; --c-emails-text: #15803d;
         }
 
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         /* SIDEBAR */
-        .sidebar { width: 400px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
+        .sidebar { width: 400px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 30; box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
         .sidebar-content { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;}
 
         .total-box { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4); flex-shrink: 0; }
-        .total-label { font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
         .total-value { font-size: 2.8rem; font-weight: 800; line-height: 1; letter-spacing: -1px;}
         .total-step { font-size: 0.8rem; opacity: 0.7; margin-top: 5px; background: rgba(0,0,0,0.2); display: inline-block; padding: 2px 8px; border-radius: 4px;}
 
@@ -46,66 +45,57 @@
         .tier-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: white; border: 1px solid transparent; transition: 0.2s; font-size: 0.85rem; color: var(--text-muted); }
         .tier-item.passed { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
         .tier-item.current { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; font-weight: 600; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1); position: relative; overflow: hidden; }
-        .tier-item.locked { background: white; border: 1px solid #f1f5f9; }
 
         .actions { margin-top: auto; padding-top: 10px; }
-        .download-hint { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 500; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
-        .btn-download { background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-download { background: #0f172a; color: white; }
         .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
 
         /* MAIN */
         .main { flex: 1; display: flex; flex-direction: column; background: white; }
-        
         .toolbar { padding: 15px 30px; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; flex-direction: column; gap: 10px; }
         .search-input { width: 100%; padding: 10px 15px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
         
-        /* CUSTOM MULTI-SELECT STYLES */
+        /* === ИСПРАВЛЕННЫЕ ЧЕКБОКСЫ И ВЫПАДАШКИ === */
         .geo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         
         .custom-select-container { position: relative; width: 100%; }
         
-        /* Кнопка открытия списка */
         .select-trigger {
             padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
             font-size: 0.9rem; background: white; width: 100%; cursor: pointer;
             text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             display: flex; justify-content: space-between; align-items: center;
             user-select: none;
-            box-sizing: border-box; /* Важно! */
         }
         .select-trigger::after { content: '▼'; font-size: 0.7rem; color: #94a3b8; margin-left: 8px;}
-        .select-trigger.disabled { background: #f1f5f9; color: #94a3b8; cursor: default; border-color: #e2e8f0; pointer-events: none; }
-        .select-trigger:hover:not(.disabled) { border-color: #94a3b8; }
+        .select-trigger.disabled { background: #f1f5f9; color: #94a3b8; pointer-events: none; opacity: 0.7; }
 
-        /* Выпадающий список */
         .select-dropdown {
             position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
             background: white; border: 1px solid #cbd5e1; border-radius: 6px;
-            margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            max-height: 300px; overflow-y: auto; display: none;
+            margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 350px; overflow-y: auto; display: none;
         }
         .select-dropdown.show { display: block; }
         
-        /* Опции в списке */
         .select-option {
-            padding: 8px 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-main);
+            padding: 10px 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-main);
             border-bottom: 1px solid #f1f5f9; display: flex; align-items: center;
+            transition: background 0.1s;
         }
-        .select-option:last-child { border-bottom: none; }
         .select-option:hover { background: #f8fafc; }
-        .select-option.selected { background: #eff6ff; color: var(--primary); font-weight: 500; }
+        .select-option.selected { background: #eff6ff; color: var(--primary); font-weight: 600; }
         
-        .select-checkbox {
-            width: 16px; height: 16px; margin-right: 10px; border: 1px solid #cbd5e1; border-radius: 4px;
-            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        /* Реальный чекбокс для надежности */
+        .select-real-checkbox {
+            width: 18px; height: 18px; margin-right: 10px; cursor: pointer;
+            accent-color: var(--primary); transform: scale(1.1);
         }
-        .select-option.selected .select-checkbox { background: var(--primary); border-color: var(--primary); }
-        .select-option.selected .select-checkbox::after { content: '✔'; color: white; font-size: 0.7rem; }
 
         .select-all-opt { font-weight: 700; border-bottom: 2px solid #e2e8f0; background: #fafafa; }
 
-
+        /* TREE */
         .tree-wrapper { flex: 1; overflow-y: auto; padding: 0 30px 20px 30px; }
         ul { list-style: none; padding: 0; margin: 0; }
         
@@ -117,12 +107,11 @@
         .node-row:hover { background: #f8fafc; }
         .node-row.selected { background: #eff6ff; }
         .node-row.indeterminate { background: #fff7ed; } 
-        .node-row.indeterminate input[type="checkbox"] { opacity: 0.6; }
-
+        
         .row-left { flex: 1; display: flex; align-items: center; overflow: hidden; padding-right: 15px; }
         .row-right { display: flex; gap: 5px; }
         .toggler { width: 24px; display: flex; justify-content: center; margin-right: 8px; color: #94a3b8; flex-shrink: 0;}
-        input[type="checkbox"] { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .node-checkbox { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
         .node-name { font-weight: 500; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .badge { padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: center; width: 100%; }
         .b-lines { color: var(--c-lines-text); } .b-phones { color: var(--c-phones-text); } .b-emails { color: var(--c-emails-text); }
@@ -142,13 +131,11 @@
 
         <div class="bonus-box" id="bonusBox">
             <div class="bonus-header">
-                <span id="bonusTitle">Следующая скидка</span>
+                <span id="bonusTitle">Скидка</span>
                 <span id="bonusPercent">0%</span>
             </div>
-            <div class="bonus-text" id="bonusText">Начните выбирать данные для расчета.</div>
-            <div class="bucket-container">
-                <div class="bucket-progress"><div class="bucket-fill" id="bucketFill"></div></div>
-            </div>
+            <div class="bonus-text" id="bonusText">...</div>
+            <div class="bucket-container"><div class="bucket-progress"><div class="bucket-fill" id="bucketFill"></div></div></div>
         </div>
         
         <div class="stats-grid">
@@ -158,12 +145,10 @@
         </div>
 
         <div class="tier-section">
-            <div class="tier-title">Тарифная сетка (за строку)</div>
             <div class="tier-list" id="tierListContainer"></div>
         </div>
 
         <div class="actions">
-            <div class="download-hint">Скачайте файл и просто скиньте мне в чат для заказа 👇</div>
             <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" onclick="resetAll()">Сброс</button>
         </div>
@@ -173,8 +158,7 @@
 <div class="main">
     <div class="toolbar">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск...">
-        <div class="geo-grid" id="geoFilters">
-            </div>
+        <div class="geo-grid" id="geoFilters"></div>
     </div>
     
     <div class="tree-wrapper">
@@ -211,7 +195,7 @@
     let idCounter = 0;
     let debounceTimer;
 
-    // Хранилище состояния фильтров: индекс уровня -> Set выбранных имен
+    // Хранилище состояния фильтров
     let filterState = [new Set(), new Set(), new Set(), new Set()];
 
     window.onload = () => {
@@ -227,7 +211,7 @@
         if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB;
             initFiltersUI();
-            runSelectorChain(true); // true = init run
+            runSelectorChain(); 
             document.getElementById('loader').style.display = 'none';
         } else {
             document.getElementById('loaderStatus').innerText = "База не найдена.";
@@ -242,14 +226,15 @@
             wrap.className = 'custom-select-container';
             wrap.id = `filter-wrap-${i}`;
             wrap.innerHTML = `
-                <div class="select-trigger disabled" id="trigger-${i}" onclick="toggleDropdown(${i})">${LEVEL_LABELS[i]}</div>
+                <div class="select-trigger disabled" id="trigger-${i}" onclick="toggleDropdown(event, ${i})">${LEVEL_LABELS[i]}</div>
                 <div class="select-dropdown" id="dropdown-${i}"></div>
             `;
             container.appendChild(wrap);
         }
     }
 
-    function toggleDropdown(idx) {
+    function toggleDropdown(e, idx) {
+        // e.stopPropagation(); // Отменил, чтобы работало закрытие при клике вовне
         // Закрыть остальные
         for(let i=0; i<4; i++) {
             if(i !== idx) document.getElementById(`dropdown-${i}`).classList.remove('show');
@@ -257,99 +242,60 @@
         document.getElementById(`dropdown-${idx}`).classList.toggle('show');
     }
 
-    // === ГЛАВНАЯ ЛОГИКА МУЛЬТИ-СЕЛЕКТА ===
-    function runSelectorChain(isInit = false) {
-        // Начинаем с корня базы
-        // Нам нужно собрать доступные узлы для каждого уровня
-        
-        // Уровень 0: Дети корня (Страны)
+    // === ГЛАВНАЯ ЛОГИКА ===
+    function runSelectorChain() {
         let level0Opts = geoDB.children ? geoDB.children.filter(x => x.type !== 'file') : [];
         updateFilterUI(0, level0Opts);
-
-        // Получаем выбранные объекты уровня 0
         let selectedLevel0 = getSelectedNodes(level0Opts, 0);
 
-        // Уровень 1: Дети ВСЕХ выбранных стран
         let level1Opts = getChildrenFromMultiple(selectedLevel0);
         updateFilterUI(1, level1Opts);
-        
-        // Получаем выбранные объекты уровня 1
         let selectedLevel1 = getSelectedNodes(level1Opts, 1);
 
-        // Уровень 2: Дети ВСЕХ выбранных регионов
         let level2Opts = getChildrenFromMultiple(selectedLevel1);
         updateFilterUI(2, level2Opts);
-
         let selectedLevel2 = getSelectedNodes(level2Opts, 2);
 
-        // Уровень 3: Города
         let level3Opts = getChildrenFromMultiple(selectedLevel2);
         updateFilterUI(3, level3Opts);
-
         let selectedLevel3 = getSelectedNodes(level3Opts, 3);
 
-        // Финальный сбор данных для дерева
-        // Дерево строится из объединения всех выбранных на САМОМ ГЛУБОКОМ активном уровне
         let nodesToShow = [];
-        
-        // Логика: если на уровне 3 что-то есть - берем его. Если нет - берем уровень 2...
-        // Но при "Все" мы берем всё.
-        
-        // Проще: мы всегда собираем дерево на основе "последнего уровня, где есть опции".
-        // Если выбрано "Все", то берем все опции этого уровня.
-        
         if (selectedLevel3.length > 0) nodesToShow = selectedLevel3;
         else if (selectedLevel2.length > 0) nodesToShow = selectedLevel2;
         else if (selectedLevel1.length > 0) nodesToShow = selectedLevel1;
         else if (selectedLevel0.length > 0) nodesToShow = selectedLevel0;
-        else nodesToShow = [geoDB]; // Fallback
+        else nodesToShow = [geoDB];
 
-        // Строим дерево из массива узлов (виртуальный корень)
         updateTreeFromNodes(nodesToShow);
     }
 
-    // Возвращает массив узлов, которые сейчас выбраны в фильтре idx
     function getSelectedNodes(options, idx) {
         if (!options || options.length === 0) return [];
         const selectedNames = filterState[idx];
-        
-        // Если ничего не выбрано (пустой Set) -> значит выбрано "Всё" (по умолчанию)
-        if (selectedNames.size === 0) return options;
-
+        if (selectedNames.size === 0) return options; // Если пусто = все
         return options.filter(o => selectedNames.has(o.name));
     }
 
-    // Собирает детей из нескольких родителей в один плоский список
     function getChildrenFromMultiple(parents) {
         let allChildren = [];
         parents.forEach(p => {
-            if (p.children) {
-                // Берем только папки
-                const folders = p.children.filter(x => x.type !== 'file');
-                allChildren = allChildren.concat(folders);
-            }
+            if (p.children) allChildren = allChildren.concat(p.children.filter(x => x.type !== 'file'));
         });
-        // Уникальность имен не проверяем, так как могут быть одинаковые имена в разных регионах, 
-        // но здесь для простоты UI считаем что они различаются по context. 
-        // В селекте они будут просто списком.
         return allChildren;
     }
 
     function updateFilterUI(idx, options) {
         const trigger = document.getElementById(`trigger-${idx}`);
         const dropdown = document.getElementById(`dropdown-${idx}`);
-        
-        // 1. Проверяем валидность текущего выбора
-        // Если мы выбрали регион, которого больше нет в списке (потому что сменили страну), удаляем его
         let currentSet = filterState[idx];
         const validNames = new Set(options.map(o => o.name));
         
-        // Очистка мертвых выборов
+        // Очистка мертвых
         for (let name of currentSet) {
             if (!validNames.has(name)) currentSet.delete(name);
         }
 
-        // 2. Если опций нет -> дизейбл
         if (options.length === 0) {
             trigger.innerText = "—";
             trigger.classList.add('disabled');
@@ -357,36 +303,24 @@
             return;
         }
 
-        // 3. Если опция ОДНА -> автовыбор и лок
         if (options.length === 1) {
             trigger.innerText = options[0].name;
             trigger.classList.add('disabled');
             dropdown.innerHTML = '';
-            // Важно: мы НЕ добавляем в set, чтобы логика считала "пустой set = все". 
-            // А так как "все" это и есть этот единственный элемент, всё сходится.
             return;
         }
 
-        // 4. Опций много -> рендер списка
         trigger.classList.remove('disabled');
-        
-        // Текст кнопки
-        if (currentSet.size === 0 || currentSet.size === options.length) {
-            trigger.innerText = LEVEL_LABELS[idx]; // "Все страны"
-        } else {
-            // Перечисляем выбранные
-            const arr = Array.from(currentSet);
-            trigger.innerText = arr.join(', ');
-        }
-
-        // Рендер внутренностей
-        let html = ``;
-        
-        // Кнопка "Все"
         const isAll = (currentSet.size === 0 || currentSet.size === options.length);
+        
+        if (isAll) trigger.innerText = LEVEL_LABELS[idx];
+        else trigger.innerText = Array.from(currentSet).join(', ');
+
+        let html = ``;
+        // Опция ВСЕ
         html += `
-            <div class="select-option select-all-opt ${isAll ? 'selected' : ''}" onclick="clickOption(${idx}, 'ALL')">
-                <div class="select-checkbox"></div>
+            <div class="select-option select-all-opt ${isAll ? 'selected' : ''}" onclick="clickOption(event, ${idx}, 'ALL')">
+                <input type="checkbox" class="select-real-checkbox" ${isAll ? 'checked' : ''} onclick="this.parentElement.click(); event.stopPropagation();">
                 <div>${LEVEL_LABELS[idx]}</div>
             </div>
         `;
@@ -394,94 +328,64 @@
         options.forEach(opt => {
             const isSel = currentSet.has(opt.name);
             html += `
-                <div class="select-option ${isSel ? 'selected' : ''}" onclick="clickOption(${idx}, '${opt.name}')">
-                    <div class="select-checkbox"></div>
+                <div class="select-option ${isSel ? 'selected' : ''}" onclick="clickOption(event, ${idx}, '${opt.name}')">
+                    <input type="checkbox" class="select-real-checkbox" ${isSel ? 'checked' : ''} onclick="this.parentElement.click(); event.stopPropagation();">
                     <div>${opt.name}</div>
                 </div>
             `;
         });
-        
         dropdown.innerHTML = html;
     }
 
-    // Обработка клика по опции
-    window.clickOption = function(levelIdx, val) {
+    window.clickOption = function(e, levelIdx, val) {
+        // ВАЖНО: Останавливаем всплытие, чтобы меню не закрылось
+        if(e) e.stopPropagation();
+
         const currentSet = filterState[levelIdx];
-        
-        // Получаем текущие опции (немного костыльно, но быстро: читаем из DOM или пересчитываем?)
-        // Лучше пересчитать для надежности, но мы уже знаем их из runSelectorChain.
-        // Чтобы не усложнять, мы просто возьмем их из dropdown DOM элементов.
         const dropdown = document.getElementById(`dropdown-${levelIdx}`);
         const allOptionDivs = dropdown.querySelectorAll('.select-option:not(.select-all-opt)');
         const allNames = Array.from(allOptionDivs).map(div => div.querySelector('div:last-child').innerText);
 
         if (val === 'ALL') {
-            // Если кликнули "Все":
-            if (currentSet.size === 0) {
-                // Если было "Все" (пусто), то ничего не меняем или можно сбросить? 
-                // Обычно клик по "Все" сбрасывает выбор в "Все"
-            } else {
-                currentSet.clear(); // Очистить = выбрать всё
-            }
+             // Если кликнули ВСЕ, сбрасываем сет (что значит "все")
+             // Если сет уже пустой, то ничего не делаем, он и так "все"
+             if(currentSet.size > 0) currentSet.clear();
         } else {
-            // Кликнули конкретный
-            if (currentSet.has(val)) {
-                currentSet.delete(val);
-            } else {
-                currentSet.add(val);
-            }
+            if (currentSet.has(val)) currentSet.delete(val);
+            else currentSet.add(val);
             
-            // Если выбрали руками ВСЕ галочки -> сбросить в "Все" (пустой сет)
-            if (currentSet.size === allNames.length) {
-                currentSet.clear();
-            }
+            // Если выбрали все галочки руками -> сброс в "Все"
+            if (currentSet.size === allNames.length) currentSet.clear();
         }
 
-        // Перезапуск цепочки (обновит следующие списки и дерево)
         runSelectorChain();
     };
 
-    // === СБОРКА ДЕРЕВА (МЕРДЖ) ===
+    // === ДЕРЕВО И РАСЧЕТЫ (Без изменений логики) ===
     function updateTreeFromNodes(nodesList) {
         document.getElementById('treeContainer').innerHTML = '';
         if(!nodesList || nodesList.length === 0) return;
-
         let contents = [];
-        // Собираем контент из всех переданных узлов
-        nodesList.forEach(node => {
-            collectContents(node, contents);
-        });
-        
-        // Мержим
+        nodesList.forEach(node => collectContents(node, contents));
         let mergedRoot = [];
         contents.forEach(tree => merge(mergedRoot, tree));
-        
         idCounter = 0; selectedIds.clear(); indeterminateIds.clear();
         treeData = assignIds(mergedRoot, null);
-        
         renderTree(treeData, document.getElementById('treeContainer'), 0);
         recalculate();
     }
-
     function collectContents(node, list) {
         if (node.type === 'file' && node.file_content) list.push(node.file_content);
         if (node.children) node.children.forEach(c => collectContents(c, list));
     }
-
     function merge(target, source) {
         source.forEach(src => {
             let tgt = target.find(x => x.name === src.name);
-            if (!tgt) {
-                tgt = JSON.parse(JSON.stringify(src));
-                tgt.children = []; 
-                target.push(tgt);
-            } else {
-                tgt.stats.l += src.stats.l; tgt.stats.p += src.stats.p; tgt.stats.e += src.stats.e;
-            }
+            if (!tgt) { tgt = JSON.parse(JSON.stringify(src)); tgt.children = []; target.push(tgt); } 
+            else { tgt.stats.l += src.stats.l; tgt.stats.p += src.stats.p; tgt.stats.e += src.stats.e; }
             if (src.children) merge(tgt.children, src.children);
         });
     }
-
     function assignIds(nodes, parent) {
         nodes.sort((a,b) => a.name.localeCompare(b.name));
         return nodes.map(n => {
@@ -490,8 +394,6 @@
             return node;
         });
     }
-
-    // === UI RENDERING ===
     function renderTree(nodes, container, depth) {
         const ul = document.createElement('ul');
         ul.className = (container.id === 'treeContainer') ? 'root' : 'nested';
@@ -501,166 +403,84 @@
             const hasChild = node.children.length > 0;
             const sel = selectedIds.has(node.id);
             const ind = indeterminateIds.has(node.id);
-
             const row = document.createElement('div');
             row.className = `node-row ${sel ? 'selected' : ''} ${ind ? 'indeterminate' : ''}`;
-            
             const left = document.createElement('div');
             left.className = 'row-left'; left.style.paddingLeft = (depth * 20) + 'px';
-            
-            const tog = document.createElement('div');
-            tog.className = `toggler ${hasChild ? '' : 'empty'}`;
-            tog.innerHTML = node.expanded ? '▼' : '▶';
-            
-            const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = sel; chk.indeterminate = ind;
+            const tog = document.createElement('div'); tog.className = `toggler ${hasChild ? '' : 'empty'}`; tog.innerHTML = node.expanded ? '▼' : '▶';
+            const chk = document.createElement('input'); chk.type = 'checkbox'; chk.className='node-checkbox'; chk.checked = sel; chk.indeterminate = ind;
             const name = document.createElement('div'); name.className = 'node-name'; name.innerText = node.name;
-            
             left.append(tog, chk, name);
             const right = document.createElement('div'); right.className = 'row-right';
             right.innerHTML = `<div class="col-fixed"><div class="badge b-lines">${node.stats.l}</div></div><div class="col-fixed"><div class="badge b-phones">${node.stats.p}</div></div><div class="col-fixed"><div class="badge b-emails">${node.stats.e}</div></div>`;
             row.append(left, right);
             li.appendChild(row);
-
             const clickTog = (e) => { e.stopPropagation(); if(!hasChild)return; node.expanded=!node.expanded; document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'),0); };
             const clickChk = (e) => { e.stopPropagation(); toggleSel(node, !sel); document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'),0); recalculate(); };
             tog.onclick = clickTog; chk.onclick = clickChk; row.onclick = (e) => { if(e.target!==chk && e.target!==tog) clickTog(e); };
-
-            if (node.expanded && hasChild) {
-                renderTree(node.children, li, depth + 1);
-                li.querySelector('ul.nested').style.display = 'block';
-            }
+            if (node.expanded && hasChild) { renderTree(node.children, li, depth + 1); li.querySelector('ul.nested').style.display = 'block'; }
             ul.appendChild(li);
         });
         container.appendChild(ul);
     }
-
     function toggleSel(node, state) {
         function setAll(n, s) {
             if(s) { selectedIds.add(n.id); indeterminateIds.delete(n.id); } else { selectedIds.delete(n.id); indeterminateIds.delete(n.id); }
             if(n.children) n.children.forEach(c => setAll(c, s));
         }
         setAll(node, state);
-        let curr = node.parent;
-        while(curr) { updatePar(curr); curr = curr.parent; }
+        let curr = node.parent; while(curr) { updatePar(curr); curr = curr.parent; }
     }
-
     function updatePar(node) {
         if(!node.children) return;
         let all=true, none=true;
-        node.children.forEach(c => {
-            const s = selectedIds.has(c.id), i = indeterminateIds.has(c.id);
-            if(!s) all=false;
-            if(s||i) none=false;
-        });
-        if(all) { selectedIds.add(node.id); indeterminateIds.delete(node.id); }
-        else if(none) { selectedIds.delete(node.id); indeterminateIds.delete(node.id); }
-        else { selectedIds.delete(node.id); indeterminateIds.add(node.id); }
+        node.children.forEach(c => { const s = selectedIds.has(c.id), i = indeterminateIds.has(c.id); if(!s) all=false; if(s||i) none=false; });
+        if(all) { selectedIds.add(node.id); indeterminateIds.delete(node.id); } else if(none) { selectedIds.delete(node.id); indeterminateIds.delete(node.id); } else { selectedIds.delete(node.id); indeterminateIds.add(node.id); }
     }
-
     function recalculate() {
         let l=0, p=0, e=0;
         function trav(nodes) {
-            nodes.forEach(n => {
-                if (selectedIds.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; }
-                else if (indeterminateIds.has(n.id) || (n.children && n.children.length)) trav(n.children);
-            });
+            nodes.forEach(n => { if (selectedIds.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; } else if (indeterminateIds.has(n.id) || (n.children && n.children.length)) trav(n.children); });
         }
         trav(treeData);
-        
         const vol = l+p+e;
         let cur = TIERS[0], idx = 0;
         for (let i=0; i<TIERS.length; i++) { if (vol < TIERS[i].limit) { cur=TIERS[i]; idx=i; break; } }
         if (vol >= TIERS[6].limit) { cur=TIERS[6]; idx=6; }
-
         let final = Math.ceil((vol * cur.rate) / PRICE_STEP) * PRICE_STEP;
         if(vol > 0 && final < MIN_PRICE) final = MIN_PRICE;
-
-        document.getElementById('selLines').innerText = l.toLocaleString();
-        document.getElementById('selPhones').innerText = p.toLocaleString();
-        document.getElementById('selEmails').innerText = e.toLocaleString();
-        document.getElementById('totalPrice').innerText = final.toLocaleString();
-
-        const box = document.getElementById('bonusBox');
-        const bucketFill = document.getElementById('bucketFill');
-        const bonusText = document.getElementById('bonusText');
-        const bonusTitle = document.getElementById('bonusTitle');
-        const bonusPercent = document.getElementById('bonusPercent');
-
-        if(vol===0) { 
-            box.classList.remove('active');
-            bucketFill.style.width='0%'; 
-            bonusText.innerText = "Начните выбирать данные."; 
-            bonusTitle.innerText = "Скидки";
-            bonusPercent.innerText = "0%";
-        } else {
-            box.classList.add('active');
-            const nextTier = TIERS[idx + 1];
-            if (nextTier) {
-                const needed = nextTier.limit - vol;
-                const percent = Math.min(100, Math.round((vol / nextTier.limit) * 100));
-                bonusTitle.innerText = "До тарифа " + nextTier.name;
-                bonusPercent.innerText = percent + "%";
-                bucketFill.style.width = percent + '%';
-                bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена стала <b>${nextTier.rate}₽</b> за строку.`;
-            } else {
-                bonusTitle.innerText = "Максимум";
-                bonusPercent.innerText = "100%";
-                bucketFill.style.width = '100%';
-                bonusText.innerHTML = `Вы достигли максимальной оптовой скидки! Цена <b>${cur.rate}₽</b> за строку.`;
-            }
+        document.getElementById('selLines').innerText = l.toLocaleString(); document.getElementById('selPhones').innerText = p.toLocaleString(); document.getElementById('selEmails').innerText = e.toLocaleString(); document.getElementById('totalPrice').innerText = final.toLocaleString();
+        
+        const box = document.getElementById('bonusBox'); const bucketFill = document.getElementById('bucketFill'); const bonusText = document.getElementById('bonusText'); const bonusTitle = document.getElementById('bonusTitle'); const bonusPercent = document.getElementById('bonusPercent');
+        if(vol===0) { box.classList.remove('active'); bucketFill.style.width='0%'; bonusText.innerText = "Выберите данные."; bonusTitle.innerText = "Скидки"; bonusPercent.innerText = "0%"; } 
+        else {
+            box.classList.add('active'); const nextTier = TIERS[idx + 1];
+            if (nextTier) { const needed = nextTier.limit - vol; const percent = Math.min(100, Math.round((vol / nextTier.limit) * 100)); bonusTitle.innerText = "До тарифа " + nextTier.name; bonusPercent.innerText = percent + "%"; bucketFill.style.width = percent + '%'; bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена стала <b>${nextTier.rate}₽</b> за строку.`; } 
+            else { bonusTitle.innerText = "Максимум"; bonusPercent.innerText = "100%"; bucketFill.style.width = '100%'; bonusText.innerHTML = `Максимальная оптовая скидка! Цена <b>${cur.rate}₽</b>.`; }
         }
-
-        const tCon = document.getElementById('tierListContainer'); tCon.innerHTML='';
-        TIERS.forEach((t, i) => {
-            let label = (t.limit === Infinity) ? "∞" : t.limit.toLocaleString();
-            tCon.innerHTML += `<div class="tier-item ${i===idx?'current':''} ${i<idx?'passed':''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(до ${label})</small></div><div>${t.rate}₽</div></div>`;
-        });
+        const tCon = document.getElementById('tierListContainer'); tCon.innerHTML=''; TIERS.forEach((t, i) => { let label = (t.limit === Infinity) ? "∞" : t.limit.toLocaleString(); tCon.innerHTML += `<div class="tier-item ${i===idx?'current':''} ${i<idx?'passed':''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}₽</div></div>`; });
     }
 
     function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
     function runSearch() {
         const q = document.getElementById('searchInput').value.toLowerCase();
         const filter = (n) => {
-            const match = n.name.toLowerCase().includes(q);
-            let childMatch = false;
+            const match = n.name.toLowerCase().includes(q); let childMatch = false;
             if(n.children) n.children.forEach(c => { if(filter(c)) childMatch=true; });
-            n.visible = match || childMatch;
-            if(q && childMatch) n.expanded=true; else if(!q) n.expanded=false;
+            n.visible = match || childMatch; if(q && childMatch) n.expanded=true; else if(!q) n.expanded=false;
             return n.visible;
         }
-        treeData.forEach(filter);
-        document.getElementById('treeContainer').innerHTML='';
-        renderTree(treeData, document.getElementById('treeContainer'), 0);
+        treeData.forEach(filter); document.getElementById('treeContainer').innerHTML=''; renderTree(treeData, document.getElementById('treeContainer'), 0);
     }
-
-    function getPath(node) {
-        let path = [node.name], curr = node.parent;
-        while(curr) { path.unshift(curr.name); curr = curr.parent; }
-        return path.join(" / ");
-    }
-
+    function getPath(node) { let path = [node.name], curr = node.parent; while(curr) { path.unshift(curr.name); curr = curr.parent; } return path.join(" / "); }
     function downloadOrder() {
         if(!selectedIds.size && !indeterminateIds.size) return alert('Пусто');
-        // Собираем текст фильтров
-        let filtersTxt = "";
-        for(let i=0; i<4; i++) {
-            const tr = document.getElementById(`trigger-${i}`);
-            if(!tr.classList.contains('disabled')) filtersTxt += `[${LEVEL_LABELS[i]}: ${tr.innerText}] `;
-        }
-
+        let filtersTxt = ""; for(let i=0; i<4; i++) { const tr = document.getElementById(`trigger-${i}`); if(!tr.classList.contains('disabled')) filtersTxt += `[${LEVEL_LABELS[i]}: ${tr.innerText}] `; }
         let txt = `ЗАКАЗ\nФильтры: ${filtersTxt}\nСумма: ${document.getElementById('totalPrice').innerText}\n---\n`;
-        function w(nodes) {
-            nodes.forEach(n => {
-                if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`;
-                else if(n.children) w(n.children);
-            });
-        }
-        w(treeData);
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
+        function w(nodes) { nodes.forEach(n => { if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`; else if(n.children) w(n.children); }); }
+        w(treeData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
     }
-    
     function resetAll() { location.reload(); }
 </script>
-
 </body>
 </html>
