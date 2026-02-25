@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import time
 
 # === НАСТРОЙКИ ===
 BASE_DIR = 'base'
@@ -114,6 +115,26 @@ def main():
                 f.write(js_content)
             print(f"✅ Успех! Файл {OUTPUT_FILE} создан.")
             print(f"📁 Обработано корневых элементов: {len(full_tree['children'])}")
+            
+            # --- БЛОК АВТОМАТИЧЕСКОГО СБРОСА КЭША ---
+            try:
+                with open('index.html', 'r', encoding='utf-8') as f_html:
+                    html_content = f_html.read()
+                
+                # Ищем скрипт с database.js (даже если там уже есть версия ?v=...) и меняем на новую
+                new_html = re.sub(
+                    r'<script src="database\.js[^>]*></script>', 
+                    f'<script src="database.js?v={int(time.time())}"></script>', 
+                    html_content
+                )
+                
+                with open('index.html', 'w', encoding='utf-8') as f_html:
+                    f_html.write(new_html)
+                print("✅ Версия базы в index.html обновлена (кэш сброшен)!")
+            except Exception as e:
+                print(f"❌ Ошибка обновления index.html: {e}")
+            # --- КОНЕЦ БЛОКА ---
+            
         except Exception as e:
             print(f"❌ Ошибка записи файла: {e}")
     else:
