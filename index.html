@@ -527,25 +527,87 @@
     function recalculate() {
         let l=0, p=0, e=0;
         function trav(nodes) {
-            nodes.forEach(n => { if (selectedIds.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; } else if (indeterminateIds.has(n.id) || (n.children && n.children.length)) trav(n.children); });
+            nodes.forEach(n => { 
+                if (selectedIds.has(n.id)) { l+=n.stats.l; p+=n.stats.p; e+=n.stats.e; } 
+                else if (indeterminateIds.has(n.id) || (n.children && n.children.length)) trav(n.children); 
+            });
         }
         trav(treeData);
-        const vol = l+p+e;
-        let cur = TIERS[0], idx = 0;
-        for (let i=0; i<TIERS.length; i++) { if (vol < TIERS[i].limit) { cur=TIERS[i]; idx=i; break; } }
-        if (vol >= TIERS[6].limit) { cur=TIERS[6]; idx=6; }
-        let final = Math.ceil((vol * cur.rate) / PRICE_STEP) * PRICE_STEP;
-        if(vol > 0 && final < MIN_PRICE) final = MIN_PRICE;
-        document.getElementById('selLines').innerText = l.toLocaleString(); document.getElementById('selPhones').innerText = p.toLocaleString(); document.getElementById('selEmails').innerText = e.toLocaleString(); document.getElementById('totalPrice').innerText = final.toLocaleString();
         
-        const box = document.getElementById('bonusBox'); const bucketFill = document.getElementById('bucketFill'); const bonusText = document.getElementById('bonusText'); const bonusTitle = document.getElementById('bonusTitle'); const bonusPercent = document.getElementById('bonusPercent');
-        if(vol===0) { box.classList.remove('active'); bucketFill.style.width='0%'; bonusText.innerText = "Выберите данные."; bonusTitle.innerText = "Скидки"; bonusPercent.innerText = "0%"; } 
-        else {
-            box.classList.add('active'); const nextTier = TIERS[idx + 1];
-            if (nextTier) { const needed = nextTier.limit - vol; const percent = Math.min(100, Math.round((vol / nextTier.limit) * 100)); bonusTitle.innerText = "До тарифа " + nextTier.name; bonusPercent.innerText = percent + "%"; bucketFill.style.width = percent + '%'; bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена стала <b>${nextTier.rate}₽</b> за строку.`; } 
-            else { bonusTitle.innerText = "Максимум"; bonusPercent.innerText = "100%"; bucketFill.style.width = '100%'; bonusText.innerHTML = `Максимальная оптовая скидка! Цена <b>${cur.rate}₽</b>.`; }
+        const vol = l+p+e;
+        let finalUnrounded = 0;
+        let remainingVol = vol;
+        let previousLimit = 0;
+        let currentTierIdx = 0;
+
+        // Прогрессивный подсчет стоимости
+        for (let i = 0; i < TIERS.length; i++) {
+            let maxInThisTier = TIERS[i].limit - previousLimit;
+            let take = Math.min(remainingVol, maxInThisTier);
+            
+            if (take > 0) {
+                finalUnrounded += take * TIERS[i].rate;
+                remainingVol -= take;
+                currentTierIdx = i;
+            }
+            previousLimit = TIERS[i].limit;
+            if (remainingVol <= 0) break;
         }
-        const tCon = document.getElementById('tierListContainer'); tCon.innerHTML=''; TIERS.forEach((t, i) => { let label = (t.limit === Infinity) ? "∞" : t.limit.toLocaleString(); tCon.innerHTML += `<div class="tier-item ${i===idx?'current':''} ${i<idx?'passed':''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}₽</div></div>`; });
+
+        let final = Math.ceil(finalUnrounded / PRICE_STEP) * PRICE_STEP;
+        if(vol > 0 && final < MIN_PRICE) final = MIN_PRICE;
+        
+        document.getElementById('selLines').innerText = l.toLocaleString(); 
+        document.getElementById('selPhones').innerText = p.toLocaleString(); 
+        document.getElementById('selEmails').innerText = e.toLocaleString(); 
+        document.getElementById('totalPrice').innerText = final.toLocaleString();
+        
+        // Обновление UI-блока с бонусами
+        const box = document.getElementById('bonusBox'); 
+        const bucketFill = document.getElementById('bucketFill'); 
+        const bonusText = document.getElementById('bonusText'); 
+        const bonusTitle = document.getElementById('bonusTitle'); 
+        const bonusPercent = document.getElementById('bonusPercent');
+        
+        if(vol === 0) { 
+            box.classList.remove('active'); 
+            bucketFill.style.width='0%'; 
+            bonusText.innerText = "Выберите данные."; 
+            bonusTitle.innerText = "Скидки"; 
+            bonusPercent.innerText = "0%"; 
+        } else {
+            box.classList.add('active'); 
+            const nextTier = TIERS[currentTierIdx + 1];
+            
+            if (nextTier) { 
+                const currentTierLimit = TIERS[currentTierIdx].limit;
+                const prevTierLimit = currentTierIdx > 0 ? TIERS[currentTierIdx - 1].limit : 0;
+                const progressInCurrentTier = vol - prevTierLimit;
+                const sizeOfCurrentTier = currentTierLimit - prevTierLimit;
+                
+                const needed = currentTierLimit - vol; 
+                const percent = Math.min(100, Math.round((progressInCurrentTier / sizeOfCurrentTier) * 100)); 
+                
+                bonusTitle.innerText = "До тарифа " + nextTier.name; 
+                bonusPercent.innerText = percent + "%"; 
+                bucketFill.style.width = percent + '%'; 
+                // Немного изменил текст, чтобы он был честным при каскадном расчете
+                bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена следующих строк стала <b>${nextTier.rate}₽</b>.`; 
+            } else { 
+                bonusTitle.innerText = "Максимум"; 
+                bonusPercent.innerText = "100%"; 
+                bucketFill.style.width = '100%'; 
+                bonusText.innerHTML = `Максимальная оптовая скидка достигнута!`; 
+            }
+        }
+        
+        // Обновление списка тарифов сбоку
+        const tCon = document.getElementById('tierListContainer'); 
+        tCon.innerHTML=''; 
+        TIERS.forEach((t, i) => { 
+            let label = (t.limit === Infinity) ? "∞" : t.limit.toLocaleString(); 
+            tCon.innerHTML += `<div class="tier-item ${i===currentTierIdx?'current':''} ${i<currentTierIdx?'passed':''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}₽</div></div>`; 
+        });
     }
 
     function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runSearch, 300); }
@@ -578,6 +640,7 @@
 </script>
 </body>
 </html>
+
 
 
 
