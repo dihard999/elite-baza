@@ -180,14 +180,14 @@
 
 <script>
     const TIERS = [
-    { limit: 20000, rate: 0.03, name: "Новичок" },         // До 20к по 3 коп. (макс. 600₽)
-    { limit: 50000, rate: 0.02, name: "Старт" },           // До 50к по 2 коп. (макс. 1000₽)
-    { limit: 100000, rate: 0.015, name: "Активный" },      // До 100к по 1.5 коп. (макс. 1500₽)
-    { limit: 250000, rate: 0.01, name: "Бизнес" },         // До 250к по 1 коп. (макс. 2500₽)
-    { limit: 500000, rate: 0.007, name: "Профи" },         // До 500к по 0.7 коп. (макс. 3500₽)
-    { limit: 1000000, rate: 0.005, name: "Опт" },          // До 1 млн по 0.5 коп. (макс. 5000₽)
-    { limit: Infinity, rate: 0.002, name: "Супер опт" }    // От 1 млн строк по 0.2 коп.
-];
+        { limit: 20000, rate: 0.03, name: "Новичок" },         
+        { limit: 50000, rate: 0.02, name: "Старт" },           
+        { limit: 100000, rate: 0.015, name: "Активный" },      
+        { limit: 250000, rate: 0.01, name: "Бизнес" },         
+        { limit: 500000, rate: 0.007, name: "Профи" },         
+        { limit: 1000000, rate: 0.005, name: "Опт" },          
+        { limit: Infinity, rate: 0.002, name: "Супер опт" }    
+    ];
     const PRICE_STEP = 100;
     const MIN_PRICE = 500;
     const LEVEL_LABELS = ["Страна", "Регион", "Район", "Город"];
@@ -524,6 +524,7 @@
         node.children.forEach(c => { const s = selectedIds.has(c.id), i = indeterminateIds.has(c.id); if(!s) all=false; if(s||i) none=false; });
         if(all) { selectedIds.add(node.id); indeterminateIds.delete(node.id); } else if(none) { selectedIds.delete(node.id); indeterminateIds.delete(node.id); } else { selectedIds.delete(node.id); indeterminateIds.add(node.id); }
     }
+    
     function recalculate() {
         let l=0, p=0, e=0;
         function trav(nodes) {
@@ -591,7 +592,6 @@
                 bonusTitle.innerText = "До тарифа " + nextTier.name; 
                 bonusPercent.innerText = percent + "%"; 
                 bucketFill.style.width = percent + '%'; 
-                // Немного изменил текст, чтобы он был честным при каскадном расчете
                 bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена следующих строк стала <b>${nextTier.rate}₽</b>.`; 
             } else { 
                 bonusTitle.innerText = "Максимум"; 
@@ -640,7 +640,3 @@
 </script>
 </body>
 </html>
-
-
-
-
