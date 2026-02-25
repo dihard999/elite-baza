@@ -539,17 +539,14 @@
         let finalUnrounded = 0;
         let remainingVol = vol;
         let previousLimit = 0;
-        let currentTierIdx = 0;
 
-        // Прогрессивный подсчет стоимости
+        // Прогрессивный подсчет скидок
         for (let i = 0; i < TIERS.length; i++) {
             let maxInThisTier = TIERS[i].limit - previousLimit;
             let take = Math.min(remainingVol, maxInThisTier);
-            
             if (take > 0) {
                 finalUnrounded += take * TIERS[i].rate;
                 remainingVol -= take;
-                currentTierIdx = i;
             }
             previousLimit = TIERS[i].limit;
             if (remainingVol <= 0) break;
@@ -563,50 +560,67 @@
         document.getElementById('selEmails').innerText = e.toLocaleString(); 
         document.getElementById('totalPrice').innerText = final.toLocaleString();
         
-        // Обновление UI-блока с бонусами
+        // --- НОВАЯ ЛОГИКА ОТОБРАЖЕНИЯ ИНТЕРФЕЙСА ---
+        let activeTierIdx = 0;
+        for (let i = 0; i < TIERS.length; i++) {
+            if (vol < TIERS[i].limit) {
+                activeTierIdx = i;
+                break;
+            }
+        }
+        if (vol >= TIERS[TIERS.length - 1].limit) activeTierIdx = TIERS.length - 1;
+        
         const box = document.getElementById('bonusBox'); 
         const bucketFill = document.getElementById('bucketFill'); 
         const bonusText = document.getElementById('bonusText'); 
         const bonusTitle = document.getElementById('bonusTitle'); 
         const bonusPercent = document.getElementById('bonusPercent');
         
-        if(vol === 0) { 
+        if (vol === 0) { 
             box.classList.remove('active'); 
-            bucketFill.style.width='0%'; 
-            bonusText.innerText = "Выберите данные."; 
+            bucketFill.style.width = '0%'; 
+            bonusText.innerText = "Выберите данные, чтобы увидеть скидку."; 
             bonusTitle.innerText = "Скидки"; 
             bonusPercent.innerText = "0%"; 
         } else {
             box.classList.add('active'); 
-            const nextTier = TIERS[currentTierIdx + 1];
+            const currentTier = TIERS[activeTierIdx];
+            const nextTier = TIERS[activeTierIdx + 1];
             
             if (nextTier) { 
-                const currentTierLimit = TIERS[currentTierIdx].limit;
-                const prevTierLimit = currentTierIdx > 0 ? TIERS[currentTierIdx - 1].limit : 0;
-                const progressInCurrentTier = vol - prevTierLimit;
-                const sizeOfCurrentTier = currentTierLimit - prevTierLimit;
-                
-                const needed = currentTierLimit - vol; 
+                const prevLimit = activeTierIdx === 0 ? 0 : TIERS[activeTierIdx - 1].limit;
+                const currentLimit = currentTier.limit;
+                const progressInCurrentTier = vol - prevLimit;
+                const sizeOfCurrentTier = currentLimit - prevLimit;
+                const needed = currentLimit - vol; 
                 const percent = Math.min(100, Math.round((progressInCurrentTier / sizeOfCurrentTier) * 100)); 
                 
-                bonusTitle.innerText = "До тарифа " + nextTier.name; 
+                bonusTitle.innerText = "До цены " + nextTier.rate + "₽"; 
                 bonusPercent.innerText = percent + "%"; 
                 bucketFill.style.width = percent + '%'; 
-                bonusText.innerHTML = `Наберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена следующих строк стала <b>${nextTier.rate}₽</b>.`; 
+                bonusText.innerHTML = `Вы в диапазоне <b>${currentTier.name}</b>. Выберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена следующих контактов снизилась до <b>${nextTier.rate}₽</b>.`; 
             } else { 
                 bonusTitle.innerText = "Максимум"; 
                 bonusPercent.innerText = "100%"; 
                 bucketFill.style.width = '100%'; 
-                bonusText.innerHTML = `Максимальная оптовая скидка достигнута!`; 
+                bonusText.innerHTML = `Вы достигли диапазона <b>${currentTier.name}</b>! Максимальная выгода.`; 
             }
         }
         
-        // Обновление списка тарифов сбоку
+        // Обновление бокового списка тарифов с понятными диапазонами
         const tCon = document.getElementById('tierListContainer'); 
-        tCon.innerHTML=''; 
+        tCon.innerHTML = ''; 
         TIERS.forEach((t, i) => { 
-            let label = (t.limit === Infinity) ? "∞" : t.limit.toLocaleString(); 
-            tCon.innerHTML += `<div class="tier-item ${i===currentTierIdx?'current':''} ${i<currentTierIdx?'passed':''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}₽</div></div>`; 
+            let prevLimit = i === 0 ? 0 : TIERS[i-1].limit;
+            let label = "";
+            if (t.limit === Infinity) {
+                label = `от ${(prevLimit/1000)}к`;
+            } else if (i === 0) {
+                label = `до ${(t.limit/1000)}к`;
+            } else {
+                label = `${(prevLimit/1000)}к - ${(t.limit/1000)}к`;
+            }
+            tCon.innerHTML += `<div class="tier-item ${i === activeTierIdx ? 'current' : ''} ${i < activeTierIdx ? 'passed' : ''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}₽</div></div>`; 
         });
     }
 
@@ -640,3 +654,4 @@
 </script>
 </body>
 </html>
+
