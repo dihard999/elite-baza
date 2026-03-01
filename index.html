@@ -132,7 +132,7 @@
 
         .tour-tooltip {
             position: fixed;
-            width: 320px;
+            width: 380px; /* Увеличили ширину, чтобы кнопки не слипались */
             background: white;
             padding: 24px;
             border-radius: 16px;
@@ -147,18 +147,24 @@
         .tour-tooltip.visible { display: flex; opacity: 1; }
         .tour-header { font-weight: 800; font-size: 1.15rem; color: var(--text-main); }
         .tour-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
-        .tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
         
-        .tour-btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+        .tour-footer { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-top: 15px; /* Увеличили отступ сверху */
+            gap: 10px; /* Добавили обязательный промежуток */
+        }
         
-        /* Изменено: Кнопка "Пропустить" теперь полноценная красная кнопка */
+        .tour-btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; white-space: nowrap;}
+        
         .tour-btn-skip { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
         .tour-btn-skip:hover { background: #fecaca; color: #dc2626; border-color: #f87171; }
         
         .tour-btn-next { background: var(--primary); color: white; }
         .tour-btn-next:hover { background: #2563eb; }
         
-        .tour-dots { display: flex; gap: 6px; }
+        .tour-dots { display: flex; gap: 6px; justify-content: center; }
         .tour-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: 0.3s; }
         .tour-dot.active { background: var(--primary); transform: scale(1.2); }
 
@@ -279,8 +285,6 @@
             runSelectorChain(); 
             document.getElementById('loader').style.display = 'none';
             
-            // Запускаем тур сразу при загрузке (параметр true обходит localStorage)
-            // Оставил минимальный таймаут 100мс, чтобы дерево DOM успело перерисоваться
             setTimeout(() => startTour(true), 100);
         } else {
             document.getElementById('loaderStatus').innerText = "База не найдена.";
@@ -726,7 +730,6 @@
     
     let currentTourStep = 0;
 
-    // Убрали проверку localStorage, если передан параметр force (а мы его теперь передаем при старте)
     function startTour(force = false) {
         if (!force && localStorage.getItem('smartBaseTourDone')) return;
         currentTourStep = 0;
@@ -773,11 +776,13 @@
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         const rect = target.getBoundingClientRect();
+        
+        // Исправлено: центрируем относительно новой ширины тултипа 380px (половина - 190px)
         let top = rect.bottom + 20;
-        let left = rect.left + (rect.width / 2) - 160; 
+        let left = rect.left + (rect.width / 2) - 190; 
 
         if (left < 20) left = 20;
-        if (left + 320 > window.innerWidth) left = window.innerWidth - 340;
+        if (left + 380 > window.innerWidth) left = window.innerWidth - 400;
         
         const tipHeight = tooltip.offsetHeight || 180;
         if (top + tipHeight > window.innerHeight) {
