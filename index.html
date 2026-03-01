@@ -150,8 +150,9 @@
         .tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
         
         .tour-btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
-        .tour-btn-skip { background: transparent; color: #94a3b8; padding-left: 0; }
-        .tour-btn-skip:hover { color: #64748b; }
+        /* Изменили стили кнопки Пропустить на красные */
+        .tour-btn-skip { background: transparent; color: #ef4444; padding-left: 0; }
+        .tour-btn-skip:hover { color: #dc2626; }
         .tour-btn-next { background: var(--primary); color: white; }
         .tour-btn-next:hover { background: #2563eb; }
         
@@ -234,7 +235,7 @@
     <div class="tour-header" id="tourTitle">Заголовок</div>
     <div class="tour-body" id="tourText">Текст</div>
     <div class="tour-footer">
-        <button class="tour-btn tour-btn-skip" onclick="endTour()">Пропустить</button>
+        <button class="tour-btn tour-btn-skip" onclick="endTour()">Пропустить тур</button>
         <div class="tour-dots" id="tourDots"></div>
         <button class="tour-btn tour-btn-next" id="tourNextBtn" onclick="nextTourStep()">Далее</button>
     </div>
@@ -276,7 +277,6 @@
             runSelectorChain(); 
             document.getElementById('loader').style.display = 'none';
             
-            // Запускаем тур, если он еще не был пройден
             setTimeout(() => startTour(), 600);
         } else {
             document.getElementById('loaderStatus').innerText = "База не найдена.";
@@ -320,7 +320,6 @@
         }
     }
 
-    // === ЛОГИКА СИНХРОНИЗАЦИИ ВВЕРХ (REVERSE SYNC) ===
     function syncFiltersUp(changedLevel) {
         if (changedLevel === 0) return; 
 
@@ -358,7 +357,6 @@
         }
     }
 
-    // === ГЛАВНАЯ ЦЕПОЧКА (DOWN SYNC) ===
     function runSelectorChain() {
         let level0Opts = geoDB.children ? geoDB.children.filter(x => x.type !== 'file') : [];
         updateFilterUI(0, level0Opts);
@@ -500,7 +498,6 @@
         runSelectorChain();
     };
 
-    // === ДЕРЕВО ===
     function updateTreeFromNodes(nodesList) {
         document.getElementById('treeContainer').innerHTML = '';
         if(!nodesList || nodesList.length === 0) return;
@@ -712,24 +709,26 @@
 
     /* ================= ONBOARDING TOUR LOGIC ================= */
     const TOUR_STEPS = [
-        { target: '#searchInput', title: '🔍 Поиск', text: 'Удобный сквозной поиск. Просто начните вводить название нужной папки, категории или страны.' },
-        { target: '#geoFilters', title: '🌍 Умные фильтры', text: 'Позволяют мгновенно отсечь ненужные локации. Фильтры каскадные: выбрав страну, регионы и города обновятся автоматически.' },
-        { target: '#summaryPanel', title: '📋 Сводка', text: 'Здесь всегда можно посмотреть текущие активные фильтры, чтобы не потеряться в выборке.' },
-        { target: '.tree-wrapper', title: '📁 Выбор баз', text: 'Основное рабочее окно. Раскрывайте папки и отмечайте галочками базы, которые хотите добавить в заказ.' },
-        { target: '.total-box', title: '💰 Стоимость', text: 'Итоговая стоимость рассчитывается автоматически. Учитывается минимальный шаг и сумма заказа.' },
-        { target: '.tier-section', title: '📉 Прогрессивная скидка', text: 'Чем больший объем вы собираете, тем дешевле обходится каждая следующая строка. Здесь видно, как близко вы к новому уровню скидки.' },
-        { target: '.actions', title: '🚀 Заказ', text: 'Когда соберете нужный объем, нажмите кнопку скачивания. Система создаст готовый TXT файл для отправки менеджеру.' }
+        { target: '#searchInput', title: '🔍 Поиск', text: 'Удобный сквозной поиск. Просто начните вводить название категории для быстрого поиска', bgFix: true },
+        { target: '#geoFilters', title: '🌍 Умные фильтры', text: 'Позволяют мгновенно отсечь ненужные локации. Фильтры каскадные: выбрав страну, регионы и города обновятся автоматически.', bgFix: false },
+        { target: '#summaryPanel', title: '📋 Сводка', text: 'Здесь всегда можно посмотреть текущие активные фильтры, чтобы не потеряться в выборке.', bgFix: true },
+        { target: '.tree-wrapper', title: '📁 Выбор баз', text: 'Основное рабочее окно. Раскрывайте папки и отмечайте галочками базы, которые хотите добавить в заказ.', bgFix: true },
+        { target: '.total-box', title: '💰 Стоимость', text: 'Итоговая стоимость рассчитывается автоматически. Учитывается минимальный шаг и сумма заказа.', bgFix: false },
+        { target: '.stats-grid', title: '📊 Выбранные контакты', text: 'Здесь отображается точное количество выбранных строк, а также уникальных телефонов и email-адресов.', bgFix: false },
+        { target: '.tier-section', title: '📉 Прогрессивная скидка', text: 'Чем больший объем вы собираете, тем дешевле обходится каждая следующая строка. Здесь видно, как близко вы к новому уровню скидки.', bgFix: true },
+        { target: '.btn-download', title: '🚀 Заказ', text: 'Когда соберете нужный объем, нажмите кнопку скачивания. Система создаст готовый TXT файл для отправки менеджеру.', bgFix: false },
+        { target: '.btn-reset', title: '🔄 Сброс', text: 'Если нужно начать выбор баз с нуля, просто нажмите эту кнопку для сброса всех настроек.', bgFix: false }
     ];
+    
     let currentTourStep = 0;
 
     function startTour(force = false) {
-        if (!force && localStorage.getItem('smartBaseTourDone')) return; // Не показываем, если уже пройдено
+        if (!force && localStorage.getItem('smartBaseTourDone')) return;
         currentTourStep = 0;
         showTourStep();
     }
 
     function showTourStep() {
-        // Очистка старых выделений
         document.querySelectorAll('.tour-highlight, .tour-bg-fix, .tour-no-clip').forEach(el => {
             el.classList.remove('tour-highlight', 'tour-bg-fix', 'tour-no-clip');
         });
@@ -739,7 +738,6 @@
         
         if (!target) { endTour(); return; }
 
-        // Обходим скрытие родительских контейнеров (overflow: hidden/auto)
         let parent = target.parentElement;
         while(parent && parent !== document.body) {
             const style = window.getComputedStyle(parent);
@@ -749,17 +747,16 @@
             parent = parent.parentElement;
         }
 
-        // Подсветка целевого элемента
         target.classList.add('tour-highlight');
-        if (window.getComputedStyle(target).backgroundColor === 'rgba(0, 0, 0, 0)' || window.getComputedStyle(target).backgroundColor === 'transparent') {
+        
+        // Добавляем белый фон ТОЛЬКО если это явно указано в шаге (чтобы не убивать градиенты)
+        if (step.bgFix) {
             target.classList.add('tour-bg-fix');
         }
 
-        // Обновляем текст в тултипе
         document.getElementById('tourTitle').innerText = step.title;
         document.getElementById('tourText').innerText = step.text;
         
-        // Рендерим точки навигации
         const dots = document.getElementById('tourDots');
         dots.innerHTML = TOUR_STEPS.map((_, i) => `<div class="tour-dot ${i === currentTourStep ? 'active' : ''}"></div>`).join('');
         
@@ -767,31 +764,26 @@
         nextBtn.innerText = currentTourStep === TOUR_STEPS.length - 1 ? 'Завершить' : 'Далее';
 
         const tooltip = document.getElementById('tourTooltip');
-        tooltip.style.display = 'flex'; // Делаем flex, чтобы можно было замерить высоту
+        tooltip.style.display = 'flex';
         
-        // Скроллим к элементу, если он вне зоны видимости (полезно для небольших экранов)
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Рассчитываем позицию тултипа
         const rect = target.getBoundingClientRect();
         let top = rect.bottom + 20;
-        let left = rect.left + (rect.width / 2) - 160; // 160 это половина ширины тултипа
+        let left = rect.left + (rect.width / 2) - 160; 
 
-        // Защита от выхода за экран по горизонтали
         if (left < 20) left = 20;
         if (left + 320 > window.innerWidth) left = window.innerWidth - 340;
         
-        // Если тултип не влезает снизу — кидаем наверх
         const tipHeight = tooltip.offsetHeight || 180;
         if (top + tipHeight > window.innerHeight) {
             top = rect.top - tipHeight - 20;
-            if (top < 20) top = 20; // fallback
+            if (top < 20) top = 20; 
         }
 
         tooltip.style.top = top + 'px';
         tooltip.style.left = left + 'px';
         
-        // Включаем анимацию появления
         setTimeout(() => tooltip.classList.add('visible'), 10);
     }
 
@@ -813,7 +805,7 @@
             el.classList.remove('tour-highlight', 'tour-bg-fix', 'tour-no-clip');
         });
         
-        localStorage.setItem('smartBaseTourDone', 'true'); // Записываем, что юзер прошел тур
+        localStorage.setItem('smartBaseTourDone', 'true'); 
     }
 </script>
 </body>
