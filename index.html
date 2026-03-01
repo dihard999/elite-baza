@@ -150,9 +150,11 @@
         .tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
         
         .tour-btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
-        /* Изменили стили кнопки Пропустить на красные */
-        .tour-btn-skip { background: transparent; color: #ef4444; padding-left: 0; }
-        .tour-btn-skip:hover { color: #dc2626; }
+        
+        /* Изменено: Кнопка "Пропустить" теперь полноценная красная кнопка */
+        .tour-btn-skip { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
+        .tour-btn-skip:hover { background: #fecaca; color: #dc2626; border-color: #f87171; }
+        
         .tour-btn-next { background: var(--primary); color: white; }
         .tour-btn-next:hover { background: #2563eb; }
         
@@ -277,7 +279,9 @@
             runSelectorChain(); 
             document.getElementById('loader').style.display = 'none';
             
-            setTimeout(() => startTour(), 600);
+            // Запускаем тур сразу при загрузке (параметр true обходит localStorage)
+            // Оставил минимальный таймаут 100мс, чтобы дерево DOM успело перерисоваться
+            setTimeout(() => startTour(true), 100);
         } else {
             document.getElementById('loaderStatus').innerText = "База не найдена.";
         }
@@ -722,6 +726,7 @@
     
     let currentTourStep = 0;
 
+    // Убрали проверку localStorage, если передан параметр force (а мы его теперь передаем при старте)
     function startTour(force = false) {
         if (!force && localStorage.getItem('smartBaseTourDone')) return;
         currentTourStep = 0;
@@ -749,7 +754,6 @@
 
         target.classList.add('tour-highlight');
         
-        // Добавляем белый фон ТОЛЬКО если это явно указано в шаге (чтобы не убивать градиенты)
         if (step.bgFix) {
             target.classList.add('tour-bg-fix');
         }
