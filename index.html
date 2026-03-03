@@ -48,8 +48,6 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
         .btn-download { background: #0f172a; color: white; }
         .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
-        .btn-lang { background: #e2e8f0; color: #475569; }
-        .btn-lang:hover { background: #cbd5e1; }
 
         /* MAIN */
         .main { flex: 1; display: flex; flex-direction: column; background: white; }
@@ -118,33 +116,77 @@
         .badge { padding: 4px 0; border-radius: 6px; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: center; width: 100%; }
         .b-lines { color: var(--c-lines-text); } .b-phones { color: var(--c-phones-text); } .b-emails { color: var(--c-emails-text); }
         
-        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+
+        /* ================= LANGUAGE WIDGETS ================= */
+        /* Modal on First Load */
+        .lang-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8);
+            z-index: 10000; display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px); transition: opacity 0.3s;
+        }
+        .lang-modal {
+            background: white; padding: 40px; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center;
+            display: flex; flex-direction: column; gap: 20px;
+            transform: scale(0.95); animation: popIn 0.3s forwards;
+        }
+        @keyframes popIn { to { transform: scale(1); } }
+        .lang-icon-big { font-size: 4rem; margin-bottom: 10px; }
+        .lang-modal-flags { display: flex; gap: 20px; justify-content: center; }
+        .flag-btn {
+            font-size: 3rem; background: none; border: 2px solid transparent;
+            border-radius: 16px; cursor: pointer; padding: 10px 20px; transition: 0.2s;
+        }
+        .flag-btn:hover { transform: scale(1.1); background: #f1f5f9; border-color: #cbd5e1; }
+
+        /* Floating Right Panel */
+        .lang-float {
+            position: fixed; top: 20px; right: 20px; z-index: 8000;
+            display: flex; flex-direction: column; align-items: flex-end;
+        }
+        .lang-float-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: white; border: 1px solid #cbd5e1;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: 1.4rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: 0.2s; z-index: 2;
+        }
+        .lang-float-btn:hover { background: #f8fafc; }
+        .lang-menu {
+            display: flex; flex-direction: column; gap: 10px;
+            opacity: 0; pointer-events: none; transform: translateY(-20px);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 10px; background: white; padding: 10px; border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #cbd5e1;
+        }
+        .lang-float:hover .lang-menu {
+            opacity: 1; pointer-events: auto; transform: translateY(0);
+        }
+        .lang-opt {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #f1f5f9; border: 2px solid transparent;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: 1.2rem; transition: 0.2s;
+        }
+        .lang-opt:hover { background: #e2e8f0; transform: scale(1.1); }
+        .lang-opt.active { border-color: var(--primary); background: white; }
 
         /* ================= TOUR WIDGET STYLES ================= */
         .tour-highlight {
-            position: relative !important;
-            z-index: 10000 !important;
+            position: relative !important; z-index: 10000 !important;
             box-shadow: 0 0 0 6px white, 0 0 0 9999px rgba(15, 23, 42, 0.75) !important;
-            border-radius: 10px;
-            pointer-events: none !important;
+            border-radius: 10px; pointer-events: none !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tour-bg-fix { background: white !important; }
         .tour-no-clip { overflow: visible !important; }
 
         .tour-tooltip {
-            position: fixed;
-            width: 380px;
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            z-index: 10001;
-            display: none;
-            flex-direction: column;
-            gap: 12px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            position: fixed; width: 380px; background: white; padding: 24px;
+            border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 10001; display: none; flex-direction: column; gap: 12px;
+            opacity: 0; transition: opacity 0.3s ease;
         }
         .tour-tooltip.visible { display: flex; opacity: 1; }
         .tour-header { font-weight: 800; font-size: 1.15rem; color: var(--text-main); }
@@ -208,7 +250,6 @@
         <div class="actions">
             <button class="btn btn-download" id="btnDownload" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" id="btnReset" onclick="resetAll()">Сброс</button>
-            <button class="btn btn-lang" id="btnLangToggle" onclick="toggleLang()">🌐 Switch to English</button>
         </div>
     </div>
 </div>
@@ -236,6 +277,24 @@
     <div id="loaderStatus" style="color:#94a3b8; font-size:0.8rem"></div>
 </div>
 
+<div class="lang-overlay" id="langOverlay" style="display: none;">
+    <div class="lang-modal">
+        <div class="lang-icon-big">🌍</div>
+        <div class="lang-modal-flags">
+            <button class="flag-btn" onclick="selectLang('ru', true)" title="Русский">🇷🇺</button>
+            <button class="flag-btn" onclick="selectLang('en', true)" title="English">🇬🇧</button>
+        </div>
+    </div>
+</div>
+
+<div class="lang-float">
+    <div class="lang-float-btn">🌍</div>
+    <div class="lang-menu">
+        <div class="lang-opt" data-lang="ru" onclick="selectLang('ru')" title="Русский">🇷🇺</div>
+        <div class="lang-opt" data-lang="en" onclick="selectLang('en')" title="English">🇬🇧</div>
+    </div>
+</div>
+
 <button class="help-float-btn" onclick="startTour(true)" title="Показать обучение">?</button>
 <div class="tour-tooltip" id="tourTooltip">
     <div class="tour-header" id="tourTitle">Заголовок</div>
@@ -249,14 +308,14 @@
 
 <script>
     // === MULTILINGUAL DICTIONARY ===
-    let currentLang = localStorage.getItem('appLang') || 'ru';
+    let currentLang = 'ru'; 
 
     const DICT = {
         ru: {
             lblTotal: "К оплате",
             lblStep: "Мин. заказ 500₽ | Шаг 100₽",
             lblStatLines: "Строк", lblStatPhones: "Тел", lblStatEmails: "Email",
-            btnDownload: "⬇ Скачать заказ", btnReset: "Сброс", btnLangToggle: "🌐 Switch to English",
+            btnDownload: "⬇ Скачать заказ", btnReset: "Сброс",
             searchPH: "🔍 Поиск...",
             thCategory: "Категория", thLines: "Строк", thPhones: "Тел", thEmails: "Email",
             lvlLabels: ["Страна", "Регион", "Район", "Город"],
@@ -286,7 +345,7 @@
             lblTotal: "Total Amount",
             lblStep: "Min. order 500₽ | Step 100₽",
             lblStatLines: "Lines", lblStatPhones: "Phones", lblStatEmails: "Emails",
-            btnDownload: "⬇ Download Order", btnReset: "Reset", btnLangToggle: "🌐 Русская версия",
+            btnDownload: "⬇ Download Order", btnReset: "Reset",
             searchPH: "🔍 Search...",
             thCategory: "Category", thLines: "Lines", thPhones: "Phones", thEmails: "Emails",
             lvlLabels: ["Country", "Region", "District", "City"],
@@ -326,9 +385,9 @@
     const PRICE_STEP = 100;
     const MIN_PRICE = 500;
     
-    let LEVEL_LABELS = DICT[currentLang].lvlLabels;
-    let LEVEL_PLURALS = DICT[currentLang].lvlPlurals;
-    let TOUR_STEPS = DICT[currentLang].tourSteps;
+    let LEVEL_LABELS = DICT.ru.lvlLabels;
+    let LEVEL_PLURALS = DICT.ru.lvlPlurals;
+    let TOUR_STEPS = DICT.ru.tourSteps;
 
     let geoDB = null;       
     let treeData = [];      
@@ -346,7 +405,6 @@
         document.getElementById('lblStep').innerText = d.lblStep;
         document.getElementById('btnDownload').innerText = d.btnDownload;
         document.getElementById('btnReset').innerText = d.btnReset;
-        document.getElementById('btnLangToggle').innerText = d.btnLangToggle;
         document.getElementById('searchInput').placeholder = d.searchPH;
         
         document.getElementById('lblStatLines').innerText = d.lblStatLines;
@@ -367,6 +425,12 @@
         TOUR_STEPS = d.tourSteps;
         TIERS.forEach((t, i) => t.name = d.tierNames[i]);
 
+        // Toggle active class on right panel flags
+        document.querySelectorAll('.lang-opt').forEach(el => {
+            if(el.dataset.lang === currentLang) el.classList.add('active');
+            else el.classList.remove('active');
+        });
+
         // Re-render
         if (geoDB) {
             initFiltersUI();
@@ -378,29 +442,49 @@
         }
     }
 
-    function toggleLang() {
-        currentLang = currentLang === 'ru' ? 'en' : 'ru';
+    function selectLang(lang, isFirstLoad = false) {
+        currentLang = lang;
         localStorage.setItem('appLang', currentLang);
+        
+        const overlay = document.getElementById('langOverlay');
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+        
         applyLang();
+        
+        if (isFirstLoad) {
+            setTimeout(() => startTour(false), 500); 
+        }
     }
 
     window.onload = () => {
-        applyLang(); // Init translation
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.custom-select-container')) {
                 closeAllDropdowns();
             }
         });
+        
+        // Сначала скрываем лоадер, если база найдена
         if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB;
-            initFiltersUI();
-            runSelectorChain(); 
             document.getElementById('loader').style.display = 'none';
-            
-            setTimeout(() => startTour(true), 100);
         } else {
-            document.getElementById('loaderStatus').innerText = DICT[currentLang].loaderError;
+            document.getElementById('loaderStatus').innerText = DICT.ru.loaderError;
+        }
+
+        // Логика языка и первого входа
+        const savedLang = localStorage.getItem('appLang');
+        if (!savedLang) {
+            // Первый вход: показываем оверлей, рисуем фон на RU
+            document.getElementById('langOverlay').style.display = 'flex';
+            currentLang = 'ru'; 
+            applyLang();
+        } else {
+            // Уже был: применяем сохраненный язык и запускаем тур (если еще не пройден)
+            currentLang = savedLang;
+            applyLang();
+            setTimeout(() => startTour(false), 100);
         }
     };
 
@@ -519,7 +603,6 @@
             row.style.display = 'flex';
             const set = filterState[i];
             if (set.size === 0) {
-                // Check if current text is the 'plural' fallback text
                 let isPluralText = false;
                 Object.values(DICT).forEach(lang => {
                     if (trigger.innerText === lang.lvlPlurals[i]) isPluralText = true;
