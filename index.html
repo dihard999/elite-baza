@@ -213,7 +213,7 @@
     <div class="sidebar-content">
         <div class="total-box">
             <div class="total-label" id="lblTotal">К оплате</div>
-            <div class="total-value"><span id="totalPrice">0</span>₽</div>
+            <div class="total-value"><span id="totalPrice">0</span><span id="currencySym">₽</span></div>
             <div class="total-step" id="lblStep">Мин. заказ 500₽ | Шаг 100₽</div>
         </div>
 
@@ -307,7 +307,7 @@
 </div>
 
 <script>
-    // === ВШИТЫЕ SVG ФЛАГИ (работают везде без интернета) ===
+    // === ВШИТЫЕ SVG ФЛАГИ ===
     const FLAG_RU = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Crect fill='%23fff' width='9' height='3'/%3E%3Crect fill='%23d52b1e' y='3' width='9' height='3'/%3E%3Crect fill='%230039a6' y='2' width='9' height='2'/%3E%3C/svg%3E";
     const FLAG_EN = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 31.5'%3E%3Crect fill='%23b22234' width='60' height='31.5'/%3E%3Cpath d='M0,2.25H60M0,6.75H60M0,11.25H60M0,15.75H60M0,20.25H60M0,24.75H60M0,29.25H60' stroke='%23fff' stroke-width='2.25'/%3E%3Crect fill='%233c3b6e' width='24' height='15.75'/%3E%3Cg fill='%23fff'%3E%3Cpath d='M2,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M3.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM6.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM9.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM12.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM15.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM18.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM21.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M2,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M3.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM6.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM9.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM12.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM15.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM18.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM21.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M2,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M3.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM6.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM9.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM12.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM15.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM18.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM21.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M2,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3C/g%3E%3C/svg%3E";
 
@@ -315,6 +315,9 @@
 
     const DICT = {
         ru: {
+            currency: "₽",
+            priceMin: 500,
+            priceStep: 100,
             lblTotal: "К оплате",
             lblStep: "Мин. заказ 500₽ | Шаг 100₽",
             lblStatLines: "Строк", lblStatPhones: "Тел", lblStatEmails: "Email",
@@ -328,10 +331,11 @@
             bonusEmptyText: "Выберите данные, чтобы увидеть скидку.",
             bonusMaxTitle: "Максимум",
             bonusMaxText: "Вы достигли диапазона! Максимальная выгода.",
-            bonusToRateText: (rate) => `До цены ${rate}₽`,
-            bonusRangeText: (tierName, needed, nextRate) => `Вы в диапазоне <b>${tierName}</b>. Выберите ещё <b>${needed}</b> строк, чтобы цена следующих контактов снизилась до <b>${nextRate}₽</b>.`,
+            bonusToRateText: (rate, cur) => `До цены ${rate}${cur}`,
+            bonusRangeText: (tierName, needed, nextRate, cur) => `Вы в диапазоне <b>${tierName}</b>. Выберите ещё <b>${needed}</b> строк, чтобы цена следующих контактов снизилась до <b>${nextRate}${cur}</b>.`,
             loaderTitle: "Загрузка...", loaderError: "База не найдена.", alertEmpty: "Пусто", txtOrder: "ЗАКАЗ", txtFilters: "Фильтры", txtSum: "Сумма",
             tourSkip: "Пропустить тур", tourNext: "Далее", tourEnd: "Завершить",
+            fromText: "от", toText: "до",
             tourSteps: [
                 { target: '#searchInput', title: '🔍 Поиск', text: 'Удобный сквозной поиск. Просто начните вводить название категории для быстрого поиска', bgFix: true },
                 { target: '#geoFilters', title: '🌍 Умные фильтры', text: 'Позволяют мгновенно отсечь ненужные локации. Фильтры каскадные: выбрав страну, регионы и города обновятся автоматически.', bgFix: false },
@@ -345,8 +349,11 @@
             ]
         },
         en: {
+            currency: "$",
+            priceMin: 8,
+            priceStep: 2,
             lblTotal: "Total Amount",
-            lblStep: "Min. order 500₽ | Step 100₽",
+            lblStep: "Min. order 8$ | Step 2$",
             lblStatLines: "Lines", lblStatPhones: "Phones", lblStatEmails: "Emails",
             btnDownload: "⬇ Download Order", btnReset: "Reset",
             searchPH: "🔍 Search...",
@@ -358,10 +365,11 @@
             bonusEmptyText: "Select data to see the discount.",
             bonusMaxTitle: "Maximum",
             bonusMaxText: "You have reached the maximum discount range!",
-            bonusToRateText: (rate) => `Until ${rate}₽`,
-            bonusRangeText: (tierName, needed, nextRate) => `You are in the <b>${tierName}</b> range. Select <b>${needed}</b> more lines to drop the price to <b>${nextRate}₽</b>.`,
+            bonusToRateText: (rate, cur) => `Until ${rate}${cur}`,
+            bonusRangeText: (tierName, needed, nextRate, cur) => `You are in the <b>${tierName}</b> range. Select <b>${needed}</b> more lines to drop the price to <b>${nextRate}${cur}</b>.`,
             loaderTitle: "Loading...", loaderError: "Database not found.", alertEmpty: "Empty", txtOrder: "ORDER", txtFilters: "Filters", txtSum: "Total",
             tourSkip: "Skip Tour", tourNext: "Next", tourEnd: "Finish",
+            fromText: "from", toText: "up to",
             tourSteps: [
                 { target: '#searchInput', title: '🔍 Search', text: 'Convenient global search. Just start typing a category name for quick results.', bgFix: true },
                 { target: '#geoFilters', title: '🌍 Smart Filters', text: 'Instantly cut off unnecessary locations. Filters are cascading: selecting a country will update regions and cities automatically.', bgFix: false },
@@ -376,7 +384,8 @@
         }
     };
 
-    let TIERS = [
+    // Сетка тарифов для рублей (RU)
+    const TIERS_RU = [
         { limit: 20000, rate: 0.015, name: "Новичок" },         
         { limit: 50000, rate: 0.01, name: "Старт" },           
         { limit: 100000, rate: 0.0075, name: "Активный" },      
@@ -385,9 +394,19 @@
         { limit: 1000000, rate: 0.0025, name: "Опт" },          
         { limit: Infinity, rate: 0.001, name: "Супер опт" }   
     ];
-    const PRICE_STEP = 100;
-    const MIN_PRICE = 500;
+
+    // Сетка тарифов для долларов (EN) - пока ставки те же, можно менять rate под цены в $
+    const TIERS_EN = [
+        { limit: 20000, rate: 0.015, name: "Newbie" },         
+        { limit: 50000, rate: 0.01, name: "Starter" },           
+        { limit: 100000, rate: 0.0075, name: "Active" },      
+        { limit: 250000, rate: 0.005, name: "Business" },         
+        { limit: 500000, rate: 0.0035, name: "Pro" },         
+        { limit: 1000000, rate: 0.0025, name: "Wholesale" },          
+        { limit: Infinity, rate: 0.001, name: "Super Whole" }   
+    ];
     
+    let TIERS = TIERS_RU;
     let LEVEL_LABELS = DICT.ru.lvlLabels;
     let LEVEL_PLURALS = DICT.ru.lvlPlurals;
     let TOUR_STEPS = DICT.ru.tourSteps;
@@ -421,23 +440,23 @@
         
         document.getElementById('loaderTitle').innerText = d.loaderTitle;
         document.getElementById('btnTourSkip').innerText = d.tourSkip;
+        document.getElementById('currencySym').innerText = d.currency;
 
         // Dynamic Arrays Update
         LEVEL_LABELS = d.lvlLabels;
         LEVEL_PLURALS = d.lvlPlurals;
         TOUR_STEPS = d.tourSteps;
+        
+        TIERS = currentLang === 'ru' ? TIERS_RU : TIERS_EN;
         TIERS.forEach((t, i) => t.name = d.tierNames[i]);
 
-        // Обновляем главную кнопку-флаг
         document.getElementById('currentLangIcon').innerHTML = `<img class="flag-img-small" style="width: 26px; height: 18px; border-radius: 3px;" src="${currentLang === 'ru' ? FLAG_RU : FLAG_EN}">`;
 
-        // Выделяем активный язык в выпадающем меню
         document.querySelectorAll('.lang-opt').forEach(el => {
             if(el.dataset.lang === currentLang) el.classList.add('active');
             else el.classList.remove('active');
         });
 
-        // Re-render
         if (geoDB) {
             initFiltersUI();
             runSelectorChain();
@@ -450,14 +469,13 @@
 
     function selectLang(lang, isFirstLoad = false) {
         currentLang = lang;
-        localStorage.setItem('smartLang_v3', currentLang); // Новый ключ для сброса кеша модалки
+        localStorage.setItem('smartLang_v4', currentLang); 
         
         const overlay = document.getElementById('langOverlay');
         overlay.style.opacity = '0';
         setTimeout(() => {
             overlay.style.display = 'none';
             applyLang();
-            // Запускаем тур СРАЗУ ПОСЛЕ выбора языка
             if (isFirstLoad) {
                 startTour(true); 
             }
@@ -479,7 +497,7 @@
             document.getElementById('loaderStatus').innerText = DICT.ru.loaderError;
         }
 
-        const savedLang = localStorage.getItem('smartLang_v3');
+        const savedLang = localStorage.getItem('smartLang_v4');
         if (!savedLang) {
             document.getElementById('langOverlay').style.display = 'flex';
             currentLang = 'ru'; 
@@ -797,6 +815,10 @@
     
     function recalculate() {
         const d = DICT[currentLang];
+        const minPrice = d.priceMin;
+        const priceStep = d.priceStep;
+        const cur = d.currency;
+        
         let l=0, p=0, e=0;
         function trav(nodes) {
             nodes.forEach(n => { 
@@ -822,8 +844,8 @@
             if (remainingVol <= 0) break;
         }
 
-        let final = Math.ceil(finalUnrounded / PRICE_STEP) * PRICE_STEP;
-        if(vol > 0 && final < MIN_PRICE) final = MIN_PRICE;
+        let final = Math.ceil(finalUnrounded / priceStep) * priceStep;
+        if(vol > 0 && final < minPrice) final = minPrice;
         
         document.getElementById('selLines').innerText = l.toLocaleString(); 
         document.getElementById('selPhones').innerText = p.toLocaleString(); 
@@ -864,10 +886,10 @@
                 const needed = currentLimit - vol; 
                 const percent = Math.min(100, Math.round((progressInCurrentTier / sizeOfCurrentTier) * 100)); 
                 
-                bonusTitle.innerText = d.bonusToRateText(nextTier.rate); 
+                bonusTitle.innerText = d.bonusToRateText(nextTier.rate, cur); 
                 bonusPercent.innerText = percent + "%"; 
                 bucketFill.style.width = percent + '%'; 
-                bonusText.innerHTML = d.bonusRangeText(currentTier.name, needed.toLocaleString(), nextTier.rate); 
+                bonusText.innerHTML = d.bonusRangeText(currentTier.name, needed.toLocaleString(), nextTier.rate, cur); 
             } else { 
                 bonusTitle.innerText = d.bonusMaxTitle; 
                 bonusPercent.innerText = "100%"; 
@@ -882,13 +904,13 @@
             let prevLimit = i === 0 ? 0 : TIERS[i-1].limit;
             let label = "";
             if (t.limit === Infinity) {
-                label = `от ${(prevLimit/1000)}к`;
+                label = `${d.fromText} ${(prevLimit/1000)}k`;
             } else if (i === 0) {
-                label = `до ${(t.limit/1000)}к`;
+                label = `${d.toText} ${(t.limit/1000)}k`;
             } else {
-                label = `${(prevLimit/1000)}к - ${(t.limit/1000)}к`;
+                label = `${(prevLimit/1000)}k - ${(t.limit/1000)}k`;
             }
-            tCon.innerHTML += `<div class="tier-item ${i === activeTierIdx ? 'current' : ''} ${i < activeTierIdx ? 'passed' : ''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}₽</div></div>`; 
+            tCon.innerHTML += `<div class="tier-item ${i === activeTierIdx ? 'current' : ''} ${i < activeTierIdx ? 'passed' : ''}"><div>${t.name} <small style="opacity:0.6; font-weight:400">(${label})</small></div><div>${t.rate}${cur}</div></div>`; 
         });
     }
 
@@ -914,7 +936,7 @@
                  filtersTxt += `[${LEVEL_LABELS[i]}: ${val.innerText}] `;
              }
         }
-        let txt = `${DICT[currentLang].txtOrder}\n${DICT[currentLang].txtFilters}: ${filtersTxt}\n${DICT[currentLang].txtSum}: ${document.getElementById('totalPrice').innerText}₽\n---\n`;
+        let txt = `${DICT[currentLang].txtOrder}\n${DICT[currentLang].txtFilters}: ${filtersTxt}\n${DICT[currentLang].txtSum}: ${document.getElementById('totalPrice').innerText}${DICT[currentLang].currency}\n---\n`;
         function w(nodes) { nodes.forEach(n => { if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`; else if(n.children) w(n.children); }); }
         w(treeData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
     }
