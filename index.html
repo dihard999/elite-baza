@@ -395,15 +395,15 @@
         { limit: Infinity, rate: 0.001, name: "Супер опт" }   
     ];
 
-    // Сетка тарифов для долларов (EN) - пока ставки те же, можно менять rate под цены в $
+    // Сетка тарифов для долларов (EN) - уменьшенные ставки
     const TIERS_EN = [
-        { limit: 20000, rate: 0.015, name: "Newbie" },         
-        { limit: 50000, rate: 0.01, name: "Starter" },           
-        { limit: 100000, rate: 0.0075, name: "Active" },      
-        { limit: 250000, rate: 0.005, name: "Business" },         
-        { limit: 500000, rate: 0.0035, name: "Pro" },         
-        { limit: 1000000, rate: 0.0025, name: "Wholesale" },          
-        { limit: Infinity, rate: 0.001, name: "Super Whole" }   
+        { limit: 20000, rate: 0.00015, name: "Newbie" },         
+        { limit: 50000, rate: 0.0001, name: "Starter" },           
+        { limit: 100000, rate: 0.000075, name: "Active" },      
+        { limit: 250000, rate: 0.00005, name: "Business" },         
+        { limit: 500000, rate: 0.000035, name: "Pro" },         
+        { limit: 1000000, rate: 0.000025, name: "Wholesale" },          
+        { limit: Infinity, rate: 0.00001, name: "Super Whole" }   
     ];
     
     let TIERS = TIERS_RU;
@@ -469,7 +469,7 @@
 
     function selectLang(lang, isFirstLoad = false) {
         currentLang = lang;
-        localStorage.setItem('smartLang_v4', currentLang); 
+        localStorage.setItem('smartLang_v5', currentLang); 
         
         const overlay = document.getElementById('langOverlay');
         overlay.style.opacity = '0';
@@ -497,7 +497,7 @@
             document.getElementById('loaderStatus').innerText = DICT.ru.loaderError;
         }
 
-        const savedLang = localStorage.getItem('smartLang_v4');
+        const savedLang = localStorage.getItem('smartLang_v5');
         if (!savedLang) {
             document.getElementById('langOverlay').style.display = 'flex';
             currentLang = 'ru'; 
