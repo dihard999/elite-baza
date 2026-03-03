@@ -85,10 +85,7 @@
         .select-all-opt { font-weight: 700; border-bottom: 2px solid #e2e8f0; background: #fafafa; position: sticky; top: 0; z-index: 2; }
 
         /* SUMMARY PANEL */
-        .summary-panel { 
-            display: flex; flex-direction: column; gap: 4px; 
-            padding-top: 5px; border-top: 1px solid #e2e8f0; 
-        }
+        .summary-panel { display: flex; flex-direction: column; gap: 4px; padding-top: 5px; border-top: 1px solid #e2e8f0; }
         .summary-row { font-size: 0.75rem; color: #64748b; line-height: 1.4; display: flex; }
         .summary-label { font-weight: 700; color: #475569; margin-right: 6px; min-width: 60px; }
         .summary-value { color: #334155; word-break: break-word; }
@@ -119,7 +116,6 @@
         .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
 
         /* ================= LANGUAGE WIDGETS ================= */
-        /* Modal on First Load */
         .lang-overlay {
             position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8);
             z-index: 10000; display: flex; justify-content: center; align-items: center;
@@ -132,27 +128,28 @@
             transform: scale(0.95); animation: popIn 0.3s forwards;
         }
         @keyframes popIn { to { transform: scale(1); } }
-        .lang-icon-big { font-size: 4rem; margin-bottom: 10px; }
-        .lang-modal-flags { display: flex; gap: 20px; justify-content: center; }
+        .lang-modal-flags { display: flex; gap: 20px; justify-content: center; margin-top: 10px; }
+        
         .flag-btn {
-            font-size: 3rem; background: none; border: 2px solid transparent;
-            border-radius: 16px; cursor: pointer; padding: 10px 20px; transition: 0.2s;
+            background: white; border: 2px solid #e2e8f0;
+            border-radius: 16px; cursor: pointer; padding: 20px; transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; width: 120px;
         }
-        .flag-btn:hover { transform: scale(1.1); background: #f1f5f9; border-color: #cbd5e1; }
+        .flag-btn:hover { transform: scale(1.05); background: #f8fafc; border-color: var(--primary); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1); }
+        .flag-img-big { width: 64px; height: 44px; object-fit: cover; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .flag-label-big { font-size: 1.1rem; margin-top: 12px; font-weight: 700; color: var(--text-main); }
 
-        /* Floating Right Panel */
         .lang-float {
             position: fixed; top: 20px; right: 20px; z-index: 8000;
             display: flex; flex-direction: column; align-items: flex-end;
         }
         .lang-float-btn {
-            width: 44px; height: 44px; border-radius: 50%;
+            width: 48px; height: 48px; border-radius: 50%;
             background: white; border: 1px solid #cbd5e1;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 1.4rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: 0.2s; z-index: 2;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: 0.2s; z-index: 2;
         }
-        .lang-float-btn:hover { background: #f8fafc; }
+        .lang-float-btn:hover { background: #f8fafc; transform: scale(1.05); }
         .lang-menu {
             display: flex; flex-direction: column; gap: 10px;
             opacity: 0; pointer-events: none; transform: translateY(-20px);
@@ -160,17 +157,16 @@
             margin-top: 10px; background: white; padding: 10px; border-radius: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #cbd5e1;
         }
-        .lang-float:hover .lang-menu {
-            opacity: 1; pointer-events: auto; transform: translateY(0);
-        }
+        .lang-float:hover .lang-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
         .lang-opt {
-            width: 36px; height: 36px; border-radius: 50%;
+            width: 40px; height: 40px; border-radius: 50%;
             background: #f1f5f9; border: 2px solid transparent;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 1.2rem; transition: 0.2s;
+            cursor: pointer; transition: 0.2s;
         }
         .lang-opt:hover { background: #e2e8f0; transform: scale(1.1); }
         .lang-opt.active { border-color: var(--primary); background: white; }
+        .flag-img-small { width: 24px; height: 16px; object-fit: cover; border-radius: 2px; }
 
         /* ================= TOUR WIDGET STYLES ================= */
         .tour-highlight {
@@ -191,18 +187,12 @@
         .tour-tooltip.visible { display: flex; opacity: 1; }
         .tour-header { font-weight: 800; font-size: 1.15rem; color: var(--text-main); }
         .tour-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
-        
-        .tour-footer { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-top: 15px; gap: 10px;
-        }
-        
+        .tour-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px;}
         .tour-btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; white-space: nowrap;}
         .tour-btn-skip { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
         .tour-btn-skip:hover { background: #fecaca; color: #dc2626; border-color: #f87171; }
         .tour-btn-next { background: var(--primary); color: white; }
         .tour-btn-next:hover { background: #2563eb; }
-        
         .tour-dots { display: flex; gap: 6px; justify-content: center; }
         .tour-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: 0.3s; }
         .tour-dot.active { background: var(--primary); transform: scale(1.2); }
@@ -212,8 +202,7 @@
             border-radius: 50%; background: var(--primary); color: white;
             border: none; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
             font-size: 1.3rem; font-weight: bold; cursor: pointer;
-            z-index: 9000; display: flex; justify-content: center; align-items: center;
-            transition: 0.2s;
+            z-index: 9000; display: flex; justify-content: center; align-items: center; transition: 0.2s;
         }
         .help-float-btn:hover { transform: scale(1.1); background: #2563eb; }
     </style>
@@ -279,19 +268,30 @@
 
 <div class="lang-overlay" id="langOverlay" style="display: none;">
     <div class="lang-modal">
-        <div class="lang-icon-big">🌍</div>
+        <h2 style="margin:0; color:var(--text-main);">Choose Language / Выберите язык</h2>
         <div class="lang-modal-flags">
-            <button class="flag-btn" onclick="selectLang('ru', true)" title="Русский">🇷🇺</button>
-            <button class="flag-btn" onclick="selectLang('en', true)" title="English">🇬🇧</button>
+            <button class="flag-btn" onclick="selectLang('ru', true)">
+                <img class="flag-img-big" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Crect fill='%23fff' width='9' height='3'/%3E%3Crect fill='%23d52b1e' y='3' width='9' height='3'/%3E%3Crect fill='%230039a6' y='2' width='9' height='2'/%3E%3C/svg%3E">
+                <div class="flag-label-big">Русский</div>
+            </button>
+            <button class="flag-btn" onclick="selectLang('en', true)">
+                <img class="flag-img-big" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Cpath d='M0 0v30h60V0z'/%3E%3C/clipPath%3E%3CclipPath id='b'%3E%3Cpath d='M30 15h30v15zv15H0zH0V0zV0h30z'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Cpath d='M0 0v30h60V0z' fill='%23012169'/%3E%3Cpath d='M0 0l60 30m0-30L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30m0-30L0 30' clip-path='url(%23b)' stroke='%23C8102E' stroke-width='4'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E">
+                <div class="flag-label-big">English</div>
+            </button>
         </div>
     </div>
 </div>
 
 <div class="lang-float">
-    <div class="lang-float-btn">🌍</div>
+    <div class="lang-float-btn" id="currentLangIcon">
+        </div>
     <div class="lang-menu">
-        <div class="lang-opt" data-lang="ru" onclick="selectLang('ru')" title="Русский">🇷🇺</div>
-        <div class="lang-opt" data-lang="en" onclick="selectLang('en')" title="English">🇬🇧</div>
+        <div class="lang-opt" data-lang="ru" onclick="selectLang('ru')" title="Русский">
+            <img class="flag-img-small" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Crect fill='%23fff' width='9' height='3'/%3E%3Crect fill='%23d52b1e' y='3' width='9' height='3'/%3E%3Crect fill='%230039a6' y='2' width='9' height='2'/%3E%3C/svg%3E">
+        </div>
+        <div class="lang-opt" data-lang="en" onclick="selectLang('en')" title="English">
+            <img class="flag-img-small" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Cpath d='M0 0v30h60V0z'/%3E%3C/clipPath%3E%3CclipPath id='b'%3E%3Cpath d='M30 15h30v15zv15H0zH0V0zV0h30z'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Cpath d='M0 0v30h60V0z' fill='%23012169'/%3E%3Cpath d='M0 0l60 30m0-30L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30m0-30L0 30' clip-path='url(%23b)' stroke='%23C8102E' stroke-width='4'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E">
+        </div>
     </div>
 </div>
 
@@ -307,7 +307,10 @@
 </div>
 
 <script>
-    // === MULTILINGUAL DICTIONARY ===
+    // === ВШИТЫЕ SVG ФЛАГИ (работают везде без интернета) ===
+    const FLAG_RU = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Crect fill='%23fff' width='9' height='3'/%3E%3Crect fill='%23d52b1e' y='3' width='9' height='3'/%3E%3Crect fill='%230039a6' y='2' width='9' height='2'/%3E%3C/svg%3E";
+    const FLAG_EN = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Cpath d='M0 0v30h60V0z'/%3E%3C/clipPath%3E%3CclipPath id='b'%3E%3Cpath d='M30 15h30v15zv15H0zH0V0zV0h30z'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Cpath d='M0 0v30h60V0z' fill='%23012169'/%3E%3Cpath d='M0 0l60 30m0-30L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30m0-30L0 30' clip-path='url(%23b)' stroke='%23C8102E' stroke-width='4'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E";
+
     let currentLang = 'ru'; 
 
     const DICT = {
@@ -425,7 +428,10 @@
         TOUR_STEPS = d.tourSteps;
         TIERS.forEach((t, i) => t.name = d.tierNames[i]);
 
-        // Toggle active class on right panel flags
+        // Обновляем главную кнопку-флаг
+        document.getElementById('currentLangIcon').innerHTML = `<img class="flag-img-small" style="width: 26px; height: 18px; border-radius: 3px;" src="${currentLang === 'ru' ? FLAG_RU : FLAG_EN}">`;
+
+        // Выделяем активный язык в выпадающем меню
         document.querySelectorAll('.lang-opt').forEach(el => {
             if(el.dataset.lang === currentLang) el.classList.add('active');
             else el.classList.remove('active');
@@ -437,14 +443,14 @@
             runSelectorChain();
             recalculate();
             if(document.getElementById('tourTooltip').classList.contains('visible')) {
-                showTourStep(); // Refresh tour text if active
+                showTourStep();
             }
         }
     }
 
     function selectLang(lang, isFirstLoad = false) {
         currentLang = lang;
-        localStorage.setItem('appLang', currentLang);
+        localStorage.setItem('smartLang_v2', currentLang);
         
         const overlay = document.getElementById('langOverlay');
         overlay.style.opacity = '0';
@@ -465,7 +471,6 @@
             }
         });
         
-        // Сначала скрываем лоадер, если база найдена
         if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB;
             document.getElementById('loader').style.display = 'none';
@@ -473,15 +478,14 @@
             document.getElementById('loaderStatus').innerText = DICT.ru.loaderError;
         }
 
-        // Логика языка и первого входа
-        const savedLang = localStorage.getItem('appLang');
+        // Ключ 'smartLang_v2' - новый, поэтому у всех появится окно выбора!
+        const savedLang = localStorage.getItem('smartLang_v2');
         if (!savedLang) {
-            // Первый вход: показываем оверлей, рисуем фон на RU
             document.getElementById('langOverlay').style.display = 'flex';
             currentLang = 'ru'; 
             applyLang();
         } else {
-            // Уже был: применяем сохраненный язык и запускаем тур (если еще не пройден)
+            document.getElementById('langOverlay').style.display = 'none';
             currentLang = savedLang;
             applyLang();
             setTimeout(() => startTour(false), 100);
@@ -946,10 +950,7 @@
         }
 
         target.classList.add('tour-highlight');
-        
-        if (step.bgFix) {
-            target.classList.add('tour-bg-fix');
-        }
+        if (step.bgFix) target.classList.add('tour-bg-fix');
 
         document.getElementById('tourTitle').innerText = step.title;
         document.getElementById('tourText').innerText = step.text;
@@ -986,12 +987,8 @@
     }
 
     function nextTourStep() {
-        if (currentTourStep >= TOUR_STEPS.length - 1) {
-            endTour();
-        } else {
-            currentTourStep++;
-            showTourStep();
-        }
+        if (currentTourStep >= TOUR_STEPS.length - 1) endTour();
+        else { currentTourStep++; showTourStep(); }
     }
 
     function endTour() {
