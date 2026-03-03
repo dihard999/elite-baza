@@ -48,6 +48,8 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; font-size: 0.95rem; }
         .btn-download { background: #0f172a; color: white; }
         .btn-reset { background: white; color: #ef4444; border: 1px solid #fecaca; }
+        .btn-lang { background: #e2e8f0; color: #475569; }
+        .btn-lang:hover { background: #cbd5e1; }
 
         /* MAIN */
         .main { flex: 1; display: flex; flex-direction: column; background: white; }
@@ -132,7 +134,7 @@
 
         .tour-tooltip {
             position: fixed;
-            width: 380px; /* Увеличили ширину, чтобы кнопки не слипались */
+            width: 380px;
             background: white;
             padding: 24px;
             border-radius: 16px;
@@ -149,18 +151,13 @@
         .tour-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
         
         .tour-footer { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-top: 15px; /* Увеличили отступ сверху */
-            gap: 10px; /* Добавили обязательный промежуток */
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-top: 15px; gap: 10px;
         }
         
         .tour-btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; white-space: nowrap;}
-        
         .tour-btn-skip { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
         .tour-btn-skip:hover { background: #fecaca; color: #dc2626; border-color: #f87171; }
-        
         .tour-btn-next { background: var(--primary); color: white; }
         .tour-btn-next:hover { background: #2563eb; }
         
@@ -184,9 +181,9 @@
 <div class="sidebar">
     <div class="sidebar-content">
         <div class="total-box">
-            <div class="total-label">К оплате</div>
+            <div class="total-label" id="lblTotal">К оплате</div>
             <div class="total-value"><span id="totalPrice">0</span>₽</div>
-            <div class="total-step">Мин. заказ 500₽ | Шаг 100₽</div>
+            <div class="total-step" id="lblStep">Мин. заказ 500₽ | Шаг 100₽</div>
         </div>
 
         <div class="bonus-box" id="bonusBox">
@@ -199,9 +196,9 @@
         </div>
         
         <div class="stats-grid">
-            <div class="stat-item"><span class="stat-num" id="selLines" style="color:var(--c-lines-text)">0</span><span class="stat-lbl">Строк</span></div>
-            <div class="stat-item"><span class="stat-num" id="selPhones" style="color:var(--c-phones-text)">0</span><span class="stat-lbl">Тел</span></div>
-            <div class="stat-item"><span class="stat-num" id="selEmails" style="color:var(--c-emails-text)">0</span><span class="stat-lbl">Email</span></div>
+            <div class="stat-item"><span class="stat-num" id="selLines" style="color:var(--c-lines-text)">0</span><span class="stat-lbl" id="lblStatLines">Строк</span></div>
+            <div class="stat-item"><span class="stat-num" id="selPhones" style="color:var(--c-phones-text)">0</span><span class="stat-lbl" id="lblStatPhones">Тел</span></div>
+            <div class="stat-item"><span class="stat-num" id="selEmails" style="color:var(--c-emails-text)">0</span><span class="stat-lbl" id="lblStatEmails">Email</span></div>
         </div>
 
         <div class="tier-section">
@@ -209,8 +206,9 @@
         </div>
 
         <div class="actions">
-            <button class="btn btn-download" onclick="downloadOrder()">⬇ Скачать заказ</button>
-            <button class="btn btn-reset" onclick="resetAll()">Сброс</button>
+            <button class="btn btn-download" id="btnDownload" onclick="downloadOrder()">⬇ Скачать заказ</button>
+            <button class="btn btn-reset" id="btnReset" onclick="resetAll()">Сброс</button>
+            <button class="btn btn-lang" id="btnLangToggle" onclick="toggleLang()">🌐 Switch to English</button>
         </div>
     </div>
 </div>
@@ -224,17 +222,17 @@
     
     <div class="tree-wrapper">
         <div class="table-header">
-            <div class="header-pad">Категория</div>
-            <div class="col-fixed">Строк</div>
-            <div class="col-fixed" style="color:var(--c-phones-text)">Тел</div>
-            <div class="col-fixed" style="color:var(--c-emails-text)">Email</div>
+            <div class="header-pad" id="thCategory">Категория</div>
+            <div class="col-fixed" id="thLines">Строк</div>
+            <div class="col-fixed" id="thPhones" style="color:var(--c-phones-text)">Тел</div>
+            <div class="col-fixed" id="thEmails" style="color:var(--c-emails-text)">Email</div>
         </div>
         <div id="treeContainer"></div>
     </div>
 </div>
 
 <div class="loader" id="loader">
-    <h3 style="color:#475569;">Загрузка...</h3>
+    <h3 style="color:#475569;" id="loaderTitle">Загрузка...</h3>
     <div id="loaderStatus" style="color:#94a3b8; font-size:0.8rem"></div>
 </div>
 
@@ -243,14 +241,80 @@
     <div class="tour-header" id="tourTitle">Заголовок</div>
     <div class="tour-body" id="tourText">Текст</div>
     <div class="tour-footer">
-        <button class="tour-btn tour-btn-skip" onclick="endTour()">Пропустить тур</button>
+        <button class="tour-btn tour-btn-skip" id="btnTourSkip" onclick="endTour()">Пропустить тур</button>
         <div class="tour-dots" id="tourDots"></div>
         <button class="tour-btn tour-btn-next" id="tourNextBtn" onclick="nextTourStep()">Далее</button>
     </div>
 </div>
 
 <script>
-    const TIERS = [
+    // === MULTILINGUAL DICTIONARY ===
+    let currentLang = localStorage.getItem('appLang') || 'ru';
+
+    const DICT = {
+        ru: {
+            lblTotal: "К оплате",
+            lblStep: "Мин. заказ 500₽ | Шаг 100₽",
+            lblStatLines: "Строк", lblStatPhones: "Тел", lblStatEmails: "Email",
+            btnDownload: "⬇ Скачать заказ", btnReset: "Сброс", btnLangToggle: "🌐 Switch to English",
+            searchPH: "🔍 Поиск...",
+            thCategory: "Категория", thLines: "Строк", thPhones: "Тел", thEmails: "Email",
+            lvlLabels: ["Страна", "Регион", "Район", "Город"],
+            lvlPlurals: ["Все страны", "Все регионы", "Все районы", "Все города"],
+            tierNames: ["Новичок", "Старт", "Активный", "Бизнес", "Профи", "Опт", "Супер опт"],
+            bonusEmptyTitle: "Скидка",
+            bonusEmptyText: "Выберите данные, чтобы увидеть скидку.",
+            bonusMaxTitle: "Максимум",
+            bonusMaxText: "Вы достигли диапазона! Максимальная выгода.",
+            bonusToRateText: (rate) => `До цены ${rate}₽`,
+            bonusRangeText: (tierName, needed, nextRate) => `Вы в диапазоне <b>${tierName}</b>. Выберите ещё <b>${needed}</b> строк, чтобы цена следующих контактов снизилась до <b>${nextRate}₽</b>.`,
+            loaderTitle: "Загрузка...", loaderError: "База не найдена.", alertEmpty: "Пусто", txtOrder: "ЗАКАЗ", txtFilters: "Фильтры", txtSum: "Сумма",
+            tourSkip: "Пропустить тур", tourNext: "Далее", tourEnd: "Завершить",
+            tourSteps: [
+                { target: '#searchInput', title: '🔍 Поиск', text: 'Удобный сквозной поиск. Просто начните вводить название категории для быстрого поиска', bgFix: true },
+                { target: '#geoFilters', title: '🌍 Умные фильтры', text: 'Позволяют мгновенно отсечь ненужные локации. Фильтры каскадные: выбрав страну, регионы и города обновятся автоматически.', bgFix: false },
+                { target: '#summaryPanel', title: '📋 Сводка', text: 'Здесь всегда можно посмотреть текущие активные фильтры, чтобы не потеряться в выборке.', bgFix: true },
+                { target: '.tree-wrapper', title: '📁 Выбор баз', text: 'Основное рабочее окно. Раскрывайте папки и отмечайте галочками базы, которые хотите добавить в заказ.', bgFix: true },
+                { target: '.total-box', title: '💰 Стоимость', text: 'Итоговая стоимость рассчитывается автоматически. Учитывается минимальный шаг и сумма заказа.', bgFix: false },
+                { target: '.stats-grid', title: '📊 Выбранные контакты', text: 'Здесь отображается точное количество выбранных строк, а также уникальных телефонов и email-адресов.', bgFix: false },
+                { target: '.tier-section', title: '📉 Прогрессивная скидка', text: 'Чем больший объем вы собираете, тем дешевле обходится каждая следующая строка. Здесь видно, как близко вы к новому уровню скидки.', bgFix: true },
+                { target: '.btn-download', title: '🚀 Заказ', text: 'Когда соберете нужный объем, нажмите кнопку скачивания. Система создаст готовый TXT файл для отправки менеджеру.', bgFix: false },
+                { target: '.btn-reset', title: '🔄 Сброс', text: 'Если нужно начать выбор баз с нуля, просто нажмите эту кнопку для сброса всех настроек.', bgFix: false }
+            ]
+        },
+        en: {
+            lblTotal: "Total Amount",
+            lblStep: "Min. order 500₽ | Step 100₽",
+            lblStatLines: "Lines", lblStatPhones: "Phones", lblStatEmails: "Emails",
+            btnDownload: "⬇ Download Order", btnReset: "Reset", btnLangToggle: "🌐 Русская версия",
+            searchPH: "🔍 Search...",
+            thCategory: "Category", thLines: "Lines", thPhones: "Phones", thEmails: "Emails",
+            lvlLabels: ["Country", "Region", "District", "City"],
+            lvlPlurals: ["All countries", "All regions", "All districts", "All cities"],
+            tierNames: ["Newbie", "Starter", "Active", "Business", "Pro", "Wholesale", "Super Whole"],
+            bonusEmptyTitle: "Discount",
+            bonusEmptyText: "Select data to see the discount.",
+            bonusMaxTitle: "Maximum",
+            bonusMaxText: "You have reached the maximum discount range!",
+            bonusToRateText: (rate) => `Until ${rate}₽`,
+            bonusRangeText: (tierName, needed, nextRate) => `You are in the <b>${tierName}</b> range. Select <b>${needed}</b> more lines to drop the price to <b>${nextRate}₽</b>.`,
+            loaderTitle: "Loading...", loaderError: "Database not found.", alertEmpty: "Empty", txtOrder: "ORDER", txtFilters: "Filters", txtSum: "Total",
+            tourSkip: "Skip Tour", tourNext: "Next", tourEnd: "Finish",
+            tourSteps: [
+                { target: '#searchInput', title: '🔍 Search', text: 'Convenient global search. Just start typing a category name for quick results.', bgFix: true },
+                { target: '#geoFilters', title: '🌍 Smart Filters', text: 'Instantly cut off unnecessary locations. Filters are cascading: selecting a country will update regions and cities automatically.', bgFix: false },
+                { target: '#summaryPanel', title: '📋 Summary', text: 'You can always see the currently active filters here so you don’t get lost in your selection.', bgFix: true },
+                { target: '.tree-wrapper', title: '📁 Select Databases', text: 'Main workspace. Expand folders and check the databases you want to add to your order.', bgFix: true },
+                { target: '.total-box', title: '💰 Cost', text: 'The total cost is calculated automatically. It takes into account the minimum step and order amount.', bgFix: false },
+                { target: '.stats-grid', title: '📊 Selected Contacts', text: 'Displays the exact number of selected lines, as well as unique phone numbers and email addresses.', bgFix: false },
+                { target: '.tier-section', title: '📉 Progressive Discount', text: 'The larger the volume you collect, the cheaper each subsequent line costs. Here you can see how close you are to the next discount tier.', bgFix: true },
+                { target: '.btn-download', title: '🚀 Order', text: 'When you have collected the required volume, click the download button. The system will create a ready TXT file to send to the manager.', bgFix: false },
+                { target: '.btn-reset', title: '🔄 Reset', text: 'If you need to start selecting databases from scratch, just click this button to reset all settings.', bgFix: false }
+            ]
+        }
+    };
+
+    let TIERS = [
         { limit: 20000, rate: 0.015, name: "Новичок" },         
         { limit: 50000, rate: 0.01, name: "Старт" },           
         { limit: 100000, rate: 0.0075, name: "Активный" },      
@@ -261,8 +325,10 @@
     ];
     const PRICE_STEP = 100;
     const MIN_PRICE = 500;
-    const LEVEL_LABELS = ["Страна", "Регион", "Район", "Город"];
-    const LEVEL_PLURALS = ["Все страны", "Все регионы", "Все районы", "Все города"];
+    
+    let LEVEL_LABELS = DICT[currentLang].lvlLabels;
+    let LEVEL_PLURALS = DICT[currentLang].lvlPlurals;
+    let TOUR_STEPS = DICT[currentLang].tourSteps;
 
     let geoDB = null;       
     let treeData = [];      
@@ -272,7 +338,54 @@
     let debounceTimer;
     let filterState = [new Set(), new Set(), new Set(), new Set()];
 
+    function applyLang() {
+        const d = DICT[currentLang];
+        
+        // Static UI
+        document.getElementById('lblTotal').innerText = d.lblTotal;
+        document.getElementById('lblStep').innerText = d.lblStep;
+        document.getElementById('btnDownload').innerText = d.btnDownload;
+        document.getElementById('btnReset').innerText = d.btnReset;
+        document.getElementById('btnLangToggle').innerText = d.btnLangToggle;
+        document.getElementById('searchInput').placeholder = d.searchPH;
+        
+        document.getElementById('lblStatLines').innerText = d.lblStatLines;
+        document.getElementById('lblStatPhones').innerText = d.lblStatPhones;
+        document.getElementById('lblStatEmails').innerText = d.lblStatEmails;
+        
+        document.getElementById('thCategory').innerText = d.thCategory;
+        document.getElementById('thLines').innerText = d.thLines;
+        document.getElementById('thPhones').innerText = d.thPhones;
+        document.getElementById('thEmails').innerText = d.thEmails;
+        
+        document.getElementById('loaderTitle').innerText = d.loaderTitle;
+        document.getElementById('btnTourSkip').innerText = d.tourSkip;
+
+        // Dynamic Arrays Update
+        LEVEL_LABELS = d.lvlLabels;
+        LEVEL_PLURALS = d.lvlPlurals;
+        TOUR_STEPS = d.tourSteps;
+        TIERS.forEach((t, i) => t.name = d.tierNames[i]);
+
+        // Re-render
+        if (geoDB) {
+            initFiltersUI();
+            runSelectorChain();
+            recalculate();
+            if(document.getElementById('tourTooltip').classList.contains('visible')) {
+                showTourStep(); // Refresh tour text if active
+            }
+        }
+    }
+
+    function toggleLang() {
+        currentLang = currentLang === 'ru' ? 'en' : 'ru';
+        localStorage.setItem('appLang', currentLang);
+        applyLang();
+    }
+
     window.onload = () => {
+        applyLang(); // Init translation
         document.getElementById('searchInput').addEventListener('input', debounceSearch);
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.custom-select-container')) {
@@ -287,7 +400,7 @@
             
             setTimeout(() => startTour(true), 100);
         } else {
-            document.getElementById('loaderStatus').innerText = "База не найдена.";
+            document.getElementById('loaderStatus').innerText = DICT[currentLang].loaderError;
         }
     };
 
@@ -406,7 +519,12 @@
             row.style.display = 'flex';
             const set = filterState[i];
             if (set.size === 0) {
-                if(trigger.innerText.includes("Все")) val.innerText = "Все";
+                // Check if current text is the 'plural' fallback text
+                let isPluralText = false;
+                Object.values(DICT).forEach(lang => {
+                    if (trigger.innerText === lang.lvlPlurals[i]) isPluralText = true;
+                });
+                if(isPluralText) val.innerText = DICT[currentLang].lvlPlurals[i] || trigger.innerText;
                 else val.innerText = trigger.innerText;
             } else {
                 val.innerText = Array.from(set).join(', ');
@@ -592,6 +710,7 @@
     }
     
     function recalculate() {
+        const d = DICT[currentLang];
         let l=0, p=0, e=0;
         function trav(nodes) {
             nodes.forEach(n => { 
@@ -643,8 +762,8 @@
         if (vol === 0) { 
             box.classList.remove('active'); 
             bucketFill.style.width = '0%'; 
-            bonusText.innerText = "Выберите данные, чтобы увидеть скидку."; 
-            bonusTitle.innerText = "Скидки"; 
+            bonusText.innerText = d.bonusEmptyText; 
+            bonusTitle.innerText = d.bonusEmptyTitle; 
             bonusPercent.innerText = "0%"; 
         } else {
             box.classList.add('active'); 
@@ -659,15 +778,15 @@
                 const needed = currentLimit - vol; 
                 const percent = Math.min(100, Math.round((progressInCurrentTier / sizeOfCurrentTier) * 100)); 
                 
-                bonusTitle.innerText = "До цены " + nextTier.rate + "₽"; 
+                bonusTitle.innerText = d.bonusToRateText(nextTier.rate); 
                 bonusPercent.innerText = percent + "%"; 
                 bucketFill.style.width = percent + '%'; 
-                bonusText.innerHTML = `Вы в диапазоне <b>${currentTier.name}</b>. Выберите ещё <b>${needed.toLocaleString()}</b> строк, чтобы цена следующих контактов снизилась до <b>${nextTier.rate}₽</b>.`; 
+                bonusText.innerHTML = d.bonusRangeText(currentTier.name, needed.toLocaleString(), nextTier.rate); 
             } else { 
-                bonusTitle.innerText = "Максимум"; 
+                bonusTitle.innerText = d.bonusMaxTitle; 
                 bonusPercent.innerText = "100%"; 
                 bucketFill.style.width = '100%'; 
-                bonusText.innerHTML = `Вы достигли диапазона <b>${currentTier.name}</b>! Максимальная выгода.`; 
+                bonusText.innerHTML = d.bonusMaxText; 
             }
         }
         
@@ -700,7 +819,7 @@
     }
     function getPath(node) { let path = [node.name], curr = node.parent; while(curr) { path.unshift(curr.name); curr = curr.parent; } return path.join(" / "); }
     function downloadOrder() {
-        if(!selectedIds.size && !indeterminateIds.size) return alert('Пусто');
+        if(!selectedIds.size && !indeterminateIds.size) return alert(DICT[currentLang].alertEmpty);
         let filtersTxt = "";
         for(let i=0; i<4; i++) {
              const row = document.getElementById(`sum-row-${i}`);
@@ -709,25 +828,13 @@
                  filtersTxt += `[${LEVEL_LABELS[i]}: ${val.innerText}] `;
              }
         }
-        let txt = `ЗАКАЗ\nФильтры: ${filtersTxt}\nСумма: ${document.getElementById('totalPrice').innerText}\n---\n`;
+        let txt = `${DICT[currentLang].txtOrder}\n${DICT[currentLang].txtFilters}: ${filtersTxt}\n${DICT[currentLang].txtSum}: ${document.getElementById('totalPrice').innerText}₽\n---\n`;
         function w(nodes) { nodes.forEach(n => { if(selectedIds.has(n.id)) txt += `[+] ${getPath(n)} (${n.stats.l})\n`; else if(n.children) w(n.children); }); }
         w(treeData); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'})); a.download = 'Order.txt'; a.click();
     }
     function resetAll() { location.reload(); }
 
     /* ================= ONBOARDING TOUR LOGIC ================= */
-    const TOUR_STEPS = [
-        { target: '#searchInput', title: '🔍 Поиск', text: 'Удобный сквозной поиск. Просто начните вводить название категории для быстрого поиска', bgFix: true },
-        { target: '#geoFilters', title: '🌍 Умные фильтры', text: 'Позволяют мгновенно отсечь ненужные локации. Фильтры каскадные: выбрав страну, регионы и города обновятся автоматически.', bgFix: false },
-        { target: '#summaryPanel', title: '📋 Сводка', text: 'Здесь всегда можно посмотреть текущие активные фильтры, чтобы не потеряться в выборке.', bgFix: true },
-        { target: '.tree-wrapper', title: '📁 Выбор баз', text: 'Основное рабочее окно. Раскрывайте папки и отмечайте галочками базы, которые хотите добавить в заказ.', bgFix: true },
-        { target: '.total-box', title: '💰 Стоимость', text: 'Итоговая стоимость рассчитывается автоматически. Учитывается минимальный шаг и сумма заказа.', bgFix: false },
-        { target: '.stats-grid', title: '📊 Выбранные контакты', text: 'Здесь отображается точное количество выбранных строк, а также уникальных телефонов и email-адресов.', bgFix: false },
-        { target: '.tier-section', title: '📉 Прогрессивная скидка', text: 'Чем больший объем вы собираете, тем дешевле обходится каждая следующая строка. Здесь видно, как близко вы к новому уровню скидки.', bgFix: true },
-        { target: '.btn-download', title: '🚀 Заказ', text: 'Когда соберете нужный объем, нажмите кнопку скачивания. Система создаст готовый TXT файл для отправки менеджеру.', bgFix: false },
-        { target: '.btn-reset', title: '🔄 Сброс', text: 'Если нужно начать выбор баз с нуля, просто нажмите эту кнопку для сброса всех настроек.', bgFix: false }
-    ];
-    
     let currentTourStep = 0;
 
     function startTour(force = false) {
@@ -768,7 +875,7 @@
         dots.innerHTML = TOUR_STEPS.map((_, i) => `<div class="tour-dot ${i === currentTourStep ? 'active' : ''}"></div>`).join('');
         
         const nextBtn = document.getElementById('tourNextBtn');
-        nextBtn.innerText = currentTourStep === TOUR_STEPS.length - 1 ? 'Завершить' : 'Далее';
+        nextBtn.innerText = currentTourStep === TOUR_STEPS.length - 1 ? DICT[currentLang].tourEnd : DICT[currentLang].tourNext;
 
         const tooltip = document.getElementById('tourTooltip');
         tooltip.style.display = 'flex';
@@ -777,7 +884,6 @@
 
         const rect = target.getBoundingClientRect();
         
-        // Исправлено: центрируем относительно новой ширины тултипа 380px (половина - 190px)
         let top = rect.bottom + 20;
         let left = rect.left + (rect.width / 2) - 190; 
 
