@@ -4,16 +4,14 @@ import re
 import time
 
 # === НАСТРОЙКИ ===
-BASE_DIR = 'base'
+# Укажите точные названия ваших папок для языков
+BASES = {
+    'ru': 'base',
+    'en': 'base_EN' # <-- Если папка называется base_EN, измените здесь
+}
 OUTPUT_FILE = 'database.js'
 
 def parse_txt_to_tree(filepath):
-    """
-    Парсит содержимое файла.
-    Поддерживает форматы:
-    1. [Строк: 100 | Тел: 50 | Email: 10]
-    2. (1000) или [1000] - просто строки
-    """
     root_children = []
     stack = [{"level": -1, "children": root_children}]
     
@@ -73,12 +71,10 @@ def scan_directory(path):
         
         for item in items:
             full_path = os.path.join(path, item)
-            # Игнорируем скрытые файлы и скрипты
             if item.startswith('.') or item == '__pycache__' or item.endswith('.py'): continue
 
             if os.path.isdir(full_path):
                 child_node = scan_directory(full_path)
-                # Добавляем папку только если в ней что-то есть (рекурсивно)
                 if child_node and child_node['children']:
                     node['children'].append(child_node)
             
@@ -99,46 +95,61 @@ def scan_directory(path):
     return node
 
 def main():
-    print(f"🚀 Запуск одноразовой сборки базы...")
+    print(f"🚀 Запуск сборки баз данных...")
     
-    if not os.path.exists(BASE_DIR):
-        print(f"❌ Папка '{BASE_DIR}' не найдена!")
+    db_contents = {}
+    
+    for lang, path in BASES.items():
+        if not os.path.exists(path):
+            print(f"⚠️ Папка '{path}' ({lang}) не найдена! Пропускаем.")
+            continue
+        
+        tree = scan_directory(path)
+        if tree and tree['children']:
+            db_contents[lang] = tree
+            print(f"✅ База [{lang.upper()}] собрана: {len(tree['children'])} корневых элементов.")
+        else:
+            print(f"⚠️ База [{lang.upper()}] пустая или файлы не найдены.")
+    
+    if not db_contents:
+        print("❌ Ни одна база не была собрана!")
         return
 
-    full_tree = scan_directory(BASE_DIR)
-    
-    if full_tree and full_tree['children']:
-        # Оборачиваем в JS переменную
-        js_content = f"const GEO_DB = {json.dumps(full_tree, ensure_ascii=False)};"
+    # Формируем JS контент
+    js_content = ""
+    if 'ru' in db_contents:
+        js_content += f"const GEO_DB_RU = {json.dumps(db_contents['ru'], ensure_ascii=False)};\n"
+    if 'en' in db_contents:
+        js_content += f"const GEO_DB_EN = {json.dumps(db_contents['en'], ensure_ascii=False)};\n"
+        
+    # Страховка, чтобы не сломать index.html, если вы его еще не обновили
+    js_content += "\n// Для обратной совместимости\n"
+    if 'ru' in db_contents:
+        js_content += "const GEO_DB = GEO_DB_RU;\n"
+    elif 'en' in db_contents:
+        js_content += "const GEO_DB = GEO_DB_EN;\n"
+
+    try:
+        with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+            f.write(js_content)
+        print(f"✅ Успех! Файл {OUTPUT_FILE} создан.")
+        
         try:
-            with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-                f.write(js_content)
-            print(f"✅ Успех! Файл {OUTPUT_FILE} создан.")
-            print(f"📁 Обработано корневых элементов: {len(full_tree['children'])}")
-            
-            # --- БЛОК АВТОМАТИЧЕСКОГО СБРОСА КЭША ---
-            try:
-                with open('index.html', 'r', encoding='utf-8') as f_html:
-                    html_content = f_html.read()
-                
-                # Ищем скрипт с database.js (даже если там уже есть версия ?v=...) и меняем на новую
-                new_html = re.sub(
-                    r'<script src="database\.js[^>]*></script>', 
-                    f'<script src="database.js?v={int(time.time())}"></script>', 
-                    html_content
-                )
-                
-                with open('index.html', 'w', encoding='utf-8') as f_html:
-                    f_html.write(new_html)
-                print("✅ Версия базы в index.html обновлена (кэш сброшен)!")
-            except Exception as e:
-                print(f"❌ Ошибка обновления index.html: {e}")
-            # --- КОНЕЦ БЛОКА ---
-            
+            with open('index.html', 'r', encoding='utf-8') as f_html:
+                html_content = f_html.read()
+            new_html = re.sub(
+                r'<script src="database\.js[^>]*></script>', 
+                f'<script src="database.js?v={int(time.time())}"></script>', 
+                html_content
+            )
+            with open('index.html', 'w', encoding='utf-8') as f_html:
+                f_html.write(new_html)
+            print("✅ Версия базы в index.html обновлена (кэш сброшен)!")
         except Exception as e:
-            print(f"❌ Ошибка записи файла: {e}")
-    else:
-        print("⚠️ База пустая или файлы не найдены.")
+            print(f"❌ Ошибка обновления index.html: {e}")
+            
+    except Exception as e:
+        print(f"❌ Ошибка записи файла: {e}")
 
 if __name__ == "__main__":
     main()
