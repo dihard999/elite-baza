@@ -419,6 +419,13 @@ const TIERS_EN = [
     let filterState = [new Set(), new Set(), new Set(), new Set()];
 
     function applyLang() {
+        // --- ДОБАВИТЬ ЭТИ 5 СТРОК СЮДА ---
+        if (typeof GEO_DB_RU !== 'undefined' && typeof GEO_DB_EN !== 'undefined') {
+            geoDB = currentLang === 'ru' ? GEO_DB_RU : GEO_DB_EN;
+        } else if (typeof GEO_DB !== 'undefined') {
+            geoDB = GEO_DB; 
+        }
+        // ---------------------------------
         const d = DICT[currentLang];
         
         // Static UI
@@ -489,12 +496,13 @@ const TIERS_EN = [
             }
         });
         
-        if (typeof GEO_DB !== 'undefined') {
-            geoDB = GEO_DB;
+        // --- ЗАМЕНИТЬ ЭТОТ БЛОК ---
+        if (typeof GEO_DB !== 'undefined' || typeof GEO_DB_RU !== 'undefined') {
             document.getElementById('loader').style.display = 'none';
         } else {
             document.getElementById('loaderStatus').innerText = DICT.ru.loaderError;
         }
+        // --------------------------
 
         const savedLang = localStorage.getItem('smartLang_v5');
         if (!savedLang) {
