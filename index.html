@@ -1021,9 +1021,9 @@ const TIERS_EN = [
                 <thead>
                     <tr style="background: #0f172a;">
                         <th style="padding: 12px 15px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 8px 0 0 0; width: auto;">${d.thCategory}</th>
-                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 60px; white-space: nowrap;">${d.thLines}</th>
-                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 60px; white-space: nowrap;">${d.thPhones}</th>
-                        <th style="padding: 12px 15px 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 60px; white-space: nowrap; border-radius: 0 8px 0 0;">${d.thEmails}</th>
+                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap;">${d.thLines}</th>
+                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap;">${d.thPhones}</th>
+                        <th style="padding: 12px 15px 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap; border-radius: 0 8px 0 0;">${d.thEmails}</th>
                     </tr>
                 </thead>
                 <tbody id="pdfTableBody"></tbody>
@@ -1032,43 +1032,43 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка таблицы с идеальными CSS-линиями дерева
+        // 3. Сборка таблицы с идеальными ВЕКТОРНЫМИ SVG-линиями
         function buildPDFRows(nodes, depth, pathLastState = []) {
-            // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Отфильтровываем только видимые узлы перед отрисовкой!
+            // Отфильтровываем только видимые узлы, чтобы линии отрисовывались корректно
             const visibleNodes = nodes.filter(n => selectedIds.has(n.id) || indeterminateIds.has(n.id));
 
             visibleNodes.forEach((n, index) => {
                 const isLast = (index === visibleNodes.length - 1);
                 const currentPathState = [...pathLastState, isLast];
                 
-                const basePadding = 15;
-                const step = 26; // Шаг вложенности
-                const indent = basePadding + (depth * step); // Итоговый сдвиг контента
+                const basePadding = 20; // Стартовый отступ от края
+                const step = 28; // Ширина одного шага вложенности
+                const indentPixels = basePadding + (depth * step); // Место начала контента (иконки)
                 
-                let treeLines = '';
-                const lineColor = '#94a3b8'; // Цвет направляющих линий
+                let svgLines = '';
+                const lineColor = '#94a3b8'; // Строгий серый цвет линий
 
-                // Математически точная генерация линий (Tree-lines)
+                // Математический генератор SVG путей для дерева
                 for (let i = 0; i <= depth; i++) {
-                    const lineX = basePadding + (i * step) + 7; // Позиция линии точно по центру иконки
+                    const lineX = basePadding + (i * step) + 8; // Точный X-центр иконки родителя
 
                     if (i < depth) {
-                        // Если родитель не был последним, рисуем сплошную вертикальную линию вниз
+                        // Вертикальная сквозная линия от родителя (если он не последний)
                         if (!pathLastState[i]) {
-                            treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; bottom: -1px; width: 2px; background: ${lineColor}; z-index: 1;"></div>`;
+                            svgLines += `<line x1="${lineX}" y1="0" x2="${lineX}" y2="100%" stroke="${lineColor}" stroke-width="1.5" />`;
                         }
                     } else if (depth > 0) {
-                        // Ветка для текущего элемента
+                        // Горизонтальный коннектор до самой иконки
+                        const targetX = basePadding + (depth * step); 
+
                         if (isLast) {
-                            // Уголок (если это последний файл/папка в списке)
-                            treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; height: calc(50% + 1px); width: 2px; background: ${lineColor}; z-index: 1;"></div>`;
+                            // Последний элемент в ветке (L-образный угол)
+                            svgLines += `<path d="M ${lineX} 0 L ${lineX} 50% L ${targetX} 50%" fill="none" stroke="${lineColor}" stroke-width="1.5" />`;
                         } else {
-                            // Развилка (Т-образная линия, если ниже есть еще элементы)
-                            treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; bottom: -1px; width: 2px; background: ${lineColor}; z-index: 1;"></div>`;
+                            // Промежуточный элемент в ветке (T-образный перекресток)
+                            svgLines += `<line x1="${lineX}" y1="0" x2="${lineX}" y2="100%" stroke="${lineColor}" stroke-width="1.5" />`;
+                            svgLines += `<line x1="${lineX}" y1="50%" x2="${targetX}" y2="50%" stroke="${lineColor}" stroke-width="1.5" />`;
                         }
-                        
-                        // Горизонтальный коннектор от вертикальной линии до самой иконки
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: calc(50% - 1px); width: 23px; height: 2px; background: ${lineColor}; z-index: 1;"></div>`;
                     }
                 }
 
@@ -1082,9 +1082,11 @@ const TIERS_EN = [
 
                     tr.innerHTML = `
                         <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
-                            <div style="position: relative; padding: 10px 10px 10px ${indent + 30}px; display: flex; align-items: center; min-height: 40px; box-sizing: border-box;">
-                                ${treeLines}
-                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%;">
+                            <div style="position: relative; width: 100%; display: flex; align-items: center; min-height: 42px; padding-left: ${indentPixels}px; box-sizing: border-box;">
+                                <svg width="100%" height="calc(100% + 2px)" style="position: absolute; left: 0; top: -1px; pointer-events: none; z-index: 1;">
+                                    ${svgLines}
+                                </svg>
+                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%; padding: 10px 15px 10px 0;">
                                     ${icon} <span style="font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word; line-height: 1.3;">${n.name}</span>
                                 </div>
                             </div>
@@ -1096,15 +1098,17 @@ const TIERS_EN = [
                     tbody.appendChild(tr);
 
                 } else if (n.children && indeterminateIds.has(n.id)) {
-                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА (выступает как заголовок группы)
+                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА (работает как заголовок группы)
                     const tr = document.createElement('tr');
                     tr.style.background = '#f1f5f9';
                     
                     tr.innerHTML = `
                         <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
-                            <div style="position: relative; padding: 12px 15px 12px ${indent + 30}px; display: flex; align-items: center; min-height: 44px; box-sizing: border-box;">
-                                ${treeLines}
-                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%;">
+                            <div style="position: relative; width: 100%; display: flex; align-items: center; min-height: 44px; padding-left: ${indentPixels}px; box-sizing: border-box;">
+                                <svg width="100%" height="calc(100% + 2px)" style="position: absolute; left: 0; top: -1px; pointer-events: none; z-index: 1;">
+                                    ${svgLines}
+                                </svg>
+                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%; padding: 12px 15px 12px 0;">
                                     ${getFolderOpenIcon('#64748b')} 
                                     <span style="font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word; line-height: 1.3;">
                                         ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>
@@ -1115,7 +1119,7 @@ const TIERS_EN = [
                     `;
                     tbody.appendChild(tr);
                     
-                    // Рекурсия для дочерних элементов (пробрасываем состояние путей для отрисовки линий)
+                    // Рекурсия для вложенных узлов
                     buildPDFRows(n.children, depth + 1, currentPathState);
                 }
             });
@@ -1123,7 +1127,7 @@ const TIERS_EN = [
 
         buildPDFRows(treeData, 0, []);
 
-        // 4. Генерация с улучшенным качеством
+        // 4. Генерация PDF
         const opt = {
             margin:       10,
             filename:     isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf',
