@@ -970,7 +970,7 @@ const TIERS_EN = [
 
         const pdfContainer = document.createElement('div');
         pdfContainer.style.padding = '35px 45px';
-        pdfContainer.style.fontFamily = "'Inter', sans-serif";
+        pdfContainer.style.fontFamily = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
         pdfContainer.style.color = '#0f172a';
         pdfContainer.style.background = '#ffffff';
 
@@ -1032,83 +1032,52 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка таблицы с идеальными ВЕКТОРНЫМИ SVG-линиями
-        function buildPDFRows(nodes, depth, pathLastState = []) {
-            // Отфильтровываем только видимые узлы, чтобы линии отрисовывались корректно
+        // 3. Сборка таблицы с современными CSS-индикаторами вложенности
+        function buildPDFRows(nodes, depth) {
+            // Отфильтровываем только видимые узлы
             const visibleNodes = nodes.filter(n => selectedIds.has(n.id) || indeterminateIds.has(n.id));
 
-            visibleNodes.forEach((n, index) => {
-                const isLast = (index === visibleNodes.length - 1);
-                const currentPathState = [...pathLastState, isLast];
+            visibleNodes.forEach((n) => {
+                const isFolder = n.children && n.children.length > 0;
+                const tr = document.createElement('tr');
                 
-                const basePadding = 20; // Стартовый отступ от края
-                const step = 28; // Ширина одного шага вложенности
-                const indentPixels = basePadding + (depth * step); // Место начала контента (иконки)
+                // Чередование фона: папки чуть темнее, файлы белые
+                tr.style.background = isFolder ? '#f8fafc' : '#ffffff';
+                const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
+
+                // 1. Динамический отступ для имитации дерева
+                const indentPixels = depth * 28; 
                 
-                let svgLines = '';
-                const lineColor = '#94a3b8'; // Строгий серый цвет линий
-
-                // Математический генератор SVG путей для дерева
-                for (let i = 0; i <= depth; i++) {
-                    const lineX = basePadding + (i * step) + 8; // Точный X-центр иконки родителя
-
-                    if (i < depth) {
-                        // Вертикальная сквозная линия от родителя (если он не последний)
-                        if (!pathLastState[i]) {
-                            svgLines += `<line x1="${lineX}" y1="0" x2="${lineX}" y2="100%" stroke="${lineColor}" stroke-width="1.5" />`;
-                        }
-                    } else if (depth > 0) {
-                        // Горизонтальный коннектор до самой иконки
-                        const targetX = basePadding + (depth * step); 
-
-                        if (isLast) {
-                            // Последний элемент в ветке (L-образный угол)
-                            svgLines += `<path d="M ${lineX} 0 L ${lineX} 50% L ${targetX} 50%" fill="none" stroke="${lineColor}" stroke-width="1.5" />`;
-                        } else {
-                            // Промежуточный элемент в ветке (T-образный перекресток)
-                            svgLines += `<line x1="${lineX}" y1="0" x2="${lineX}" y2="100%" stroke="${lineColor}" stroke-width="1.5" />`;
-                            svgLines += `<line x1="${lineX}" y1="50%" x2="${targetX}" y2="50%" stroke="${lineColor}" stroke-width="1.5" />`;
-                        }
-                    }
-                }
+                // 2. Цветовая кодировка уровней (монолитные маркеры вместо ломающихся SVG)
+                const depthColors = ['transparent', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+                const lineColor = depthColors[Math.min(depth, depthColors.length - 1)];
+                
+                // Толстая монолитная линия (border-left) для визуализации вложенности
+                const borderStyle = depth > 0 ? `border-left: 4px solid ${lineColor};` : 'border-left: 4px solid transparent;';
 
                 if (selectedIds.has(n.id)) {
                     // ПОЛНОСТЬЮ ВЫБРАННАЯ КАТЕГОРИЯ ИЛИ ФАЙЛ
-                    const tr = document.createElement('tr');
-                    const isFolder = n.children && n.children.length > 0;
-                    
-                    tr.style.background = isFolder ? '#f8fafc' : '#ffffff';
-                    const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
-
                     tr.innerHTML = `
                         <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
-                            <div style="position: relative; width: 100%; display: flex; align-items: center; min-height: 42px; padding-left: ${indentPixels}px; box-sizing: border-box;">
-                                <svg width="100%" height="calc(100% + 2px)" style="position: absolute; left: 0; top: -1px; pointer-events: none; z-index: 1;">
-                                    ${svgLines}
-                                </svg>
-                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%; padding: 10px 15px 10px 0;">
-                                    ${icon} <span style="font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word; line-height: 1.3;">${n.name}</span>
+                            <div style="display: flex; align-items: center; min-height: 42px; padding-left: ${indentPixels}px;">
+                                <div style="display: flex; align-items: center; width: 100%; padding: 10px 15px 10px 12px; ${borderStyle} background: ${depth > 0 ? '#fafafa' : 'transparent'}; border-radius: 0 6px 6px 0;">
+                                    ${icon} 
+                                    <span style="font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word; line-height: 1.3;">${n.name}</span>
                                 </div>
                             </div>
                         </td>
-                        <td style="padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
-                        <td style="padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
-                        <td style="padding: 10px 15px 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
+                        <td style="padding: 10px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
+                        <td style="padding: 10px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
+                        <td style="padding: 10px 15px 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
                     `;
                     tbody.appendChild(tr);
 
-                } else if (n.children && indeterminateIds.has(n.id)) {
-                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА (работает как заголовок группы)
-                    const tr = document.createElement('tr');
-                    tr.style.background = '#f1f5f9';
-                    
+                } else if (isFolder && indeterminateIds.has(n.id)) {
+                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА
                     tr.innerHTML = `
                         <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
-                            <div style="position: relative; width: 100%; display: flex; align-items: center; min-height: 44px; padding-left: ${indentPixels}px; box-sizing: border-box;">
-                                <svg width="100%" height="calc(100% + 2px)" style="position: absolute; left: 0; top: -1px; pointer-events: none; z-index: 1;">
-                                    ${svgLines}
-                                </svg>
-                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%; padding: 12px 15px 12px 0;">
+                            <div style="display: flex; align-items: center; min-height: 44px; padding-left: ${indentPixels}px;">
+                                <div style="display: flex; align-items: center; width: 100%; padding: 12px 15px 12px 12px; ${borderStyle} background: ${depth > 0 ? '#fafafa' : 'transparent'}; border-radius: 0 6px 6px 0;">
                                     ${getFolderOpenIcon('#64748b')} 
                                     <span style="font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word; line-height: 1.3;">
                                         ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>
@@ -1120,12 +1089,12 @@ const TIERS_EN = [
                     tbody.appendChild(tr);
                     
                     // Рекурсия для вложенных узлов
-                    buildPDFRows(n.children, depth + 1, currentPathState);
+                    buildPDFRows(n.children, depth + 1);
                 }
             });
         }
 
-        buildPDFRows(treeData, 0, []);
+        buildPDFRows(treeData, 0);
 
         // 4. Генерация PDF
         const opt = {
