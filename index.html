@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Base Calculator: Bi-Directional</title>
     <script src="database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg-body: #f1f5f9; --bg-sidebar: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
@@ -237,6 +238,8 @@
         </div>
 
         <div class="actions">
+            <button class="btn btn-download" style="background: #2563eb; margin-bottom: 10px;" onclick="downloadPDF()">📄 Скачать PDF (без цен)</button>
+            
             <button class="btn btn-download" id="btnDownload" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" id="btnReset" onclick="resetAll()">Сброс</button>
         </div>
@@ -419,13 +422,12 @@ const TIERS_EN = [
     let filterState = [new Set(), new Set(), new Set(), new Set()];
 
     function applyLang() {
-        // --- ДОБАВИТЬ ЭТИ 5 СТРОК СЮДА ---
         if (typeof GEO_DB_RU !== 'undefined' && typeof GEO_DB_EN !== 'undefined') {
             geoDB = currentLang === 'ru' ? GEO_DB_RU : GEO_DB_EN;
         } else if (typeof GEO_DB !== 'undefined') {
             geoDB = GEO_DB; 
         }
-        // ---------------------------------
+        
         const d = DICT[currentLang];
         
         // Static UI
@@ -496,13 +498,11 @@ const TIERS_EN = [
             }
         });
         
-        // --- ЗАМЕНИТЬ ЭТОТ БЛОК ---
         if (typeof GEO_DB !== 'undefined' || typeof GEO_DB_RU !== 'undefined') {
             document.getElementById('loader').style.display = 'none';
         } else {
             document.getElementById('loaderStatus').innerText = DICT.ru.loaderError;
         }
-        // --------------------------
 
         const savedLang = localStorage.getItem('smartLang_v5');
         if (!savedLang) {
@@ -949,6 +949,97 @@ const TIERS_EN = [
     }
     function resetAll() { location.reload(); }
 
+    /* ================= PDF EXPORT LOGIC ================= */
+    function downloadPDF() {
+        if(!selectedIds.size && !indeterminateIds.size) return alert(DICT[currentLang].alertEmpty);
+
+        // Создаем виртуальный контейнер для PDF
+        const pdfContainer = document.createElement('div');
+        pdfContainer.style.padding = '30px';
+        pdfContainer.style.fontFamily = "'Inter', sans-serif";
+        pdfContainer.style.color = '#0f172a';
+        pdfContainer.style.background = '#ffffff';
+
+        // Формируем заголовок и статистику (без цен)
+        pdfContainer.innerHTML = `
+            <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <h1 style="margin: 0 0 5px 0; font-size: 24px;">Спецификация выборки B2B</h1>
+                <p style="margin: 0; color: #64748b; font-size: 14px;">Источник: stathydra.com</p>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase;">Строк</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #475569;">${document.getElementById('selLines').innerText}</div>
+                </div>
+                <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase;">Телефонов</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
+                </div>
+                <div style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase;">Email</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #15803d;">${document.getElementById('selEmails').innerText}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-bottom: 15px; font-size: 16px;">Состав базы:</h3>
+        `;
+
+        const listContainer = document.createElement('div');
+        listContainer.style.fontSize = '12px';
+        listContainer.style.lineHeight = '1.8';
+
+        // Рекурсивный обход выбранных узлов
+        function buildPDFList(nodes, depth) {
+            nodes.forEach(n => {
+                const indent = depth * 20; // Отступ для вложенности
+                
+                if (selectedIds.has(n.id)) {
+                    // Полностью выбранный узел
+                    const row = document.createElement('div');
+                    row.style.paddingLeft = indent + 'px';
+                    row.style.borderBottom = '1px solid #f8fafc';
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    
+                    row.innerHTML = `
+                        <span style="font-weight: 600;">${n.name}</span>
+                        <span style="color: #64748b; font-size: 11px;">
+                            Стр: <b>${n.stats.l}</b> | Тел: <b>${n.stats.p}</b> | E-mail: <b>${n.stats.e}</b>
+                        </span>
+                    `;
+                    listContainer.appendChild(row);
+                } else if (n.children && indeterminateIds.has(n.id)) {
+                    // Частично выбранная папка
+                    const row = document.createElement('div');
+                    row.style.paddingLeft = indent + 'px';
+                    row.style.color = '#94a3b8';
+                    row.style.marginTop = '10px';
+                    row.style.marginBottom = '2px';
+                    row.innerHTML = `<em>📂 ${n.name}</em>`;
+                    listContainer.appendChild(row);
+                    
+                    buildPDFList(n.children, depth + 1);
+                }
+            });
+        }
+
+        buildPDFList(treeData, 0);
+        pdfContainer.appendChild(listContainer);
+
+        // Настройки генератора PDF
+        const opt = {
+            margin:       10,
+            filename:     'B2B_Selection_Report.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Генерируем и сохраняем
+        html2pdf().set(opt).from(pdfContainer).save();
+    }
+
     /* ================= ONBOARDING TOUR LOGIC ================= */
     let currentTourStep = 0;
 
@@ -1033,4 +1124,3 @@ const TIERS_EN = [
 </script>
 </body>
 </html>
-
