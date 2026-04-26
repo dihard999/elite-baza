@@ -964,8 +964,8 @@ const TIERS_EN = [
             partial: isRu ? "частично" : "partial"
         };
 
-        // Векторные SVG-иконки (гарантируют одинаковый рендер на всех ОС)
-        const getFolderIcon = (color) => `<svg style="width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; fill: ${color};" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+        // Векторные SVG-иконки
+        const getFolderIcon = (color) => `<svg style="width: 16px; height: 16px; vertical-align: -3px; margin-right: 8px; fill: ${color};" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
         const getFileIcon = (color) => `<svg style="width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; fill: ${color};" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
 
         const pdfContainer = document.createElement('div');
@@ -1018,13 +1018,13 @@ const TIERS_EN = [
             </div>
             
             <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 800; color: #0f172a;">${pdfStrings.catTitle}</h3>
-            <table style="width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                <thead style="background: #f1f5f9;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
                     <tr>
-                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; font-size: 13px; border-bottom: 2px solid #cbd5e1;">${d.thCategory}</th>
-                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; font-size: 13px; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px; border-left: 1px solid #e2e8f0;">${d.thLines}</th>
-                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; font-size: 13px; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px; border-left: 1px solid #e2e8f0;">${d.thPhones}</th>
-                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; font-size: 13px; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px; border-left: 1px solid #e2e8f0;">${d.thEmails}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #cbd5e1;">${d.thCategory}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px;">${d.thLines}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px;">${d.thPhones}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px;">${d.thEmails}</th>
                     </tr>
                 </thead>
                 <tbody id="pdfTableBody"></tbody>
@@ -1032,46 +1032,56 @@ const TIERS_EN = [
         `;
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
-        let rowCounter = 0;
 
-        // 3. Сборка таблицы
+        // 3. Сборка таблицы с четкой иерархией (без зебры)
         function buildPDFRows(nodes, depth) {
             nodes.forEach(n => {
-                const indent = depth * 20;
+                const indent = depth * 24; // Увеличенный отступ для лучшей читаемости иерархии
                 
                 if (selectedIds.has(n.id)) {
-                    rowCounter++;
-                    const bg = rowCounter % 2 === 0 ? '#fafafa' : '#ffffff';
                     const tr = document.createElement('tr');
-                    tr.style.background = bg;
-                    
                     const isFolder = n.children && n.children.length > 0;
-                    // Папкам даем плотный цвет, файлам — более светлый
-                    const icon = isFolder ? getFolderIcon('#475569') : getFileIcon('#94a3b8');
-
-                    tr.innerHTML = `
-                        <td style="padding: 10px 15px; padding-left: ${indent + 15}px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #e2e8f0;">
-                            ${icon} ${n.name}
-                        </td>
-                        <td style="padding: 10px 15px; text-align: right; font-size: 13px; font-weight: 500; color: #475569; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #f1f5f9;">${n.stats.l.toLocaleString()}</td>
-                        <td style="padding: 10px 15px; text-align: right; font-size: 13px; font-weight: 500; color: #2563eb; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #f1f5f9;">${n.stats.p.toLocaleString()}</td>
-                        <td style="padding: 10px 15px; text-align: right; font-size: 13px; font-weight: 500; color: #059669; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #f1f5f9;">${n.stats.e.toLocaleString()}</td>
-                    `;
+                    
+                    if (isFolder) {
+                        // ПОЛНОСТЬЮ ВЫБРАННАЯ ПАПКА (выступает как блок-заголовок)
+                        tr.style.background = '#f8fafc';
+                        tr.innerHTML = `
+                            <td style="padding: 12px 15px; padding-left: ${indent + 15}px; font-size: 14px; font-weight: 700; color: #0f172a; border-top: 1px solid #e2e8f0; border-bottom: 2px solid #e2e8f0;">
+                                ${getFolderIcon('#3b82f6')} ${n.name}
+                            </td>
+                            <td style="padding: 12px 15px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-top: 1px solid #e2e8f0; border-bottom: 2px solid #e2e8f0;">${n.stats.l.toLocaleString()}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-top: 1px solid #e2e8f0; border-bottom: 2px solid #e2e8f0;">${n.stats.p.toLocaleString()}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-size: 13px; font-weight: 700; color: #15803d; border-top: 1px solid #e2e8f0; border-bottom: 2px solid #e2e8f0;">${n.stats.e.toLocaleString()}</td>
+                        `;
+                    } else {
+                        // ФАЙЛ (Чистый белый фон, легкая граница, символ ветки дерева)
+                        tr.style.background = '#ffffff';
+                        tr.innerHTML = `
+                            <td style="padding: 10px 15px; padding-left: ${indent + 15}px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9;">
+                                <span style="color: #cbd5e1; margin-right: 6px; font-family: monospace; font-size: 14px;">└</span>
+                                ${getFileIcon('#94a3b8')} ${n.name}
+                            </td>
+                            <td style="padding: 10px 15px; text-align: right; font-size: 13px; font-weight: 500; color: #64748b; border-bottom: 1px solid #f1f5f9;">${n.stats.l.toLocaleString()}</td>
+                            <td style="padding: 10px 15px; text-align: right; font-size: 13px; font-weight: 500; color: #3b82f6; border-bottom: 1px solid #f1f5f9;">${n.stats.p.toLocaleString()}</td>
+                            <td style="padding: 10px 15px; text-align: right; font-size: 13px; font-weight: 500; color: #10b981; border-bottom: 1px solid #f1f5f9;">${n.stats.e.toLocaleString()}</td>
+                        `;
+                    }
                     tbody.appendChild(tr);
+
                 } else if (n.children && indeterminateIds.has(n.id)) {
-                    // Группирующий заголовок (частично выбранная папка)
+                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА (работает как группирующий заголовок)
                     const tr = document.createElement('tr');
                     tr.style.background = '#f8fafc';
                     tr.innerHTML = `
-                        <td colspan="4" style="padding: 10px 15px; padding-left: ${indent + 15}px; font-size: 13px; font-weight: 600; color: #1e293b; border-bottom: 1px solid #e2e8f0;">
-                            ${getFolderIcon('#94a3b8')}
-                            ${n.name} <span style="font-weight: 400; color: #94a3b8; font-size: 12px; margin-left: 6px;">(${pdfStrings.partial})</span>
+                        <td colspan="4" style="padding: 12px 15px; padding-left: ${indent + 15}px; font-size: 14px; font-weight: 700; color: #0f172a; border-top: 1px solid #e2e8f0; border-bottom: 2px solid #e2e8f0;">
+                            ${getFolderIcon('#94a3b8')} 
+                            ${n.name} 
+                            <span style="font-weight: 600; color: #94a3b8; font-size: 11px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px;">(${pdfStrings.partial})</span>
                         </td>
                     `;
                     tbody.appendChild(tr);
                     
-                    // Сброс зебры для вложенных элементов
-                    rowCounter = 0; 
+                    // Рекурсия для вложенных файлов
                     buildPDFRows(n.children, depth + 1);
                 }
             });
