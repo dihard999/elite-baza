@@ -954,7 +954,6 @@ const TIERS_EN = [
     /* ================= PDF EXPORT LOGIC ================= */
     function downloadPDF(isFullMode = false) {
         try {
-            // 1. Проверка на пустоту
             if (!isFullMode && (!selectedIds || selectedIds.size === 0) && (!indeterminateIds || indeterminateIds.size === 0)) {
                 return alert(DICT[currentLang].alertEmpty);
             }
@@ -965,18 +964,16 @@ const TIERS_EN = [
             const isRu = currentLang === 'ru';
             const d = DICT[currentLang];
             
-            // Включаем лоадер
             const loader = document.getElementById('loader');
             const loaderStatus = document.getElementById('loaderStatus');
             if (loader && loaderStatus) {
                 loader.style.display = 'flex';
-                loaderStatus.innerText = isRu ? "Генерация отчета..." : "Generating report...";
+                loaderStatus.innerText = isRu ? "Генерация отчета (вычисление)..." : "Generating report (calculating)...";
             }
 
             setTimeout(() => {
-                let exportWrapper = null; 
                 try {
-                    // Подсчет строк для адаптации масштаба (чтобы Canvas браузера не падал)
+                    // 1. Считаем строки
                     let rowCount = 0;
                     function countRows(nodes) {
                         nodes.forEach(n => {
@@ -995,7 +992,16 @@ const TIERS_EN = [
                     }
                     countRows(treeData);
 
-                    const canvasScale = rowCount > 1000 ? 0.8 : (rowCount > 400 ? 1 : 1.5);
+                    // 2. АНТИ-КРАШ МЕХАНИКА: Динамический масштаб, чтобы обойти лимит Canvas (15 000 px)
+                    const estimatedHeight = 300 + (rowCount * 22); // Примерная высота таблицы
+                    const maxSafeHeight = 14000; // Безопасный предел браузера
+                    let canvasScale = 1.5; 
+                    
+                    if (estimatedHeight * 1.5 > maxSafeHeight) {
+                        canvasScale = maxSafeHeight / estimatedHeight; 
+                        if (canvasScale < 0.5) canvasScale = 0.5; // Не даем качеству упасть слишком сильно
+                    }
+
                     const rowPad = rowCount > 300 ? '4px 8px' : '8px 12px';
                     
                     const pdfStrings = {
@@ -1014,27 +1020,14 @@ const TIERS_EN = [
                     const getFolderSolidIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
                     const getFileIcon = (color) => `<svg style="width: 13px; height: 13px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
 
-                    // 2. ИСПРАВЛЕНИЕ: Бронебойный контейнер, который игнорирует Flexbox вашего body
-                    exportWrapper = document.createElement('div');
-                    exportWrapper.style.position = 'fixed'; // Прибиваем к экрану
-                    exportWrapper.style.top = '0px';
-                    exportWrapper.style.left = '0px';
-                    exportWrapper.style.width = '800px';
-                    exportWrapper.style.display = 'block'; // Убиваем влияние flexbox
-                    exportWrapper.style.margin = '0px';
-                    exportWrapper.style.padding = '0px';
-                    exportWrapper.style.zIndex = '-9999'; // Прячем под интерфейс
-                    exportWrapper.style.backgroundColor = '#ffffff';
-
+                    // 3. Создаем контейнер ИСКЛЮЧИТЕЛЬНО В ПАМЯТИ
                     const pdfContainer = document.createElement('div');
                     pdfContainer.style.width = '800px'; 
                     pdfContainer.style.padding = '20px 30px';
-                    pdfContainer.style.boxSizing = 'border-box';
-                    pdfContainer.style.fontFamily = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+                    pdfContainer.style.fontFamily = "'Inter', -apple-system, sans-serif";
                     pdfContainer.style.color = '#0f172a';
                     pdfContainer.style.background = '#ffffff';
 
-                    // ГЕО
                     let filtersHtml = `<table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 5px;">`;
                     let hasFilters = false;
                     for(let i=0; i<4; i++) {
@@ -1051,7 +1044,6 @@ const TIERS_EN = [
                     }
                     filtersHtml += `</table>`;
 
-                    // ЦИФРЫ В ШАПКУ
                     let finalL = 0, finalP = 0, finalE = 0;
                     if (isFullMode) {
                         treeData.forEach(n => { 
@@ -1170,16 +1162,12 @@ const TIERS_EN = [
                     }
 
                     buildPDFRows(treeData, 0);
-                    
-                    // Добавляем элементы в DOM
-                    exportWrapper.appendChild(pdfContainer);
-                    document.body.appendChild(exportWrapper);
 
                     const fileName = isFullMode 
                         ? (isRu ? 'Stathydra_Full_Report.pdf' : 'Stathydra_Full_Specification.pdf')
                         : (isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf');
 
-                    // 3. ИСПРАВЛЕНИЕ: Жестко задаем x: 0 и y: 0 для генератора
+                    // 4. Идеальные настройки (Исключают смещение)
                     const opt = {
                         margin:       [10, 10, 10, 10], 
                         filename:     fileName,
@@ -1187,27 +1175,24 @@ const TIERS_EN = [
                         html2canvas:  { 
                             scale: canvasScale, 
                             useCORS: true, 
-                            x: 0,            // НАЧИНАЕМ СТРОГО СЛЕВА
-                            y: 0,            // НАЧИНАЕМ СТРОГО СВЕРХУ
+                            windowWidth: 800,
                             scrollX: 0, 
                             scrollY: 0, 
-                            windowWidth: 800 
+                            x: 0, 
+                            y: 0 
                         }, 
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                         pagebreak:    { mode: 'css', avoid: 'tr' } 
                     };
 
-                    html2pdf().set(opt).from(exportWrapper).save().then(() => {
-                        if (exportWrapper) exportWrapper.remove(); // Удаляем после скачивания
+                    html2pdf().set(opt).from(pdfContainer).save().then(() => {
                         if (loader) loader.style.display = 'none';
                     }).catch(err => {
-                        if (exportWrapper) exportWrapper.remove();
                         if (loader) loader.style.display = 'none';
                         alert("Ошибка генерации PDF: " + err);
                     });
 
                 } catch (innerError) {
-                    if (exportWrapper) exportWrapper.remove();
                     if (document.getElementById('loader')) document.getElementById('loader').style.display = 'none';
                     alert("Сбой подготовки данных: " + innerError.message);
                 }
