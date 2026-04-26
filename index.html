@@ -1029,29 +1029,30 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка с идеальными CSS-деревьями
-        // pathLastState: массив булевых значений, указывающих, является ли родитель на данном уровне "последним" в списке
+        // 3. Сборка с явными, контрастными CSS-деревьями
         function buildPDFRows(nodes, depth, pathLastState = []) {
             nodes.forEach((n, index) => {
                 const isLast = (index === nodes.length - 1);
                 const currentPathState = [...pathLastState, isLast];
                 const basePadding = 15;
-                const step = 22; // шаг отступа для каждого уровня
+                const step = 26; // Увеличенный шаг для более длинных горизонтальных линий
                 const indent = (depth * step) + basePadding;
                 
-                // Рисуем линии дерева (Tree-lines) на основе глубины и того, является ли узел последним
                 let treeLines = '';
+                const lineColor = '#64748b'; // Более темный цвет (Slate 500) для явного контраста
+
+                // Рисуем направляющие линии для всех родительских уровней
                 for(let i = 0; i < depth; i++) {
                     const isParentLast = pathLastState[i];
-                    const lineX = basePadding + (i * step) + 7; // +7 чтобы линия была по центру иконки родителя
+                    const lineX = basePadding + (i * step) + 7; // Точно по центру иконки родителя
                     
                     if (i === depth - 1) {
                         // Отрисовка Г-образного отвода к текущему элементу
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; bottom: ${isLast ? '50%' : '-1px'}; border-left: 2px solid #cbd5e1; z-index: 1;"></div>`;
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: 50%; width: 12px; border-top: 2px solid #cbd5e1; z-index: 1;"></div>`;
+                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: -2px; bottom: ${isLast ? '50%' : '-2px'}; border-left: 2px solid ${lineColor}; z-index: 1;"></div>`;
+                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: 50%; width: 18px; border-top: 2px solid ${lineColor}; z-index: 1;"></div>`;
                     } else if (!isParentLast) {
-                        // Отрисовка сквозной вертикальной линии для нижестоящих элементов (если родитель не был последним)
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; bottom: -1px; border-left: 2px solid #cbd5e1; z-index: 1;"></div>`;
+                        // Сквозная вертикальная линия для нижестоящих элементов (если родитель не был последним)
+                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: -2px; bottom: -2px; border-left: 2px solid ${lineColor}; z-index: 1;"></div>`;
                     }
                 }
 
@@ -1073,7 +1074,7 @@ const TIERS_EN = [
                     tbody.appendChild(tr);
 
                 } else if (n.children && indeterminateIds.has(n.id)) {
-                    // Группирующий заголовок
+                    // Группирующий заголовок (Папка выбрана частично)
                     const tr = document.createElement('tr');
                     tr.style.background = '#f1f5f9';
                     
