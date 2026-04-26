@@ -6,6 +6,8 @@
     <title>Smart Base Calculator: Bi-Directional</title>
     <script src="database.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --bg-body: #f1f5f9; --bg-sidebar: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
@@ -951,169 +953,110 @@ const TIERS_EN = [
     }
     function resetAll() { location.reload(); }
 
-    /* ================= PDF EXPORT LOGIC ================= */
-    function downloadPDF(isFullMode = false) {
-        try {
-            if (!isFullMode && (!selectedIds || selectedIds.size === 0) && (!indeterminateIds || indeterminateIds.size === 0)) {
-                return alert(DICT[currentLang].alertEmpty);
-            }
-            if (isFullMode && (!treeData || treeData.length === 0)) {
-                return alert(DICT[currentLang].alertEmpty);
-            }
+    /* ================= NEW PDF EXPORT LOGIC (jsPDF-AutoTable) ================= */
+async function downloadPDF(isFullMode = false) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const isRu = currentLang === 'ru';
+    const d = DICT[currentLang];
 
-            const isRu = currentLang === 'ru';
-            const d = DICT[currentLang];
-            
-            const loader = document.getElementById('loader');
-            const loaderStatus = document.getElementById('loaderStatus');
-            if (loader && loaderStatus) {
-                loader.style.display = 'flex';
-                loaderStatus.innerText = isRu ? "Подготовка PDF..." : "Preparing PDF...";
-            }
+    // Проверка на пустоту
+    if (!isFullMode && !selectedIds.size && !indeterminateIds.size) return alert(d.alertEmpty);
 
-            setTimeout(async () => {
-                const tempDiv = document.createElement('div');
-                try {
-                    // 1. Сбор данных
-                    const flatData = [];
-                    function flattenTree(nodes, depth) {
-                        nodes.forEach(n => {
-                            if (n.stats.l === 0 || !n.visible) return;
-                            let render = isFullMode || selectedIds.has(n.id) || (isFolder(n) && indeterminateIds.has(n.id));
-                            if (!render) return;
+    // 1. Сбор данных в плоский массив для таблицы
+    const rows = [];
+    function processNodes(nodes, depth) {
+        nodes.forEach(n => {
+            if (n.stats.l === 0 || !n.visible) return;
 
-                            flatData.push({ n, depth, isPartial: !isFullMode && isFolder(n) && indeterminateIds.has(n.id) && !selectedIds.has(n.id) });
-                            
-                            // Рекурсия только если это папка и мы в режиме "Full" ИЛИ папка выбрана частично
-                            if (isFolder(n)) {
-                                if (isFullMode || (!selectedIds.has(n.id) && indeterminateIds.has(n.id))) {
-                                    flattenTree(n.children, depth + 1);
-                                }
-                            }
-                        });
-                    }
-                    function isFolder(node) { return node.children && node.children.length > 0; }
-                    flattenTree(treeData, 0);
+            let shouldAdd = false;
+            let shouldExpand = false;
 
-                    // 2. Настройка временного контейнера (КРИТИЧНО ДЛЯ СМЕЩЕНИЯ)
-                    tempDiv.style.position = 'fixed';
-                    tempDiv.style.zIndex = '9999';
-                    tempDiv.style.top = '0';
-                    tempDiv.style.left = '0';
-                    tempDiv.style.width = '210mm'; // Ширина листа A4
-                    tempDiv.style.background = '#ffffff';
-                    tempDiv.style.opacity = '0.01'; // Почти прозрачный, но видимый для движка
-                    tempDiv.style.pointerEvents = 'none';
-                    document.body.appendChild(tempDiv);
-
-                    // Сводка цифр
-                    let finalL = 0, finalP = 0, finalE = 0;
-                    if (isFullMode) {
-                        treeData.forEach(n => { if(n.visible) { finalL += n.stats.l; finalP += n.stats.p; finalE += n.stats.e; } });
-                    } else {
-                        finalL = parseInt((document.getElementById('selLines')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
-                        finalP = parseInt((document.getElementById('selPhones')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
-                        finalE = parseInt((document.getElementById('selEmails')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
-                    }
-
-                    const pdfStrings = {
-                        geo: isRu ? "Гео-таргетинг" : "Geo-Targeting",
-                        all: isRu ? "Все локации" : "All locations",
-                        title: isFullMode ? (isRu ? "Полная детализация" : "Full Details") : (isRu ? "Выбранные категории" : "Selected Categories"),
-                        part: isRu ? "частично" : "partial"
-                    };
-
-                    // 3. Генерация HTML внутри контейнера
-                    let html = `
-                        <div style="padding: 20px; width: 100%; box-sizing: border-box;">
-                            <h2 style="font-size: 20px; margin-bottom: 10px;">📍 ${pdfStrings.geo}</h2>
-                            <div style="background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
-                                ${document.getElementById('sum-row-0')?.style.display !== 'none' ? document.getElementById('sum-val-0').innerText : pdfStrings.all}
-                            </div>
-                            <div style="display: flex; margin-bottom: 25px; gap: 10px;">
-                                <div style="flex:1; border: 1px solid #cbd5e1; padding: 10px; text-align: center; border-radius: 8px;">
-                                    <small style="color: #64748b; font-size: 9px; text-transform: uppercase;">Lines</small>
-                                    <div style="font-size: 18px; font-weight: 800;">${finalL.toLocaleString()}</div>
-                                </div>
-                                <div style="flex:1; border: 1px solid #3b82f6; padding: 10px; text-align: center; border-radius: 8px; color: #1d4ed8;">
-                                    <small style="color: #3b82f6; font-size: 9px; text-transform: uppercase;">Phones</small>
-                                    <div style="font-size: 18px; font-weight: 800;">${finalP.toLocaleString()}</div>
-                                </div>
-                                <div style="flex:1; border: 1px solid #10b981; padding: 10px; text-align: center; border-radius: 8px; color: #059669;">
-                                    <small style="color: #10b981; font-size: 9px; text-transform: uppercase;">E-mails</small>
-                                    <div style="font-size: 18px; font-weight: 800;">${finalE.toLocaleString()}</div>
-                                </div>
-                            </div>
-                            <h3 style="font-size: 16px; border-left: 4px solid #3b82f6; padding-left: 10px; margin-bottom: 10px;">${pdfStrings.title}</h3>
-                            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                                <thead>
-                                    <tr style="background: #0f172a; color: #ffffff;">
-                                        <th style="padding: 8px; text-align: left; border-radius: 4px 0 0 0;">Category</th>
-                                        <th style="padding: 8px; text-align: right;">Lines</th>
-                                        <th style="padding: 8px; text-align: right;">Phones</th>
-                                        <th style="padding: 8px; text-align: right; border-radius: 0 4px 0 0;">Emails</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-
-                    flatData.forEach(item => {
-                        const indent = item.depth * 15;
-                        const colors = ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
-                        const color = colors[Math.min(item.depth, colors.length - 1)];
-                        
-                        if (item.isPartial) {
-                            html += `
-                                <tr style="background: #f1f5f9; page-break-inside: avoid;">
-                                    <td colspan="4" style="padding: 8px; border-bottom: 1px solid #e2e8f0; border-left: 3px solid ${color}; font-weight: 700; padding-left: ${indent + 8}px;">
-                                        📁 ${item.n.name} <span style="font-weight: 400; color: #64748b; font-size: 9px;">(${pdfStrings.part})</span>
-                                    </td>
-                                </tr>`;
-                        } else {
-                            html += `
-                                <tr style="page-break-inside: avoid;">
-                                    <td style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; border-left: 3px solid ${color}; padding-left: ${indent + 8}px;">
-                                        ${isFolder(item.n) ? '📁' : '📄'} ${item.n.name}
-                                    </td>
-                                    <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #f1f5f9;">${item.n.stats.l.toLocaleString()}</td>
-                                    <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #f1f5f9; color: #1d4ed8;">${item.n.stats.p.toLocaleString()}</td>
-                                    <td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid #f1f5f9; color: #059669;">${item.n.stats.e.toLocaleString()}</td>
-                                </tr>`;
-                        }
-                    });
-
-                    html += `</tbody></table></div>`;
-                    tempDiv.innerHTML = html;
-
-                    // 4. Финальные настройки PDF
-                    const opt = {
-                        margin: 10,
-                        filename: isFullMode ? 'Full_Report.pdf' : 'Selected_Report.pdf',
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { 
-                            scale: flatData.length > 500 ? 1 : 2, 
-                            useCORS: true,
-                            scrollY: 0,
-                            scrollX: 0,
-                            windowWidth: 800
-                        },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak: { mode: 'css', avoid: 'tr' }
-                    };
-
-                    await html2pdf().set(opt).from(tempDiv).save();
-                    tempDiv.remove();
-                    if (loader) loader.style.display = 'none';
-
-                } catch (err) {
-                    console.error(err);
-                    tempDiv.remove();
-                    if (loader) loader.style.display = 'none';
-                    alert("Error: " + err.message);
+            if (isFullMode) {
+                shouldAdd = true;
+                shouldExpand = true;
+            } else {
+                if (selectedIds.has(n.id)) {
+                    shouldAdd = true;
+                    shouldExpand = false;
+                } else if (indeterminateIds.has(n.id)) {
+                    shouldAdd = true;
+                    shouldExpand = true;
                 }
-            }, 150);
-        } catch (e) { alert(e.message); }
+            }
+
+            if (shouldAdd) {
+                const prefix = "  ".repeat(depth) + (n.children && n.children.length > 0 ? "• " : "- ");
+                const isPart = !isFullMode && !selectedIds.has(n.id) && indeterminateIds.has(n.id);
+                
+                rows.push([
+                    prefix + n.name + (isPart ? ` (${isRu ? 'частично' : 'partial'})` : ""),
+                    n.stats.l.toLocaleString(),
+                    n.stats.p.toLocaleString(),
+                    n.stats.e.toLocaleString()
+                ]);
+
+                if (shouldExpand && n.children) {
+                    processNodes(n.children, depth + 1);
+                }
+            }
+        });
     }
+    processNodes(treeData, 0);
+
+    // 2. Отрисовка шапки документа
+    doc.setFontSize(18);
+    doc.text("Stathydra Report", 15, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    const geoLabel = isRu ? "Гео-таргетинг: " : "Geo-Targeting: ";
+    const geoVal = (document.getElementById('sum-row-0')?.style.display !== 'none') 
+                   ? document.getElementById('sum-val-0').innerText 
+                   : (isRu ? "Все локации" : "All locations");
+    doc.text(geoLabel + geoVal, 15, 28);
+
+    // Сводные данные (Boxes)
+    doc.setFillColor(245, 248, 250);
+    doc.roundedRect(15, 35, 180, 20, 3, 3, 'F');
+    
+    doc.setFontSize(9);
+    doc.setTextColor(50);
+    doc.text(isRu ? "СТРОК" : "LINES", 25, 42);
+    doc.text(isRu ? "ТЕЛЕФОНОВ" : "PHONES", 85, 42);
+    doc.text(isRu ? "EMAIL" : "EMAILS", 145, 42);
+
+    doc.setFontSize(12);
+    doc.text(document.getElementById('selLines').innerText, 25, 49);
+    doc.text(document.getElementById('selPhones').innerText, 85, 49);
+    doc.text(document.getElementById('selEmails').innerText, 145, 49);
+
+    // 3. Генерация таблицы (AutoTable)
+    doc.autoTable({
+        startY: 60,
+        head: [[d.thCategory, d.thLines, d.thPhones, d.thEmails]],
+        body: rows,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 23, 42], fontSize: 9, halign: 'center' },
+        columnStyles: {
+            0: { cellWidth: 'auto' },
+            1: { halign: 'right', cellWidth: 30 },
+            2: { halign: 'right', cellWidth: 30 },
+            3: { halign: 'right', cellWidth: 30 }
+        },
+        styles: { fontSize: 8, cellPadding: 3, font: 'helvetica' },
+        didParseCell: function(data) {
+            // Если в имени есть "частично", выделяем строку серым
+            if (data.column.index === 0 && data.cell.raw.includes('(')) {
+                data.cell.styles.fontStyle = 'bold';
+            }
+        }
+    });
+
+    // 4. Сохранение
+    const name = isFullMode ? "Full_Report.pdf" : "Selected_Report.pdf";
+    doc.save(name);
+}
 
     /* ================= ONBOARDING TOUR LOGIC ================= */
     let currentTourStep = 0;
