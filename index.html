@@ -956,11 +956,15 @@ const TIERS_EN = [
         const isRu = currentLang === 'ru';
         const d = DICT[currentLang];
         
+        // Объект со всеми строками для PDF на двух языках
         const pdfStrings = {
             geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
             allLocs: isRu ? "Все локации" : "All locations",
             catTitle: isRu ? "Детализация выбранных категорий" : "Selected Categories Details",
-            partial: isRu ? "частично" : "partial"
+            partial: isRu ? "частично" : "partial",
+            lblLines: isRu ? "📋 Строк всего" : "📋 Total Lines",
+            lblPhones: isRu ? "📞 Телефонов" : "📞 Phones",
+            lblEmails: isRu ? "✉️ E-mail" : "✉️ E-mail"
         };
 
         // Векторные SVG-иконки
@@ -974,7 +978,7 @@ const TIERS_EN = [
         pdfContainer.style.color = '#0f172a';
         pdfContainer.style.background = '#ffffff';
 
-        // 1. Спецификация ГЕО
+        // 1. Спецификация ГЕО (использует LEVEL_LABELS, которые уже переведены в applyLang)
         let filtersHtml = `<table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-top: 10px;">`;
         let hasFilters = false;
         for(let i=0; i<4; i++) {
@@ -991,7 +995,7 @@ const TIERS_EN = [
         }
         filtersHtml += `</table>`;
 
-        // 2. Шапка и блоки статистики
+        // 2. Шапка и блоки статистики (Переведено через pdfStrings)
         pdfContainer.innerHTML = `
             <div style="margin-bottom: 40px;">
                 <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">📍 ${pdfStrings.geoTitle}</h2>
@@ -1002,15 +1006,15 @@ const TIERS_EN = [
             
             <div style="display: flex; gap: 15px; margin-bottom: 40px;">
                 <div style="padding: 22px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 14px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">📋 Строк всего</div>
+                    <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">${pdfStrings.lblLines}</div>
                     <div style="font-size: 30px; font-weight: 900; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
                 </div>
                 <div style="padding: 22px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 14px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">📞 Телефонов</div>
+                    <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">${pdfStrings.lblPhones}</div>
                     <div style="font-size: 30px; font-weight: 900; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
                 </div>
                 <div style="padding: 22px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 14px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">✉️ E-mail</div>
+                    <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">${pdfStrings.lblEmails}</div>
                     <div style="font-size: 30px; font-weight: 900; color: #059669;">${document.getElementById('selEmails').innerText}</div>
                 </div>
             </div>
@@ -1032,7 +1036,7 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка таблицы с монолитными индикаторами вложенности
+        // 3. Сборка таблицы с монолитными индикаторами вложенности (Цвета уровней)
         function buildPDFRows(nodes, depth) {
             const visibleNodes = nodes.filter(n => selectedIds.has(n.id) || indeterminateIds.has(n.id));
 
@@ -1044,12 +1048,8 @@ const TIERS_EN = [
                 const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
 
                 const indentPixels = depth * 28; 
-                
-                // Цветовая сетка: первый уровень — серый, далее — цветные уровни
                 const depthColors = ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
                 const lineColor = depthColors[Math.min(depth, depthColors.length - 1)];
-                
-                // Линия теперь рисуется всегда (для всех уровней)
                 const borderStyle = `border-left: 4px solid ${lineColor};`;
 
                 if (selectedIds.has(n.id)) {
