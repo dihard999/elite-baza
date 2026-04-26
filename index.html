@@ -973,7 +973,7 @@ const TIERS_EN = [
                         geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
                         allLocs: isRu ? "Все локации" : "All locations",
                         catTitle: isFullMode 
-                            ? (isRu ? "Сводка по фильтрам (Верхние уровни)" : "Filter Summary (Top Levels)") 
+                            ? (isRu ? "Сводка по фильтрам (Полная детализация)" : "Filter Summary (Full Details)") 
                             : (isRu ? "Детализация выбранных категорий" : "Selected Categories Details"),
                         partial: isRu ? "частично" : "partial",
                         lblLines: isRu ? "📋 Строк всего" : "📋 Total Lines",
@@ -1131,8 +1131,8 @@ const TIERS_EN = [
                                 `;
                                 tbody.appendChild(tr);
                                 
-                                // ОГРАНИЧЕНИЕ: Раскрываем только верхние уровни, чтобы предотвратить краш браузера
-                                if (isFolder && depth < 1) {
+                                // СНЯТО ОГРАНИЧЕНИЕ: Теперь проваливаемся до самого конца
+                                if (isFolder) {
                                     buildPDFRows(n.children, depth + 1);
                                 }
                             }
