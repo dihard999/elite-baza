@@ -982,9 +982,9 @@ const TIERS_EN = [
              const val = document.getElementById(`sum-val-${i}`);
              if(row && row.style.display !== 'none') {
                  filtersHtml += `
-                 <div style="display: flex; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
-                     <div style="color: #64748b; width: 150px; font-size: 14px;">${LEVEL_LABELS[i]}</div>
-                     <div style="font-weight: 700; color: #0f172a; font-size: 15px;">${val.innerText}</div>
+                 <div style="display: flex; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+                     <div style="color: #64748b; width: 150px; font-size: 13px; text-transform: uppercase; font-weight: 600;">${LEVEL_LABELS[i]}</div>
+                     <div style="font-weight: 700; color: #0f172a; font-size: 14px;">${val.innerText}</div>
                  </div>`;
                  hasFilters = true;
              }
@@ -995,23 +995,23 @@ const TIERS_EN = [
         pdfContainer.innerHTML = `
             <div style="margin-bottom: 40px;">
                 <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">📍 ${pdfStrings.geoTitle}</h2>
-                <div style="background: #fafafa; padding: 10px 20px 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="background: #f8fafc; padding: 12px 20px 15px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     ${hasFilters ? filtersHtml : `<div style="padding-top:5px; font-weight:700; color:#475569;">🌍 ${pdfStrings.allLocs}</div>`}
                 </div>
             </div>
             
             <div style="display: flex; gap: 15px; margin-bottom: 40px;">
-                <div style="padding: 22px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 14px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">📋 Строк всего</div>
-                    <div style="font-size: 30px; font-weight: 900; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
+                <div style="padding: 20px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 8px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">📋 Строк всего</div>
+                    <div style="font-size: 28px; font-weight: 900; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
                 </div>
-                <div style="padding: 22px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 14px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">📞 Телефонов</div>
-                    <div style="font-size: 30px; font-weight: 900; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
+                <div style="padding: 20px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 8px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">📞 Телефонов</div>
+                    <div style="font-size: 28px; font-weight: 900; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
                 </div>
-                <div style="padding: 22px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 14px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">✉️ E-mail</div>
-                    <div style="font-size: 30px; font-weight: 900; color: #059669;">${document.getElementById('selEmails').innerText}</div>
+                <div style="padding: 20px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 8px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">✉️ E-mail</div>
+                    <div style="font-size: 28px; font-weight: 900; color: #059669;">${document.getElementById('selEmails').innerText}</div>
                 </div>
             </div>
             
@@ -1030,84 +1030,59 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка строк с математически выверенными CSS-линиями
-        function buildPDFRows(nodes, depth, pathLastState = []) {
-            // Оставляем только те узлы, которые выбраны (полностью или частично)
-            const visibleNodes = nodes.filter(n => selectedIds.has(n.id) || indeterminateIds.has(n.id));
+        // 3. Сборка строк (БЕЗ ЛИНИЙ, только отступы и фильтрация нулевых значений)
+        function buildPDFRows(nodes, depth) {
+            // ЖЕСТКИЙ ФИЛЬТР: только выбранные И где строк строго больше нуля
+            const visibleNodes = nodes.filter(n => (selectedIds.has(n.id) || indeterminateIds.has(n.id)) && n.stats.l > 0);
 
-            visibleNodes.forEach((n, index) => {
-                const isLast = (index === visibleNodes.length - 1);
-                const currentPathState = [...pathLastState, isLast];
-                
+            visibleNodes.forEach((n) => {
                 const basePadding = 15;
-                const step = 26; // Шаг вложенности
-                const indent = basePadding + (depth * step); // Итоговый отступ
+                const step = 24; // Ширина отступа для каждого уровня
+                const indent = basePadding + (depth * step); 
                 
                 const isFolder = n.children && n.children.length > 0;
                 const isPartial = isFolder && indeterminateIds.has(n.id);
-                const rowBg = isFolder ? '#f8fafc' : '#ffffff';
                 
-                let treeLines = '';
+                // Выделяем корневые папки серым фоном для зональности
+                const rowBg = depth === 0 ? '#f8fafc' : '#ffffff';
                 
-                // Рендер направляющих линий (Tree-lines)
-                for (let i = 0; i < depth; i++) {
-                    const lineCenter = basePadding + (i * step) + 7; // Точка X (центр иконки)
-                    
-                    if (i === depth - 1) {
-                        // Линия для текущего родителя (Уголок или Перекресток)
-                        if (isLast) {
-                            treeLines += `<div style="position: absolute; left: ${lineCenter}px; top: -1px; height: 22px; border-left: 2px solid #94a3b8; z-index: 1;"></div>`;
-                        } else {
-                            treeLines += `<div style="position: absolute; left: ${lineCenter}px; top: -1px; bottom: -1px; border-left: 2px solid #94a3b8; z-index: 1;"></div>`;
-                        }
-                        // Горизонтальный коннектор (дотягивается ровно до начала иконки)
-                        treeLines += `<div style="position: absolute; left: ${lineCenter}px; top: 20px; width: 22px; border-top: 2px solid #94a3b8; z-index: 1;"></div>`;
-                    } else if (!pathLastState[i]) {
-                        // Сквозная вертикальная линия от вышестоящих папок
-                        treeLines += `<div style="position: absolute; left: ${lineCenter}px; top: -1px; bottom: -1px; border-left: 2px solid #94a3b8; z-index: 1;"></div>`;
-                    }
-                }
-
-                // Выбор иконки
                 let icon = '';
-                if (isFolder && !isPartial) icon = getFolderSolidIcon('#3b82f6'); // Синяя закрытая
-                else if (isPartial) icon = getFolderOpenIcon('#64748b');          // Серая открытая
-                else icon = getFileIcon('#64748b');                               // Серый файл
+                if (isFolder && !isPartial) icon = getFolderSolidIcon('#3b82f6'); // Синяя папка
+                else if (isPartial) icon = getFolderOpenIcon('#64748b');          // Серая папка
+                else icon = getFileIcon('#94a3b8');                               // Серый файл
 
-                // Создаем Flex-строку (работает в PDF идеально без разрывов)
                 const tr = document.createElement('div');
                 tr.style.display = 'flex';
                 tr.style.alignItems = 'stretch';
-                tr.style.minHeight = '42px';
+                tr.style.minHeight = '38px';
                 tr.style.background = rowBg;
-                tr.style.borderBottom = '1px solid #e2e8f0';
-                tr.style.position = 'relative';
-                tr.style.pageBreakInside = 'avoid'; // Защита от разрыва при переходе на новую страницу
-                tr.style.breakInside = 'avoid';
+                
+                // Тонкий разделитель для удобства чтения
+                tr.style.borderBottom = depth === 0 ? '1px solid #cbd5e1' : '1px solid #f1f5f9';
+                if (depth === 0) tr.style.borderTop = '1px solid #cbd5e1'; // Корневые папки выделены сильнее
+                
+                tr.style.pageBreakInside = 'avoid'; 
 
                 tr.innerHTML = `
-                    <div style="flex: 1; display: flex; align-items: center; padding: 10px 15px; padding-left: ${indent}px; position: relative; z-index: 2;">
-                        ${treeLines}
-                        <div style="position: relative; z-index: 3; display: flex; align-items: center; background: ${rowBg}; padding-right: 4px;">
-                            ${icon}
-                        </div>
+                    <div style="flex: 1; display: flex; align-items: center; padding: 8px 15px; padding-left: ${indent}px;">
+                        ${icon}
                         <span style="font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word;">${n.name}</span>
-                        ${isPartial ? `<span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>` : ''}
+                        ${isPartial ? `<span style="font-weight: 600; color: #94a3b8; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>` : ''}
                     </div>
-                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 10px; font-size: 13px; font-weight: 700; color: #475569; flex-shrink: 0;">${n.stats.l.toLocaleString()}</div>
-                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; flex-shrink: 0;">${n.stats.p.toLocaleString()}</div>
-                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 10px 15px 10px 10px; font-size: 13px; font-weight: 700; color: #10b981; flex-shrink: 0;">${n.stats.e.toLocaleString()}</div>
+                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 8px 10px; font-size: 13px; font-weight: 700; color: #475569; flex-shrink: 0;">${n.stats.l.toLocaleString()}</div>
+                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 8px 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; flex-shrink: 0;">${n.stats.p.toLocaleString()}</div>
+                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 8px 15px 8px 10px; font-size: 13px; font-weight: 700; color: #10b981; flex-shrink: 0;">${n.stats.e.toLocaleString()}</div>
                 `;
                 tbody.appendChild(tr);
 
-                // Если это папка - идем вглубь
-                if (isFolder && (selectedIds.has(n.id) || indeterminateIds.has(n.id))) {
-                    buildPDFRows(n.children, depth + 1, currentPathState);
+                // Идем вглубь
+                if (isFolder) {
+                    buildPDFRows(n.children, depth + 1);
                 }
             });
         }
 
-        buildPDFRows(treeData, 0, []);
+        buildPDFRows(treeData, 0);
 
         // 4. Генерация
         const opt = {
