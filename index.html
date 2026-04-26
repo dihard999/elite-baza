@@ -974,9 +974,9 @@ const TIERS_EN = [
             }
 
             setTimeout(() => {
-                let exportWrapper = null; // Глобальная ссылка для удаления после рендера
+                let exportWrapper = null; 
                 try {
-                    // Подсчет строк для адаптации масштаба
+                    // Подсчет строк для адаптации масштаба (чтобы Canvas браузера не падал)
                     let rowCount = 0;
                     function countRows(nodes) {
                         nodes.forEach(n => {
@@ -1014,19 +1014,23 @@ const TIERS_EN = [
                     const getFolderSolidIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
                     const getFileIcon = (color) => `<svg style="width: 13px; height: 13px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
 
-                    // 2. ИСПРАВЛЕНИЕ: Обертка для фиксации координат (чтобы отчет не уезжал влево)
+                    // 2. ИСПРАВЛЕНИЕ: Бронебойный контейнер, который игнорирует Flexbox вашего body
                     exportWrapper = document.createElement('div');
-                    exportWrapper.style.position = 'absolute';
-                    exportWrapper.style.left = '0';
-                    exportWrapper.style.top = '0';
+                    exportWrapper.style.position = 'fixed'; // Прибиваем к экрану
+                    exportWrapper.style.top = '0px';
+                    exportWrapper.style.left = '0px';
                     exportWrapper.style.width = '800px';
-                    exportWrapper.style.zIndex = '-9999'; // Прячем под основной интерфейс
-                    exportWrapper.style.pointerEvents = 'none';
+                    exportWrapper.style.display = 'block'; // Убиваем влияние flexbox
+                    exportWrapper.style.margin = '0px';
+                    exportWrapper.style.padding = '0px';
+                    exportWrapper.style.zIndex = '-9999'; // Прячем под интерфейс
+                    exportWrapper.style.backgroundColor = '#ffffff';
 
                     const pdfContainer = document.createElement('div');
-                    pdfContainer.style.width = '100%'; 
+                    pdfContainer.style.width = '800px'; 
                     pdfContainer.style.padding = '20px 30px';
-                    pdfContainer.style.fontFamily = "'Inter', -apple-system, sans-serif";
+                    pdfContainer.style.boxSizing = 'border-box';
+                    pdfContainer.style.fontFamily = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
                     pdfContainer.style.color = '#0f172a';
                     pdfContainer.style.background = '#ffffff';
 
@@ -1167,7 +1171,7 @@ const TIERS_EN = [
 
                     buildPDFRows(treeData, 0);
                     
-                    // Добавляем таблицу в body для правильных координат
+                    // Добавляем элементы в DOM
                     exportWrapper.appendChild(pdfContainer);
                     document.body.appendChild(exportWrapper);
 
@@ -1175,7 +1179,7 @@ const TIERS_EN = [
                         ? (isRu ? 'Stathydra_Full_Report.pdf' : 'Stathydra_Full_Specification.pdf')
                         : (isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf');
 
-                    // 3. ИСПРАВЛЕНИЕ: scrollX, scrollY в 0 - исключает смещение
+                    // 3. ИСПРАВЛЕНИЕ: Жестко задаем x: 0 и y: 0 для генератора
                     const opt = {
                         margin:       [10, 10, 10, 10], 
                         filename:     fileName,
@@ -1183,6 +1187,8 @@ const TIERS_EN = [
                         html2canvas:  { 
                             scale: canvasScale, 
                             useCORS: true, 
+                            x: 0,            // НАЧИНАЕМ СТРОГО СЛЕВА
+                            y: 0,            // НАЧИНАЕМ СТРОГО СВЕРХУ
                             scrollX: 0, 
                             scrollY: 0, 
                             windowWidth: 800 
@@ -1191,8 +1197,8 @@ const TIERS_EN = [
                         pagebreak:    { mode: 'css', avoid: 'tr' } 
                     };
 
-                    html2pdf().set(opt).from(pdfContainer).save().then(() => {
-                        if (exportWrapper) exportWrapper.remove(); // Убираем мусор
+                    html2pdf().set(opt).from(exportWrapper).save().then(() => {
+                        if (exportWrapper) exportWrapper.remove(); // Удаляем после скачивания
                         if (loader) loader.style.display = 'none';
                     }).catch(err => {
                         if (exportWrapper) exportWrapper.remove();
