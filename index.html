@@ -958,23 +958,20 @@ const TIERS_EN = [
         
         // Мультиязычные строки для PDF
         const pdfStrings = {
-            docTitle: isRu ? "Спецификация выборки B2B" : "B2B Data Selection Specification",
-            source: isRu ? "Источник: stathydra.com" : "Source: stathydra.com",
             geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
             allLocs: isRu ? "Все локации" : "All locations",
             catTitle: isRu ? "Структура базы данных" : "Database Structure",
-            partial: isRu ? "частично" : "partial",
-            dateStr: new Date().toLocaleDateString(isRu ? 'ru-RU' : 'en-US')
+            partial: isRu ? "частично" : "partial"
         };
 
         const pdfContainer = document.createElement('div');
-        pdfContainer.style.padding = '40px';
+        pdfContainer.style.padding = '30px 40px';
         pdfContainer.style.fontFamily = "'Inter', sans-serif";
         pdfContainer.style.color = '#0f172a';
         pdfContainer.style.background = '#ffffff';
 
-        // 1. Строгий блок фильтров
-        let filtersHtml = `<table style="width: 100%; font-size: 13px; border-collapse: collapse;">`;
+        // 1. Формируем таблицу фильтров
+        let filtersHtml = `<table style="width: 100%; font-size: 14px; border-collapse: collapse;">`;
         let hasFilters = false;
         for(let i=0; i<4; i++) {
              const row = document.getElementById(`sum-row-${i}`);
@@ -982,58 +979,48 @@ const TIERS_EN = [
              if(row && row.style.display !== 'none') {
                  filtersHtml += `
                  <tr>
-                     <td style="padding: 4px 0; color: #64748b; width: 120px;">${LEVEL_LABELS[i]}</td>
-                     <td style="padding: 4px 0; font-weight: 600; color: #0f172a;">${val.innerText}</td>
+                     <td style="padding: 6px 0; color: #64748b; width: 140px;">${LEVEL_LABELS[i]}</td>
+                     <td style="padding: 6px 0; font-weight: 700; color: #0f172a; font-size: 15px;">${val.innerText}</td>
                  </tr>`;
                  hasFilters = true;
              }
         }
         filtersHtml += `</table>`;
 
-        // 2. Шапка документа и главная статистика
+        // 2. Шапка и блоки статистики
         pdfContainer.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px;">
-                <div>
-                    <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase;">${pdfStrings.docTitle}</h1>
-                    <div style="color: #64748b; font-size: 12px; font-weight: 500;">${pdfStrings.source}</div>
-                </div>
-                <div style="text-align: right; color: #64748b; font-size: 13px; font-weight: 500;">
-                    ${pdfStrings.dateStr}
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 30px; margin-bottom: 35px;">
-                <div style="flex: 1;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">${pdfStrings.geoTitle}</h3>
-                    <div style="background: #f8fafc; border-left: 3px solid #3b82f6; padding: 12px 16px;">
-                        ${hasFilters ? filtersHtml : `<div style="font-size: 13px; font-weight: 500; color: #0f172a;">${pdfStrings.allLocs}</div>`}
-                    </div>
+            <div style="margin-bottom: 35px;">
+                <h2 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 3px solid #3b82f6; padding-bottom: 8px; display: inline-block;">
+                    📍 ${pdfStrings.geoTitle}
+                </h2>
+                <div style="margin-top: 5px;">
+                    ${hasFilters ? filtersHtml : `<div style="font-size: 15px; font-weight: 500; color: #475569;">🌍 ${pdfStrings.allLocs}</div>`}
                 </div>
             </div>
             
-            <div style="display: flex; gap: 15px; margin-bottom: 35px;">
-                <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1;">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${d.lblStatLines}</div>
-                    <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
+            <div style="display: flex; gap: 20px; margin-bottom: 40px;">
+                <div style="padding: 20px; background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px; flex: 1; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <div style="font-size: 12px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">📋 ${d.lblStatLines}</div>
+                    <div style="font-size: 32px; font-weight: 900; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
                 </div>
-                <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1;">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${d.lblStatPhones}</div>
-                    <div style="font-size: 24px; font-weight: 800; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
+                <div style="padding: 20px; background: #eff6ff; border: 2px solid #93c5fd; border-radius: 12px; flex: 1; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);">
+                    <div style="font-size: 12px; color: #1e40af; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">📞 ${d.lblStatPhones}</div>
+                    <div style="font-size: 32px; font-weight: 900; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
                 </div>
-                <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1;">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${d.lblStatEmails}</div>
-                    <div style="font-size: 24px; font-weight: 800; color: #15803d;">${document.getElementById('selEmails').innerText}</div>
+                <div style="padding: 20px; background: #ecfdf5; border: 2px solid #6ee7b7; border-radius: 12px; flex: 1; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);">
+                    <div style="font-size: 12px; color: #065f46; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">✉️ ${d.lblStatEmails}</div>
+                    <div style="font-size: 32px; font-weight: 900; color: #059669;">${document.getElementById('selEmails').innerText}</div>
                 </div>
             </div>
             
-            <h3 style="margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">${pdfStrings.catTitle}</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #cbd5e1;">
-                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase;">${d.thCategory}</th>
-                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; text-align: right; width: 70px;">${d.thLines}</th>
-                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; text-align: right; width: 70px;">${d.thPhones}</th>
-                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; text-align: right; width: 70px;">${d.thEmails}</th>
+            <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 800; color: #0f172a;">${pdfStrings.catTitle}</h3>
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; text-align: left; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <thead style="background: #f1f5f9;">
+                    <tr>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; border-bottom: 2px solid #cbd5e1;">${d.thCategory}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px; border-left: 1px solid #e2e8f0;">${d.thLines}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px; border-left: 1px solid #e2e8f0;">${d.thPhones}</th>
+                        <th style="padding: 12px 15px; font-weight: 800; color: #334155; border-bottom: 2px solid #cbd5e1; text-align: right; width: 80px; border-left: 1px solid #e2e8f0;">${d.thEmails}</th>
                     </tr>
                 </thead>
                 <tbody id="pdfTableBody"></tbody>
@@ -1041,45 +1028,49 @@ const TIERS_EN = [
         `;
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
+        let rowCounter = 0;
 
-        // 3. Собираем таблицу с правильной визуальной иерархией
+        // 3. Собираем таблицу с "зеброй" и четким разделением
         function buildPDFRows(nodes, depth) {
             nodes.forEach(n => {
-                const indent = depth * 16;
+                const indent = depth * 20;
                 
                 if (selectedIds.has(n.id)) {
                     const tr = document.createElement('tr');
                     
                     if (n.children && n.children.length > 0) {
-                        // Папка выбрана целиком (выделяем фоном)
-                        tr.style.background = '#f8fafc';
+                        // Полностью выбранная папка (Выделяется темным фоном)
+                        tr.style.background = '#e2e8f0'; 
                         tr.innerHTML = `
-                            <td style="padding: 12px 8px; padding-left: ${indent + 8}px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
-                                <span style="margin-right: 6px; font-size: 14px; color: #3b82f6;">📁</span> ${n.name}
+                            <td style="padding: 12px 15px; padding-left: ${indent + 15}px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #cbd5e1;">
+                                📁 ${n.name}
                             </td>
-                            <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">${n.stats.l.toLocaleString()}</td>
-                            <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #e2e8f0;">${n.stats.p.toLocaleString()}</td>
-                            <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #15803d; border-bottom: 1px solid #e2e8f0;">${n.stats.e.toLocaleString()}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-weight: 800; color: #0f172a; border-bottom: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1;">${n.stats.l.toLocaleString()}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-weight: 800; color: #1d4ed8; border-bottom: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1;">${n.stats.p.toLocaleString()}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-weight: 800; color: #15803d; border-bottom: 1px solid #cbd5e1; border-left: 1px solid #cbd5e1;">${n.stats.e.toLocaleString()}</td>
                         `;
                     } else {
-                        // Обычный файл (классическая строка)
+                        // Обычный файл (Зебра для легкого чтения)
+                        rowCounter++;
+                        const bg = rowCounter % 2 === 0 ? '#fafafa' : '#ffffff';
+                        tr.style.background = bg;
                         tr.innerHTML = `
-                            <td style="padding: 8px 8px; padding-left: ${indent + 8}px; color: #334155; border-bottom: 1px solid #f1f5f9;">
-                                <span style="margin-right: 6px; font-size: 12px; color: #cbd5e1;">📄</span> ${n.name}
+                            <td style="padding: 10px 15px; padding-left: ${indent + 15}px; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                                <span style="opacity: 0.5;">📄</span> ${n.name}
                             </td>
-                            <td style="padding: 8px 8px; text-align: right; color: #64748b; border-bottom: 1px solid #f1f5f9;">${n.stats.l.toLocaleString()}</td>
-                            <td style="padding: 8px 8px; text-align: right; color: #1d4ed8; border-bottom: 1px solid #f1f5f9;">${n.stats.p.toLocaleString()}</td>
-                            <td style="padding: 8px 8px; text-align: right; color: #15803d; border-bottom: 1px solid #f1f5f9;">${n.stats.e.toLocaleString()}</td>
+                            <td style="padding: 10px 15px; text-align: right; color: #475569; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0;">${n.stats.l.toLocaleString()}</td>
+                            <td style="padding: 10px 15px; text-align: right; font-weight: 600; color: #2563eb; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0;">${n.stats.p.toLocaleString()}</td>
+                            <td style="padding: 10px 15px; text-align: right; font-weight: 600; color: #059669; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0;">${n.stats.e.toLocaleString()}</td>
                         `;
                     }
                     tbody.appendChild(tr);
                 } else if (n.children && indeterminateIds.has(n.id)) {
-                    // Папка выбрана частично — выступает как заголовок группы
+                    // Папка выбрана частично
                     const tr = document.createElement('tr');
+                    tr.style.background = '#f8fafc';
                     tr.innerHTML = `
-                        <td colspan="4" style="padding: 14px 8px 6px ${indent + 8}px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9;">
-                            <span style="color: #94a3b8; margin-right: 6px;">📂</span> ${n.name} 
-                            <span style="font-weight: 400; font-size: 11px; color: #94a3b8; margin-left: 6px;">(${pdfStrings.partial})</span>
+                        <td colspan="4" style="padding: 12px 15px; padding-left: ${indent + 15}px; font-weight: 700; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            📂 ${n.name} <span style="font-weight: 400; font-size: 12px; opacity: 0.7;">(${pdfStrings.partial})</span>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1091,10 +1082,10 @@ const TIERS_EN = [
 
         buildPDFRows(treeData, 0);
 
-        // 4. Генерация с динамическим именем файла
+        // 4. Настройки и генерация
         const opt = {
             margin:       10,
-            filename:     isRu ? 'Stathydra_Спецификация.pdf' : 'Stathydra_Specification.pdf',
+            filename:     isRu ? 'Stathydra_Выборка.pdf' : 'Stathydra_Selection.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
