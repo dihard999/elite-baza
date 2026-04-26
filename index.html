@@ -953,63 +953,87 @@ const TIERS_EN = [
     function downloadPDF() {
         if(!selectedIds.size && !indeterminateIds.size) return alert(DICT[currentLang].alertEmpty);
 
-        // Создаем виртуальный контейнер для PDF
+        const isRu = currentLang === 'ru';
+        const d = DICT[currentLang];
+        
+        // Мультиязычные строки для PDF
+        const pdfStrings = {
+            docTitle: isRu ? "Спецификация выборки B2B" : "B2B Data Selection Specification",
+            source: isRu ? "Источник: stathydra.com" : "Source: stathydra.com",
+            geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
+            allLocs: isRu ? "Все локации" : "All locations",
+            catTitle: isRu ? "Структура базы данных" : "Database Structure",
+            partial: isRu ? "частично" : "partial",
+            dateStr: new Date().toLocaleDateString(isRu ? 'ru-RU' : 'en-US')
+        };
+
         const pdfContainer = document.createElement('div');
         pdfContainer.style.padding = '40px';
         pdfContainer.style.fontFamily = "'Inter', sans-serif";
         pdfContainer.style.color = '#0f172a';
         pdfContainer.style.background = '#ffffff';
 
-        // 1. Формируем блок с гео-фильтрами в виде аккуратных плашек
-        let filtersHtml = "";
+        // 1. Строгий блок фильтров
+        let filtersHtml = `<table style="width: 100%; font-size: 13px; border-collapse: collapse;">`;
         let hasFilters = false;
         for(let i=0; i<4; i++) {
              const row = document.getElementById(`sum-row-${i}`);
              const val = document.getElementById(`sum-val-${i}`);
              if(row && row.style.display !== 'none') {
                  filtersHtml += `
-                 <div style="display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; margin: 0 8px 8px 0;">
-                     <span style="color: #64748b; font-size: 11px; text-transform: uppercase; margin-right: 4px;">${LEVEL_LABELS[i]}:</span>
-                     <span style="font-weight: 700; font-size: 13px; color: #0f172a;">${val.innerText}</span>
-                 </div>`;
+                 <tr>
+                     <td style="padding: 4px 0; color: #64748b; width: 120px;">${LEVEL_LABELS[i]}</td>
+                     <td style="padding: 4px 0; font-weight: 600; color: #0f172a;">${val.innerText}</td>
+                 </tr>`;
                  hasFilters = true;
              }
         }
-        
-        let headerTitle = DICT[currentLang].txtFilters || "Выбранная локация";
+        filtersHtml += `</table>`;
 
-        // 2. Верстаем шапку и статистику
+        // 2. Шапка документа и главная статистика
         pdfContainer.innerHTML = `
-            <div style="margin-bottom: 25px;">
-                <h2 style="margin: 0 0 10px 0; font-size: 18px; color: #0f172a;">📍 ${headerTitle}</h2>
-                <div style="display: flex; flex-wrap: wrap;">
-                    ${hasFilters ? filtersHtml : `<div style="color: #64748b; font-size: 13px;">Все локации</div>`}
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase;">${pdfStrings.docTitle}</h1>
+                    <div style="color: #64748b; font-size: 12px; font-weight: 500;">${pdfStrings.source}</div>
+                </div>
+                <div style="text-align: right; color: #64748b; font-size: 13px; font-weight: 500;">
+                    ${pdfStrings.dateStr}
                 </div>
             </div>
             
-            <div style="display: flex; gap: 15px; margin-bottom: 30px;">
-                <div style="padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Строк</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #475569; margin-top: 4px;">${document.getElementById('selLines').innerText}</div>
-                </div>
-                <div style="padding: 15px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Телефонов</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">${document.getElementById('selPhones').innerText}</div>
-                </div>
-                <div style="padding: 15px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Email</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">${document.getElementById('selEmails').innerText}</div>
+            <div style="display: flex; gap: 30px; margin-bottom: 35px;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">${pdfStrings.geoTitle}</h3>
+                    <div style="background: #f8fafc; border-left: 3px solid #3b82f6; padding: 12px 16px;">
+                        ${hasFilters ? filtersHtml : `<div style="font-size: 13px; font-weight: 500; color: #0f172a;">${pdfStrings.allLocs}</div>`}
+                    </div>
                 </div>
             </div>
             
-            <h3 style="margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">📁 Выбранные категории</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <div style="display: flex; gap: 15px; margin-bottom: 35px;">
+                <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${d.lblStatLines}</div>
+                    <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
+                </div>
+                <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${d.lblStatPhones}</div>
+                    <div style="font-size: 24px; font-weight: 800; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
+                </div>
+                <div style="padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; flex: 1;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${d.lblStatEmails}</div>
+                    <div style="font-size: 24px; font-weight: 800; color: #15803d;">${document.getElementById('selEmails').innerText}</div>
+                </div>
+            </div>
+            
+            <h3 style="margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">${pdfStrings.catTitle}</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
                 <thead>
-                    <tr style="color: #64748b; border-bottom: 2px solid #e2e8f0;">
-                        <th style="padding: 8px 4px; font-weight: 600; text-transform: uppercase; font-size: 10px;">Название</th>
-                        <th style="padding: 8px 4px; font-weight: 600; text-transform: uppercase; font-size: 10px; width: 60px; text-align: center;">Строк</th>
-                        <th style="padding: 8px 4px; font-weight: 600; text-transform: uppercase; font-size: 10px; width: 60px; text-align: center;">Тел</th>
-                        <th style="padding: 8px 4px; font-weight: 600; text-transform: uppercase; font-size: 10px; width: 60px; text-align: center;">Email</th>
+                    <tr style="border-bottom: 2px solid #cbd5e1;">
+                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase;">${d.thCategory}</th>
+                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; text-align: right; width: 70px;">${d.thLines}</th>
+                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; text-align: right; width: 70px;">${d.thPhones}</th>
+                        <th style="padding: 10px 8px; font-weight: 700; color: #475569; font-size: 11px; text-transform: uppercase; text-align: right; width: 70px;">${d.thEmails}</th>
                     </tr>
                 </thead>
                 <tbody id="pdfTableBody"></tbody>
@@ -1018,36 +1042,44 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Собираем таблицу из дерева
+        // 3. Собираем таблицу с правильной визуальной иерархией
         function buildPDFRows(nodes, depth) {
             nodes.forEach(n => {
-                const indent = depth * 15;
+                const indent = depth * 16;
                 
                 if (selectedIds.has(n.id)) {
-                    // Полностью выбранный узел
                     const tr = document.createElement('tr');
-                    tr.style.borderBottom = '1px solid #f1f5f9';
                     
-                    const icon = n.children ? '📂' : '📄';
-                    const fw = n.children ? '600' : '400';
-                    const color = n.children ? '#0f172a' : '#334155';
-                    
-                    tr.innerHTML = `
-                        <td style="padding: 10px 4px; padding-left: ${indent + 4}px; font-weight: ${fw}; color: ${color};">
-                            <span style="margin-right: 6px; font-size: 14px;">${icon}</span> ${n.name}
-                        </td>
-                        <td style="padding: 10px 4px; text-align: center; color: #475569; font-weight: 500;">${n.stats.l.toLocaleString()}</td>
-                        <td style="padding: 10px 4px; text-align: center; color: #1d4ed8; font-weight: 500;">${n.stats.p.toLocaleString()}</td>
-                        <td style="padding: 10px 4px; text-align: center; color: #15803d; font-weight: 500;">${n.stats.e.toLocaleString()}</td>
-                    `;
+                    if (n.children && n.children.length > 0) {
+                        // Папка выбрана целиком (выделяем фоном)
+                        tr.style.background = '#f8fafc';
+                        tr.innerHTML = `
+                            <td style="padding: 12px 8px; padding-left: ${indent + 8}px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                                <span style="margin-right: 6px; font-size: 14px; color: #3b82f6;">📁</span> ${n.name}
+                            </td>
+                            <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">${n.stats.l.toLocaleString()}</td>
+                            <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #e2e8f0;">${n.stats.p.toLocaleString()}</td>
+                            <td style="padding: 12px 8px; text-align: right; font-weight: 700; color: #15803d; border-bottom: 1px solid #e2e8f0;">${n.stats.e.toLocaleString()}</td>
+                        `;
+                    } else {
+                        // Обычный файл (классическая строка)
+                        tr.innerHTML = `
+                            <td style="padding: 8px 8px; padding-left: ${indent + 8}px; color: #334155; border-bottom: 1px solid #f1f5f9;">
+                                <span style="margin-right: 6px; font-size: 12px; color: #cbd5e1;">📄</span> ${n.name}
+                            </td>
+                            <td style="padding: 8px 8px; text-align: right; color: #64748b; border-bottom: 1px solid #f1f5f9;">${n.stats.l.toLocaleString()}</td>
+                            <td style="padding: 8px 8px; text-align: right; color: #1d4ed8; border-bottom: 1px solid #f1f5f9;">${n.stats.p.toLocaleString()}</td>
+                            <td style="padding: 8px 8px; text-align: right; color: #15803d; border-bottom: 1px solid #f1f5f9;">${n.stats.e.toLocaleString()}</td>
+                        `;
+                    }
                     tbody.appendChild(tr);
                 } else if (n.children && indeterminateIds.has(n.id)) {
-                    // Частично выбранная папка
+                    // Папка выбрана частично — выступает как заголовок группы
                     const tr = document.createElement('tr');
-                    tr.style.background = '#f8fafc';
                     tr.innerHTML = `
-                        <td colspan="4" style="padding: 8px 4px; padding-left: ${indent + 4}px; font-weight: 600; color: #64748b; font-size: 11px; text-transform: uppercase;">
-                            📂 ${n.name} (частично)
+                        <td colspan="4" style="padding: 14px 8px 6px ${indent + 8}px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9;">
+                            <span style="color: #94a3b8; margin-right: 6px;">📂</span> ${n.name} 
+                            <span style="font-weight: 400; font-size: 11px; color: #94a3b8; margin-left: 6px;">(${pdfStrings.partial})</span>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1059,16 +1091,15 @@ const TIERS_EN = [
 
         buildPDFRows(treeData, 0);
 
-        // 4. Настройки генератора PDF
+        // 4. Генерация с динамическим именем файла
         const opt = {
             margin:       10,
-            filename:     'B2B_Selection_Report.pdf',
+            filename:     isRu ? 'Stathydra_Спецификация.pdf' : 'Stathydra_Specification.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        // Генерируем и сохраняем
         html2pdf().set(opt).from(pdfContainer).save();
     }
 
