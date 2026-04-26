@@ -954,6 +954,7 @@ const TIERS_EN = [
     /* ================= PDF EXPORT LOGIC ================= */
     function downloadPDF(isFullMode = false) {
         try {
+            // Проверка на пустоту
             if (!isFullMode && (!selectedIds || selectedIds.size === 0) && (!indeterminateIds || indeterminateIds.size === 0)) {
                 return alert(DICT[currentLang].alertEmpty);
             }
@@ -964,16 +965,17 @@ const TIERS_EN = [
             const isRu = currentLang === 'ru';
             const d = DICT[currentLang];
             
+            // Лоадер интерфейса
             const loader = document.getElementById('loader');
             const loaderStatus = document.getElementById('loaderStatus');
             if (loader && loaderStatus) {
                 loader.style.display = 'flex';
-                loaderStatus.innerText = isRu ? "Генерация отчета (вычисление)..." : "Generating report (calculating)...";
+                loaderStatus.innerText = isRu ? "Формирование отчета..." : "Generating report...";
             }
 
             setTimeout(() => {
                 try {
-                    // 1. Считаем строки
+                    // 1. Подсчет строк для умного масштаба (чтобы не крашился Canvas на гигантских базах)
                     let rowCount = 0;
                     function countRows(nodes) {
                         nodes.forEach(n => {
@@ -992,17 +994,14 @@ const TIERS_EN = [
                     }
                     countRows(treeData);
 
-                    // 2. АНТИ-КРАШ МЕХАНИКА: Динамический масштаб, чтобы обойти лимит Canvas (15 000 px)
-                    const estimatedHeight = 300 + (rowCount * 22); // Примерная высота таблицы
-                    const maxSafeHeight = 14000; // Безопасный предел браузера
-                    let canvasScale = 1.5; 
-                    
-                    if (estimatedHeight * 1.5 > maxSafeHeight) {
-                        canvasScale = maxSafeHeight / estimatedHeight; 
-                        if (canvasScale < 0.5) canvasScale = 0.5; // Не даем качеству упасть слишком сильно
-                    }
+                    // 2. Умная резкость (ИСПРАВЛЕНИЕ РАЗМЫТИЯ)
+                    // Максимальная высота canvas в Chrome ~32000px. Держим резкость на максимуме, пока не упремся в лимит.
+                    const estimatedHeight = 350 + (rowCount * 30);
+                    let optimalScale = 30000 / estimatedHeight;
+                    if (optimalScale > 2) optimalScale = 2; // Идеальная четкость
+                    if (optimalScale < 1) optimalScale = 1; // Минимально допустимая четкость
 
-                    const rowPad = rowCount > 300 ? '4px 8px' : '8px 12px';
+                    const rowPad = rowCount > 300 ? '6px 8px' : '10px 12px';
                     
                     const pdfStrings = {
                         geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
@@ -1020,10 +1019,10 @@ const TIERS_EN = [
                     const getFolderSolidIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
                     const getFileIcon = (color) => `<svg style="width: 13px; height: 13px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
 
-                    // 3. Создаем контейнер ИСКЛЮЧИТЕЛЬНО В ПАМЯТИ
+                    // 3. Формирование в ПАМЯТИ (ИСПРАВЛЕНИЕ СМЕЩЕНИЯ ВПРАВО)
+                    // Убран padding, так как html2pdf сам добавит margin 10mm ко всему листу
                     const pdfContainer = document.createElement('div');
                     pdfContainer.style.width = '800px'; 
-                    pdfContainer.style.padding = '20px 30px';
                     pdfContainer.style.fontFamily = "'Inter', -apple-system, sans-serif";
                     pdfContainer.style.color = '#0f172a';
                     pdfContainer.style.background = '#ffffff';
@@ -1057,33 +1056,33 @@ const TIERS_EN = [
 
                     pdfContainer.innerHTML = `
                         <div style="margin-bottom: 20px;">
-                            <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 800;">📍 ${pdfStrings.geoTitle}</h2>
-                            <div style="background: #fafafa; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800;">📍 ${pdfStrings.geoTitle}</h2>
+                            <div style="background: #fafafa; padding: 12px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
                                 ${hasFilters ? filtersHtml : `<div style="font-weight:700; color:#475569;">🌍 ${pdfStrings.allLocs}</div>`}
                             </div>
                         </div>
-                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 15px; margin-bottom: 25px;">
                             <div style="padding: 15px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 8px; flex: 1; text-align: center;">
-                                <div style="font-size: 10px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">${pdfStrings.lblLines}</div>
-                                <div style="font-size: 20px; font-weight: 900; color: #0f172a;">${finalL.toLocaleString()}</div>
+                                <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">${pdfStrings.lblLines}</div>
+                                <div style="font-size: 22px; font-weight: 900; color: #0f172a;">${finalL.toLocaleString()}</div>
                             </div>
                             <div style="padding: 15px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 8px; flex: 1; text-align: center;">
-                                <div style="font-size: 10px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">${pdfStrings.lblPhones}</div>
-                                <div style="font-size: 20px; font-weight: 900; color: #1d4ed8;">${finalP.toLocaleString()}</div>
+                                <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">${pdfStrings.lblPhones}</div>
+                                <div style="font-size: 22px; font-weight: 900; color: #1d4ed8;">${finalP.toLocaleString()}</div>
                             </div>
                             <div style="padding: 15px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 8px; flex: 1; text-align: center;">
-                                <div style="font-size: 10px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">${pdfStrings.lblEmails}</div>
-                                <div style="font-size: 20px; font-weight: 900; color: #059669;">${finalE.toLocaleString()}</div>
+                                <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 5px;">${pdfStrings.lblEmails}</div>
+                                <div style="font-size: 22px; font-weight: 900; color: #059669;">${finalE.toLocaleString()}</div>
                             </div>
                         </div>
                         <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 800; border-left: 4px solid #3b82f6; padding-left: 10px;">${pdfStrings.catTitle}</h3>
                         <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
                             <thead>
                                 <tr style="background: #0f172a;">
-                                    <th style="padding: 8px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 6px 0 0 0; width: auto;">${d.thCategory}</th>
-                                    <th style="padding: 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px;">${d.thLines}</th>
-                                    <th style="padding: 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px;">${d.thPhones}</th>
-                                    <th style="padding: 8px 10px 8px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; border-radius: 0 6px 0 0;">${d.thEmails}</th>
+                                    <th style="padding: 10px 12px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 6px 0 0 0; width: auto;">${d.thCategory}</th>
+                                    <th style="padding: 10px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px;">${d.thLines}</th>
+                                    <th style="padding: 10px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px;">${d.thPhones}</th>
+                                    <th style="padding: 10px 12px 10px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px; border-radius: 0 6px 0 0;">${d.thEmails}</th>
                                 </tr>
                             </thead>
                             <tbody id="pdfTableBody"></tbody>
@@ -1112,13 +1111,13 @@ const TIERS_EN = [
                                     <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
                                         <div style="display: flex; align-items: center; padding-left: ${indentPixels}px;">
                                             <div style="display: flex; align-items: center; width: 100%; padding: ${rowPad}; ${borderStyle} background: #fafafa;">
-                                                ${icon} <span style="font-size: 11px; font-weight: 700; color: #0f172a; line-height: 1.2;">${n.name}</span>
+                                                ${icon} <span style="font-size: 12px; font-weight: 700; color: #0f172a; line-height: 1.2;">${n.name}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
-                                    <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
-                                    <td style="padding: 6px 10px 6px 6px; text-align: right; font-size: 11px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
+                                    <td style="padding: 8px; text-align: right; font-size: 12px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
+                                    <td style="padding: 8px; text-align: right; font-size: 12px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
+                                    <td style="padding: 8px 12px 8px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
                                 `;
                                 tbody.appendChild(tr);
                                 if (isFolder) buildPDFRows(n.children, depth + 1);
@@ -1131,13 +1130,13 @@ const TIERS_EN = [
                                         <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
                                             <div style="display: flex; align-items: center; padding-left: ${indentPixels}px;">
                                                 <div style="display: flex; align-items: center; width: 100%; padding: ${rowPad}; ${borderStyle} background: #fafafa;">
-                                                    ${icon} <span style="font-size: 11px; font-weight: 700; color: #0f172a; line-height: 1.2;">${n.name}</span>
+                                                    ${icon} <span style="font-size: 12px; font-weight: 700; color: #0f172a; line-height: 1.2;">${n.name}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
-                                        <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
-                                        <td style="padding: 6px 10px 6px 6px; text-align: right; font-size: 11px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
+                                        <td style="padding: 8px; text-align: right; font-size: 12px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
+                                        <td style="padding: 8px; text-align: right; font-size: 12px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
+                                        <td style="padding: 8px 12px 8px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
                                     `;
                                     tbody.appendChild(tr);
                                 } else if (isFolder && indeterminateIds.has(n.id)) {
@@ -1147,8 +1146,8 @@ const TIERS_EN = [
                                             <div style="display: flex; align-items: center; padding-left: ${indentPixels}px;">
                                                 <div style="display: flex; align-items: center; width: 100%; padding: ${rowPad}; ${borderStyle} background: transparent;">
                                                     ${getFolderOpenIcon('#64748b')} 
-                                                    <span style="font-size: 11px; font-weight: 800; color: #0f172a;">
-                                                        ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 9px; margin-left: 6px;">(${pdfStrings.partial})</span>
+                                                    <span style="font-size: 12px; font-weight: 800; color: #0f172a;">
+                                                        ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 10px; margin-left: 6px;">(${pdfStrings.partial})</span>
                                                     </span>
                                                 </div>
                                             </div>
@@ -1167,24 +1166,21 @@ const TIERS_EN = [
                         ? (isRu ? 'Stathydra_Full_Report.pdf' : 'Stathydra_Full_Specification.pdf')
                         : (isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf');
 
-                    // 4. Идеальные настройки (Исключают смещение)
+                    // 4. Идеальные настройки генератора (максимальное качество JPEG)
                     const opt = {
-                        margin:       [10, 10, 10, 10], 
+                        margin:       [10, 10, 10, 10], // Идеальные поля со всех 4 сторон 
                         filename:     fileName,
-                        image:        { type: 'jpeg', quality: 0.98 },
+                        image:        { type: 'jpeg', quality: 1.0 }, 
                         html2canvas:  { 
-                            scale: canvasScale, 
+                            scale: optimalScale, // Высчитанная резкость
                             useCORS: true, 
-                            windowWidth: 800,
-                            scrollX: 0, 
-                            scrollY: 0, 
-                            x: 0, 
-                            y: 0 
+                            windowWidth: 800 
                         }, 
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                         pagebreak:    { mode: 'css', avoid: 'tr' } 
                     };
 
+                    // Прямой рендер из памяти (отвязан от стилей сайта)
                     html2pdf().set(opt).from(pdfContainer).save().then(() => {
                         if (loader) loader.style.display = 'none';
                     }).catch(err => {
