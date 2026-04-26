@@ -963,7 +963,7 @@ const TIERS_EN = [
             partial: isRu ? "частично" : "partial"
         };
 
-        // Векторные иконки
+        // Векторные SVG-иконки
         const getFolderOpenIcon = (color) => `<svg style="width: 16px; height: 16px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>`;
         const getFolderSolidIcon = (color) => `<svg style="width: 16px; height: 16px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
         const getFileIcon = (color) => `<svg style="width: 15px; height: 15px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
@@ -975,116 +975,159 @@ const TIERS_EN = [
         pdfContainer.style.background = '#ffffff';
 
         // 1. Спецификация ГЕО
-        let filtersHtml = `<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">`;
+        let filtersHtml = `<table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-top: 10px;">`;
         let hasFilters = false;
         for(let i=0; i<4; i++) {
              const row = document.getElementById(`sum-row-${i}`);
              const val = document.getElementById(`sum-val-${i}`);
              if(row && row.style.display !== 'none') {
                  filtersHtml += `
-                 <div style="display: flex; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-                     <div style="color: #64748b; width: 150px; font-size: 13px; text-transform: uppercase; font-weight: 600;">${LEVEL_LABELS[i]}</div>
-                     <div style="font-weight: 700; color: #0f172a; font-size: 14px;">${val.innerText}</div>
-                 </div>`;
+                 <tr>
+                     <td style="padding: 5px 0; color: #64748b; width: 150px; border-bottom: 1px solid #f1f5f9;">${LEVEL_LABELS[i]}</td>
+                     <td style="padding: 5px 0; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${val.innerText}</td>
+                 </tr>`;
                  hasFilters = true;
              }
         }
-        filtersHtml += `</div>`;
+        filtersHtml += `</table>`;
 
         // 2. Шапка и блоки статистики
         pdfContainer.innerHTML = `
             <div style="margin-bottom: 40px;">
                 <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">📍 ${pdfStrings.geoTitle}</h2>
-                <div style="background: #f8fafc; padding: 12px 20px 15px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    ${hasFilters ? filtersHtml : `<div style="padding-top:5px; font-weight:700; color:#475569;">🌍 ${pdfStrings.allLocs}</div>`}
+                <div style="background: #fafafa; padding: 5px 20px 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    ${hasFilters ? filtersHtml : `<div style="padding-top:10px; font-weight:700; color:#475569;">🌍 ${pdfStrings.allLocs}</div>`}
                 </div>
             </div>
             
             <div style="display: flex; gap: 15px; margin-bottom: 40px;">
-                <div style="padding: 20px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 8px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">📋 Строк всего</div>
-                    <div style="font-size: 28px; font-weight: 900; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
+                <div style="padding: 22px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 14px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">📋 Строк всего</div>
+                    <div style="font-size: 30px; font-weight: 900; color: #0f172a;">${document.getElementById('selLines').innerText}</div>
                 </div>
-                <div style="padding: 20px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 8px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">📞 Телефонов</div>
-                    <div style="font-size: 28px; font-weight: 900; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
+                <div style="padding: 22px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 14px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">📞 Телефонов</div>
+                    <div style="font-size: 30px; font-weight: 900; color: #1d4ed8;">${document.getElementById('selPhones').innerText}</div>
                 </div>
-                <div style="padding: 20px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 8px; flex: 1; text-align: center;">
-                    <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">✉️ E-mail</div>
-                    <div style="font-size: 28px; font-weight: 900; color: #059669;">${document.getElementById('selEmails').innerText}</div>
+                <div style="padding: 22px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 14px; flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">✉️ E-mail</div>
+                    <div style="font-size: 30px; font-weight: 900; color: #059669;">${document.getElementById('selEmails').innerText}</div>
                 </div>
             </div>
             
             <h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 800; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 12px;">${pdfStrings.catTitle}</h3>
             
-            <div style="border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden;">
-                <div style="display: flex; background: #0f172a; color: #ffffff;">
-                    <div style="flex: 1; padding: 12px 15px; font-weight: 700; font-size: 11px; text-transform: uppercase;">${d.thCategory}</div>
-                    <div style="width: 70px; padding: 12px 10px; font-weight: 700; font-size: 11px; text-transform: uppercase; text-align: right; flex-shrink: 0;">${d.thLines}</div>
-                    <div style="width: 70px; padding: 12px 10px; font-weight: 700; font-size: 11px; text-transform: uppercase; text-align: right; flex-shrink: 0;">${d.thPhones}</div>
-                    <div style="width: 70px; padding: 12px 15px 12px 10px; font-weight: 700; font-size: 11px; text-transform: uppercase; text-align: right; flex-shrink: 0;">${d.thEmails}</div>
-                </div>
-                <div id="pdfTableBody" style="display: flex; flex-direction: column;"></div>
-            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
+                <thead>
+                    <tr style="background: #0f172a;">
+                        <th style="padding: 12px 15px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 8px 0 0 0; width: auto;">${d.thCategory}</th>
+                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap;">${d.thLines}</th>
+                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap;">${d.thPhones}</th>
+                        <th style="padding: 12px 15px 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap; border-radius: 0 8px 0 0;">${d.thEmails}</th>
+                    </tr>
+                </thead>
+                <tbody id="pdfTableBody"></tbody>
+            </table>
         `;
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка строк (БЕЗ ЛИНИЙ, только отступы и фильтрация нулевых значений)
-        function buildPDFRows(nodes, depth) {
-            // ЖЕСТКИЙ ФИЛЬТР: только выбранные И где строк строго больше нуля
-            const visibleNodes = nodes.filter(n => (selectedIds.has(n.id) || indeterminateIds.has(n.id)) && n.stats.l > 0);
+        // 3. Сборка таблицы с идеальными ВЕКТОРНЫМИ SVG-линиями
+        function buildPDFRows(nodes, depth, pathLastState = []) {
+            // Отфильтровываем только видимые узлы, чтобы линии отрисовывались корректно
+            const visibleNodes = nodes.filter(n => selectedIds.has(n.id) || indeterminateIds.has(n.id));
 
-            visibleNodes.forEach((n) => {
-                const basePadding = 15;
-                const step = 24; // Ширина отступа для каждого уровня
-                const indent = basePadding + (depth * step); 
+            visibleNodes.forEach((n, index) => {
+                const isLast = (index === visibleNodes.length - 1);
+                const currentPathState = [...pathLastState, isLast];
                 
-                const isFolder = n.children && n.children.length > 0;
-                const isPartial = isFolder && indeterminateIds.has(n.id);
+                const basePadding = 20; // Стартовый отступ от края
+                const step = 28; // Ширина одного шага вложенности
+                const indentPixels = basePadding + (depth * step); // Место начала контента (иконки)
                 
-                // Выделяем корневые папки серым фоном для зональности
-                const rowBg = depth === 0 ? '#f8fafc' : '#ffffff';
-                
-                let icon = '';
-                if (isFolder && !isPartial) icon = getFolderSolidIcon('#3b82f6'); // Синяя папка
-                else if (isPartial) icon = getFolderOpenIcon('#64748b');          // Серая папка
-                else icon = getFileIcon('#94a3b8');                               // Серый файл
+                let svgLines = '';
+                const lineColor = '#94a3b8'; // Строгий серый цвет линий
 
-                const tr = document.createElement('div');
-                tr.style.display = 'flex';
-                tr.style.alignItems = 'stretch';
-                tr.style.minHeight = '38px';
-                tr.style.background = rowBg;
-                
-                // Тонкий разделитель для удобства чтения
-                tr.style.borderBottom = depth === 0 ? '1px solid #cbd5e1' : '1px solid #f1f5f9';
-                if (depth === 0) tr.style.borderTop = '1px solid #cbd5e1'; // Корневые папки выделены сильнее
-                
-                tr.style.pageBreakInside = 'avoid'; 
+                // Математический генератор SVG путей для дерева
+                for (let i = 0; i <= depth; i++) {
+                    const lineX = basePadding + (i * step) + 8; // Точный X-центр иконки родителя
 
-                tr.innerHTML = `
-                    <div style="flex: 1; display: flex; align-items: center; padding: 8px 15px; padding-left: ${indent}px;">
-                        ${icon}
-                        <span style="font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word;">${n.name}</span>
-                        ${isPartial ? `<span style="font-weight: 600; color: #94a3b8; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>` : ''}
-                    </div>
-                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 8px 10px; font-size: 13px; font-weight: 700; color: #475569; flex-shrink: 0;">${n.stats.l.toLocaleString()}</div>
-                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 8px 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; flex-shrink: 0;">${n.stats.p.toLocaleString()}</div>
-                    <div style="width: 70px; display: flex; justify-content: flex-end; align-items: center; padding: 8px 15px 8px 10px; font-size: 13px; font-weight: 700; color: #10b981; flex-shrink: 0;">${n.stats.e.toLocaleString()}</div>
-                `;
-                tbody.appendChild(tr);
+                    if (i < depth) {
+                        // Вертикальная сквозная линия от родителя (если он не последний)
+                        if (!pathLastState[i]) {
+                            svgLines += `<line x1="${lineX}" y1="0" x2="${lineX}" y2="100%" stroke="${lineColor}" stroke-width="1.5" />`;
+                        }
+                    } else if (depth > 0) {
+                        // Горизонтальный коннектор до самой иконки
+                        const targetX = basePadding + (depth * step); 
 
-                // Идем вглубь
-                if (isFolder) {
-                    buildPDFRows(n.children, depth + 1);
+                        if (isLast) {
+                            // Последний элемент в ветке (L-образный угол)
+                            svgLines += `<path d="M ${lineX} 0 L ${lineX} 50% L ${targetX} 50%" fill="none" stroke="${lineColor}" stroke-width="1.5" />`;
+                        } else {
+                            // Промежуточный элемент в ветке (T-образный перекресток)
+                            svgLines += `<line x1="${lineX}" y1="0" x2="${lineX}" y2="100%" stroke="${lineColor}" stroke-width="1.5" />`;
+                            svgLines += `<line x1="${lineX}" y1="50%" x2="${targetX}" y2="50%" stroke="${lineColor}" stroke-width="1.5" />`;
+                        }
+                    }
+                }
+
+                if (selectedIds.has(n.id)) {
+                    // ПОЛНОСТЬЮ ВЫБРАННАЯ КАТЕГОРИЯ ИЛИ ФАЙЛ
+                    const tr = document.createElement('tr');
+                    const isFolder = n.children && n.children.length > 0;
+                    
+                    tr.style.background = isFolder ? '#f8fafc' : '#ffffff';
+                    const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
+
+                    tr.innerHTML = `
+                        <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
+                            <div style="position: relative; width: 100%; display: flex; align-items: center; min-height: 42px; padding-left: ${indentPixels}px; box-sizing: border-box;">
+                                <svg width="100%" height="calc(100% + 2px)" style="position: absolute; left: 0; top: -1px; pointer-events: none; z-index: 1;">
+                                    ${svgLines}
+                                </svg>
+                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%; padding: 10px 15px 10px 0;">
+                                    ${icon} <span style="font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word; line-height: 1.3;">${n.name}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
+                        <td style="padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
+                        <td style="padding: 10px 15px 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                } else if (n.children && indeterminateIds.has(n.id)) {
+                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА (работает как заголовок группы)
+                    const tr = document.createElement('tr');
+                    tr.style.background = '#f1f5f9';
+                    
+                    tr.innerHTML = `
+                        <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
+                            <div style="position: relative; width: 100%; display: flex; align-items: center; min-height: 44px; padding-left: ${indentPixels}px; box-sizing: border-box;">
+                                <svg width="100%" height="calc(100% + 2px)" style="position: absolute; left: 0; top: -1px; pointer-events: none; z-index: 1;">
+                                    ${svgLines}
+                                </svg>
+                                <div style="position: relative; z-index: 2; display: flex; align-items: center; width: 100%; padding: 12px 15px 12px 0;">
+                                    ${getFolderOpenIcon('#64748b')} 
+                                    <span style="font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word; line-height: 1.3;">
+                                        ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                    
+                    // Рекурсия для вложенных узлов
+                    buildPDFRows(n.children, depth + 1, currentPathState);
                 }
             });
         }
 
-        buildPDFRows(treeData, 0);
+        buildPDFRows(treeData, 0, []);
 
-        // 4. Генерация
+        // 4. Генерация PDF
         const opt = {
             margin:       10,
             filename:     isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf',
