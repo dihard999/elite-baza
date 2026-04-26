@@ -963,8 +963,10 @@ const TIERS_EN = [
             partial: isRu ? "частично" : "partial"
         };
 
-        const getFolderIcon = (color) => `<svg style="width: 15px; height: 15px; vertical-align: -3px; margin-right: 6px; fill: ${color}; position: relative; z-index: 2;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
-        const getFileIcon = (color) => `<svg style="width: 15px; height: 15px; vertical-align: -3px; margin-right: 6px; fill: ${color}; position: relative; z-index: 2;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+        // Векторные SVG-иконки для явного отличия папок от файлов
+        const getFolderOpenIcon = (color) => `<svg style="width: 16px; height: 16px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>`;
+        const getFolderSolidIcon = (color) => `<svg style="width: 16px; height: 16px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+        const getFileIcon = (color) => `<svg style="width: 15px; height: 15px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
 
         const pdfContainer = document.createElement('div');
         pdfContainer.style.padding = '35px 45px';
@@ -1014,13 +1016,14 @@ const TIERS_EN = [
             </div>
             
             <h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 800; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 12px;">${pdfStrings.catTitle}</h3>
+            
             <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
                 <thead>
                     <tr style="background: #0f172a;">
-                        <th style="padding: 12px 15px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 8px 0 0 0;">${d.thCategory}</th>
-                        <th style="padding: 12px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap;">${d.thLines}</th>
-                        <th style="padding: 12px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap;">${d.thPhones}</th>
-                        <th style="padding: 12px 15px 12px 8px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 75px; white-space: nowrap; border-radius: 0 8px 0 0;">${d.thEmails}</th>
+                        <th style="padding: 12px 15px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 8px 0 0 0; width: auto;">${d.thCategory}</th>
+                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 65px; white-space: nowrap;">${d.thLines}</th>
+                        <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 65px; white-space: nowrap;">${d.thPhones}</th>
+                        <th style="padding: 12px 15px 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 65px; white-space: nowrap; border-radius: 0 8px 0 0;">${d.thEmails}</th>
                     </tr>
                 </thead>
                 <tbody id="pdfTableBody"></tbody>
@@ -1029,47 +1032,62 @@ const TIERS_EN = [
 
         const tbody = pdfContainer.querySelector('#pdfTableBody');
 
-        // 3. Сборка с явными, контрастными CSS-деревьями
+        // 3. Сборка таблицы с идеальными CSS-линиями дерева (без символов)
         function buildPDFRows(nodes, depth, pathLastState = []) {
             nodes.forEach((n, index) => {
                 const isLast = (index === nodes.length - 1);
                 const currentPathState = [...pathLastState, isLast];
+                
                 const basePadding = 15;
-                const step = 26; // Увеличенный шаг для более длинных горизонтальных линий
-                const indent = (depth * step) + basePadding;
+                const step = 26; // Ширина отступа для каждого уровня
+                const indent = basePadding + (depth * step); // Смещение контента 
                 
                 let treeLines = '';
-                const lineColor = '#64748b'; // Более темный цвет (Slate 500) для явного контраста
+                const lineColor = '#94a3b8'; // Цвет направляющих
+                const lineThickness = '2px';
 
-                // Рисуем направляющие линии для всех родительских уровней
-                for(let i = 0; i < depth; i++) {
-                    const isParentLast = pathLastState[i];
-                    const lineX = basePadding + (i * step) + 7; // Точно по центру иконки родителя
-                    
-                    if (i === depth - 1) {
-                        // Отрисовка Г-образного отвода к текущему элементу
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: -2px; bottom: ${isLast ? '50%' : '-2px'}; border-left: 2px solid ${lineColor}; z-index: 1;"></div>`;
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: 50%; width: 18px; border-top: 2px solid ${lineColor}; z-index: 1;"></div>`;
-                    } else if (!isParentLast) {
-                        // Сквозная вертикальная линия для нижестоящих элементов (если родитель не был последним)
-                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: -2px; bottom: -2px; border-left: 2px solid ${lineColor}; z-index: 1;"></div>`;
+                // Математически точная генерация линий
+                for (let i = 0; i <= depth; i++) {
+                    const lineX = basePadding + (i * step) + 7; // Точно по центру иконки вышестоящего узла
+
+                    if (i < depth) {
+                        // Сквозная вертикальная линия от родителя (если он не последний в своем узле)
+                        if (!pathLastState[i]) {
+                            treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; bottom: -1px; width: ${lineThickness}; background: ${lineColor}; z-index: 1;"></div>`;
+                        }
+                    } else if (depth > 0) {
+                        // Вертикальная ветка для ТЕКУЩЕГО элемента
+                        if (isLast) {
+                            // Уголок (если файл/папка последний) - линия идет только до середины
+                            treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; height: 50%; width: ${lineThickness}; background: ${lineColor}; z-index: 1;"></div>`;
+                        } else {
+                            // Развилка (если есть элементы ниже) - линия идет до конца
+                            treeLines += `<div style="position: absolute; left: ${lineX}px; top: -1px; bottom: -1px; width: ${lineThickness}; background: ${lineColor}; z-index: 1;"></div>`;
+                        }
+                        
+                        // Горизонтальный коннектор (точно соединяет вертикальную линию и иконку)
+                        treeLines += `<div style="position: absolute; left: ${lineX}px; top: calc(50% - 1px); width: 23px; height: ${lineThickness}; background: ${lineColor}; z-index: 1;"></div>`;
                     }
                 }
 
                 if (selectedIds.has(n.id)) {
                     const tr = document.createElement('tr');
                     const isFolder = n.children && n.children.length > 0;
+                    
                     tr.style.background = isFolder ? '#f8fafc' : '#ffffff';
+                    const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
 
+                    // Все названия теперь строго font-weight: 700;
                     tr.innerHTML = `
-                        <td style="padding: 10px 15px; padding-left: ${indent}px; font-size: 13px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #f1f5f9; position: relative;">
-                            ${treeLines}
-                            ${isFolder ? getFolderIcon('#3b82f6') : getFileIcon('#64748b')} 
-                            <span style="position: relative; z-index: 2;">${n.name}</span>
+                        <td style="padding: 0; border-bottom: 1px solid #f1f5f9;">
+                            <div style="position: relative; padding: 10px 15px; padding-left: ${indent + 30}px; display: flex; align-items: center; min-height: 40px; box-sizing: border-box;">
+                                ${treeLines}
+                                ${icon} <span style="position: relative; z-index: 2; font-size: 13px; font-weight: 700; color: #0f172a; word-break: break-word;">${n.name}</span>
+                            </div>
                         </td>
-                        <td style="padding: 10px 8px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${n.stats.l.toLocaleString()}</td>
-                        <td style="padding: 10px 8px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${n.stats.p.toLocaleString()}</td>
-                        <td style="padding: 10px 15px 10px 8px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${n.stats.e.toLocaleString()}</td>
+                        <td style="padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${n.stats.l.toLocaleString()}</td>
+                        <td style="padding: 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${n.stats.p.toLocaleString()}</td>
+                        <td style="padding: 10px 15px 10px 10px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${n.stats.e.toLocaleString()}</td>
                     `;
                     tbody.appendChild(tr);
 
@@ -1079,10 +1097,14 @@ const TIERS_EN = [
                     tr.style.background = '#f1f5f9';
                     
                     tr.innerHTML = `
-                        <td colspan="4" style="padding: 12px 15px; padding-left: ${indent}px; font-size: 13px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; position: relative;">
-                            ${treeLines}
-                            ${getFolderIcon('#94a3b8')} 
-                            <span style="position: relative; z-index: 2;">${n.name} <span style="font-weight: 600; color: #94a3b8; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span></span>
+                        <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0;">
+                            <div style="position: relative; padding: 12px 15px; padding-left: ${indent + 30}px; display: flex; align-items: center; min-height: 42px; box-sizing: border-box;">
+                                ${treeLines}
+                                ${getFolderOpenIcon('#64748b')} 
+                                <span style="position: relative; z-index: 2; font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word;">
+                                    ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 8px; text-transform: uppercase;">(${pdfStrings.partial})</span>
+                                </span>
+                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1094,7 +1116,7 @@ const TIERS_EN = [
 
         buildPDFRows(treeData, 0, []);
 
-        // 4. Генерация
+        // 4. Генерация с улучшенным качеством
         const opt = {
             margin:       10,
             filename:     isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf',
