@@ -944,267 +944,220 @@
     }
     function resetAll() { location.reload(); }
 
-    /* ================= PDF EXPORT LOGIC ================= */
+    /* ================= 100% НАДЕЖНЫЙ ЭКСПОРТ (NATIVE BROWSER PRINT) ================= */
     function downloadPDF(isFullMode = false) {
-        try {
-            if (!isFullMode && (!selectedIds || selectedIds.size === 0) && (!indeterminateIds || indeterminateIds.size === 0)) {
-                return alert(DICT[currentLang].alertEmpty);
-            }
-            if (isFullMode && (!treeData || treeData.length === 0)) {
-                return alert(DICT[currentLang].alertEmpty);
-            }
-
-            const isRu = currentLang === 'ru';
-            const d = DICT[currentLang];
-            
-            const loader = document.getElementById('loader');
-            const loaderStatus = document.getElementById('loaderStatus');
-            if (loader && loaderStatus) {
-                loader.style.display = 'flex';
-                loaderStatus.innerText = isRu ? "Формируем отчет..." : "Generating report...";
-            }
-
-            setTimeout(() => {
-                let printWrapper = null;
-                try {
-                    let rowCount = 0;
-                    function countRows(nodes) {
-                        nodes.forEach(n => {
-                            if (n.stats.l === 0 || !n.visible) return;
-                            if (isFullMode) {
-                                rowCount++;
-                                if (n.children && n.children.length > 0) countRows(n.children);
-                            } else {
-                                if (selectedIds.has(n.id)) {
-                                    rowCount++;
-                                } else if (n.children && n.children.length > 0 && indeterminateIds.has(n.id)) {
-                                    rowCount++;
-                                    countRows(n.children);
-                                }
-                            }
-                        });
-                    }
-                    countRows(treeData);
-
-                    // Умный масштаб от краша Canvas
-                    let canvasScale = 2; 
-                    if (rowCount > 400) canvasScale = 1.5;
-                    if (rowCount > 800) canvasScale = 1.0;
-                    if (rowCount > 1500) canvasScale = 0.8;
-
-                    const pdfStrings = {
-                        geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
-                        allLocs: isRu ? "Все локации" : "All locations",
-                        catTitle: isFullMode 
-                            ? (isRu ? "Сводка (Полная детализация)" : "Summary (Full Details)") 
-                            : (isRu ? "Детализация выбранных категорий" : "Selected Categories Details"),
-                        partial: isRu ? "частично" : "partial",
-                        lblLines: isRu ? "📋 Строк всего" : "📋 Total Lines",
-                        lblPhones: isRu ? "📞 Телефонов" : "📞 Phones",
-                        lblEmails: isRu ? "✉️ E-mail" : "✉️ E-mail"
-                    };
-
-                    const getFolderOpenIcon = (color) => `<svg style="width: 15px; height: 15px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>`;
-                    const getFolderSolidIcon = (color) => `<svg style="width: 15px; height: 15px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
-                    const getFileIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
-
-                    // ОБЕРТКА (Изоляция от стилей сайта для защиты от смещения влево)
-                    printWrapper = document.createElement('div');
-                    printWrapper.style.position = 'absolute';
-                    printWrapper.style.top = '0px';
-                    printWrapper.style.left = '0px';
-                    printWrapper.style.width = '800px';
-                    printWrapper.style.backgroundColor = '#ffffff';
-                    printWrapper.style.zIndex = '-9999'; 
-                    printWrapper.style.display = 'block'; 
-
-                    const pdfContainer = document.createElement('div');
-                    pdfContainer.style.width = '100%'; 
-                    pdfContainer.style.padding = '30px 40px';
-                    pdfContainer.style.boxSizing = 'border-box';
-                    pdfContainer.style.fontFamily = "'Inter', -apple-system, sans-serif";
-                    pdfContainer.style.color = '#0f172a';
-
-                    let filtersHtml = `<table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-top: 5px;">`;
-                    let hasFilters = false;
-                    for(let i=0; i<4; i++) {
-                        const row = document.getElementById(`sum-row-${i}`);
-                        const val = document.getElementById(`sum-val-${i}`);
-                        if(row && row.style.display !== 'none') {
-                            filtersHtml += `
-                            <tr>
-                                <td style="padding: 5px 0; color: #64748b; width: 150px; border-bottom: 1px solid #f1f5f9;">${LEVEL_LABELS[i]}</td>
-                                <td style="padding: 5px 0; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${val.innerText}</td>
-                            </tr>`;
-                            hasFilters = true;
-                        }
-                    }
-                    filtersHtml += `</table>`;
-
-                    let finalL = 0, finalP = 0, finalE = 0;
-                    if (isFullMode) {
-                        treeData.forEach(n => { 
-                            if(n.visible) { finalL += n.stats.l; finalP += n.stats.p; finalE += n.stats.e; }
-                        });
-                    } else {
-                        finalL = parseInt((document.getElementById('selLines')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
-                        finalP = parseInt((document.getElementById('selPhones')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
-                        finalE = parseInt((document.getElementById('selEmails')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
-                    }
-
-                    pdfContainer.innerHTML = `
-                        <div style="margin-bottom: 25px;">
-                            <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800;">📍 ${pdfStrings.geoTitle}</h2>
-                            <div style="background: #fafafa; padding: 10px 20px 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                ${hasFilters ? filtersHtml : `<div style="padding-top:10px; font-weight:700; color:#475569;">🌍 ${pdfStrings.allLocs}</div>`}
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 15px; margin-bottom: 30px;">
-                            <div style="padding: 20px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 14px; flex: 1; text-align: center;">
-                                <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblLines}</div>
-                                <div style="font-size: 26px; font-weight: 900; color: #0f172a;">${finalL.toLocaleString()}</div>
-                            </div>
-                            <div style="padding: 20px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 14px; flex: 1; text-align: center;">
-                                <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblPhones}</div>
-                                <div style="font-size: 26px; font-weight: 900; color: #1d4ed8;">${finalP.toLocaleString()}</div>
-                            </div>
-                            <div style="padding: 20px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 14px; flex: 1; text-align: center;">
-                                <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblEmails}</div>
-                                <div style="font-size: 26px; font-weight: 900; color: #059669;">${finalE.toLocaleString()}</div>
-                            </div>
-                        </div>
-                        <h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 800; border-left: 4px solid #3b82f6; padding-left: 12px;">${pdfStrings.catTitle}</h3>
-                        <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
-                            <thead>
-                                <tr style="background: #0f172a;">
-                                    <th style="padding: 12px 15px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 8px 0 0 0; width: auto;">${d.thCategory}</th>
-                                    <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px;">${d.thLines}</th>
-                                    <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px;">${d.thPhones}</th>
-                                    <th style="padding: 12px 15px 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px; border-radius: 0 8px 0 0;">${d.thEmails}</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pdfTableBody"></tbody>
-                        </table>
-                    `;
-
-                    const tbody = pdfContainer.querySelector('#pdfTableBody');
-
-                    function buildPDFRows(nodes, depth) {
-                        nodes.forEach((n) => {
-                            if (n.stats.l === 0 || !n.visible) return;
-
-                            const isFolder = n.children && n.children.length > 0;
-                            const tr = document.createElement('tr');
-                            tr.style.pageBreakInside = 'avoid';
-                            
-                            const indentPixels = depth * 20; 
-                            const depthColors = ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
-                            const lineColor = depthColors[Math.min(depth, depthColors.length - 1)];
-                            const borderStyle = `border-left: 4px solid ${lineColor};`;
-
-                            let shouldPrint = false;
-                            let shouldRecurse = false;
-                            let isPartial = false;
-
-                            if (isFullMode) {
-                                shouldPrint = true;
-                                shouldRecurse = true;
-                            } else {
-                                if (selectedIds.has(n.id)) {
-                                    shouldPrint = true;
-                                    shouldRecurse = false;
-                                } else if (isFolder && indeterminateIds.has(n.id)) {
-                                    shouldPrint = true;
-                                    shouldRecurse = true;
-                                    isPartial = true;
-                                }
-                            }
-
-                            if (shouldPrint) {
-                                const bg = isFolder ? '#f8fafc' : '#ffffff';
-                                const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
-
-                                if (isPartial) {
-                                    tr.style.background = '#f1f5f9';
-                                    tr.innerHTML = `
-                                        <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
-                                            <div style="display: flex; align-items: center; min-height: 40px; padding-left: ${indentPixels}px;">
-                                                <div style="display: flex; align-items: center; width: 100%; padding: 8px 12px; ${borderStyle} background: #fafafa; border-radius: 0 6px 6px 0;">
-                                                    ${getFolderOpenIcon('#64748b')} 
-                                                    <span style="font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.3;">
-                                                        ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 6px; text-transform: uppercase;">(${pdfStrings.partial})</span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    `;
-                                } else {
-                                    tr.style.background = bg;
-                                    tr.innerHTML = `
-                                        <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
-                                            <div style="display: flex; align-items: center; min-height: 40px; padding-left: ${indentPixels}px;">
-                                                <div style="display: flex; align-items: center; width: 100%; padding: 8px 12px; ${borderStyle} background: ${depth > 0 ? '#fafafa' : 'transparent'}; border-radius: 0 6px 6px 0;">
-                                                    ${icon} <span style="font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3;">${n.name}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 8px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
-                                        <td style="padding: 8px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
-                                        <td style="padding: 8px 15px 8px 8px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
-                                    `;
-                                }
-                                tbody.appendChild(tr);
-
-                                if (shouldRecurse && n.children) {
-                                    buildPDFRows(n.children, depth + 1);
-                                }
-                            }
-                        });
-                    }
-
-                    buildPDFRows(treeData, 0);
-
-                    // Добавляем в DOM (абсолютно невидимо)
-                    printWrapper.appendChild(pdfContainer);
-                    document.body.appendChild(printWrapper);
-
-                    const fileName = isFullMode 
-                        ? (isRu ? 'Stathydra_Full_Report.pdf' : 'Stathydra_Full_Specification.pdf')
-                        : (isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf');
-
-                    const opt = {
-                        margin:       10, 
-                        filename:     fileName,
-                        image:        { type: 'jpeg', quality: 1.0 }, 
-                        html2canvas:  { 
-                            scale: canvasScale, 
-                            useCORS: true, 
-                            scrollX: 0, 
-                            scrollY: 0, 
-                            windowWidth: 800 
-                        }, 
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' } 
-                    };
-
-                    html2pdf().set(opt).from(pdfContainer).save().then(() => {
-                        if (printWrapper) printWrapper.remove();
-                        if (loader) loader.style.display = 'none';
-                    }).catch(err => {
-                        if (printWrapper) printWrapper.remove();
-                        if (loader) loader.style.display = 'none';
-                        alert("Ошибка генерации PDF: " + err);
-                    });
-
-                } catch (innerError) {
-                    if (printWrapper) printWrapper.remove();
-                    if (document.getElementById('loader')) document.getElementById('loader').style.display = 'none';
-                    alert("Сбой подготовки данных: " + innerError.message);
-                }
-            }, 150); 
-        } catch (error) {
-            alert("Критическая ошибка: " + error.message);
+        // 1. Проверки на пустоту
+        if (!isFullMode && (!selectedIds || selectedIds.size === 0) && (!indeterminateIds || indeterminateIds.size === 0)) {
+            return alert(DICT[currentLang].alertEmpty);
         }
+        if (isFullMode && (!treeData || treeData.length === 0)) {
+            return alert(DICT[currentLang].alertEmpty);
+        }
+
+        const isRu = currentLang === 'ru';
+        const d = DICT[currentLang];
+
+        const pdfStrings = {
+            geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
+            allLocs: isRu ? "Все локации" : "All locations",
+            catTitle: isFullMode 
+                ? (isRu ? "Сводка (Полная детализация)" : "Summary (Full Details)") 
+                : (isRu ? "Детализация выбранных категорий" : "Selected Categories Details"),
+            partial: isRu ? "частично" : "partial",
+            lblLines: isRu ? "📋 Строк всего" : "📋 Total Lines",
+            lblPhones: isRu ? "📞 Телефонов" : "📞 Phones",
+            lblEmails: isRu ? "✉️ E-mail" : "✉️ E-mail"
+        };
+
+        const getFolderOpenIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>`;
+        const getFolderSolidIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+        const getFileIcon = (color) => `<svg style="width: 13px; height: 13px; margin-right: 6px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+
+        // 2. Создаем или находим специальный контейнер для печати
+        let printArea = document.getElementById('smart-print-area');
+        if (!printArea) {
+            printArea = document.createElement('div');
+            printArea.id = 'smart-print-area';
+            document.body.appendChild(printArea);
+
+            // Инжектим специальные стили, которые скроют весь сайт и покажут только отчет при печати
+            const printStyle = document.createElement('style');
+            printStyle.innerHTML = `
+                @media print {
+                    body > *:not(#smart-print-area) { display: none !important; }
+                    body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+                    #smart-print-area { display: block !important; position: static !important; width: 100% !important; }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    @page { margin: 10mm; size: A4 portrait; }
+                    .page-break-avoid { page-break-inside: avoid !important; break-inside: avoid !important; }
+                }
+                #smart-print-area { display: none; }
+            `;
+            document.head.appendChild(printStyle);
+        }
+
+        // 3. Формируем статистику ГЕО
+        let filtersHtml = `<table style="width: 100%; font-size: 14px; border-collapse: collapse; margin-top: 5px;">`;
+        let hasFilters = false;
+        for(let i=0; i<4; i++) {
+            const row = document.getElementById(`sum-row-${i}`);
+            const val = document.getElementById(`sum-val-${i}`);
+            if(row && row.style.display !== 'none') {
+                filtersHtml += `
+                <tr>
+                    <td style="padding: 5px 0; color: #64748b; width: 150px; border-bottom: 1px solid #f1f5f9;">${LEVEL_LABELS[i]}</td>
+                    <td style="padding: 5px 0; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${val.innerText}</td>
+                </tr>`;
+                hasFilters = true;
+            }
+        }
+        filtersHtml += `</table>`;
+
+        let finalL = 0, finalP = 0, finalE = 0;
+        if (isFullMode) {
+            treeData.forEach(n => { 
+                if(n.visible) { finalL += n.stats.l; finalP += n.stats.p; finalE += n.stats.e; }
+            });
+        } else {
+            finalL = parseInt((document.getElementById('selLines')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
+            finalP = parseInt((document.getElementById('selPhones')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
+            finalE = parseInt((document.getElementById('selEmails')?.innerText || '0').replace(/\D/g, ''), 10) || 0;
+        }
+
+        // 4. Генерируем HTML самого отчета
+        let html = `
+            <div style="font-family: 'Inter', -apple-system, sans-serif; color: #0f172a; width: 100%; max-width: 800px; margin: 0 auto;">
+                <div style="margin-bottom: 25px;">
+                    <h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800;">📍 ${pdfStrings.geoTitle}</h2>
+                    <div style="background: #fafafa; padding: 10px 20px 15px 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        ${hasFilters ? filtersHtml : `<div style="padding-top:10px; font-weight:700; color:#475569;">🌍 ${pdfStrings.allLocs}</div>`}
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+                    <div style="padding: 20px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 14px; flex: 1; text-align: center;">
+                        <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblLines}</div>
+                        <div style="font-size: 26px; font-weight: 900; color: #0f172a;">${finalL.toLocaleString()}</div>
+                    </div>
+                    <div style="padding: 20px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 14px; flex: 1; text-align: center;">
+                        <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblPhones}</div>
+                        <div style="font-size: 26px; font-weight: 900; color: #1d4ed8;">${finalP.toLocaleString()}</div>
+                    </div>
+                    <div style="padding: 20px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 14px; flex: 1; text-align: center;">
+                        <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblEmails}</div>
+                        <div style="font-size: 26px; font-weight: 900; color: #059669;">${finalE.toLocaleString()}</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 800; border-left: 4px solid #3b82f6; padding-left: 12px;">${pdfStrings.catTitle}</h3>
+                
+                <table style="width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed;">
+                    <thead>
+                        <tr style="background: #0f172a;">
+                            <th style="padding: 12px 15px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; border-radius: 8px 0 0 0; width: auto;">${d.thCategory}</th>
+                            <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px;">${d.thLines}</th>
+                            <th style="padding: 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px;">${d.thPhones}</th>
+                            <th style="padding: 12px 15px 12px 10px; font-weight: 700; color: #ffffff; font-size: 11px; text-transform: uppercase; text-align: right; width: 85px; border-radius: 0 8px 0 0;">${d.thEmails}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        // 5. Рекурсивное построение идеальных строк таблицы
+        function buildRowsHTML(nodes, depth) {
+            let rowHtml = "";
+            nodes.forEach((n) => {
+                if (n.stats.l === 0 || !n.visible) return;
+
+                const isFolder = n.children && n.children.length > 0;
+                const indentPixels = depth * 24; 
+                const depthColors = ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+                const lineColor = depthColors[Math.min(depth, depthColors.length - 1)];
+                const borderStyle = `border-left: 4px solid ${lineColor};`;
+
+                let shouldPrint = false;
+                let shouldRecurse = false;
+                let isPartial = false;
+
+                if (isFullMode) {
+                    shouldPrint = true;
+                    shouldRecurse = true;
+                } else {
+                    if (selectedIds.has(n.id)) {
+                        shouldPrint = true;
+                        shouldRecurse = false;
+                    } else if (isFolder && indeterminateIds.has(n.id)) {
+                        shouldPrint = true;
+                        shouldRecurse = true;
+                        isPartial = true;
+                    }
+                }
+
+                if (shouldPrint) {
+                    const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
+                    const bg = isFolder ? '#f8fafc' : '#ffffff';
+
+                    if (isPartial) {
+                        rowHtml += `
+                            <tr class="page-break-avoid" style="background: #f1f5f9;">
+                                <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
+                                    <div style="display: flex; align-items: center; min-height: 40px; padding-left: ${indentPixels}px;">
+                                        <div style="display: flex; align-items: center; width: 100%; padding: 8px 12px; ${borderStyle} background: #fafafa; border-radius: 0 6px 6px 0;">
+                                            ${getFolderOpenIcon('#64748b')} 
+                                            <span style="font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.3;">
+                                                ${n.name} <span style="font-weight: 600; color: #64748b; font-size: 11px; margin-left: 6px; text-transform: uppercase;">(${pdfStrings.partial})</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        rowHtml += `
+                            <tr class="page-break-avoid" style="background: ${bg};">
+                                <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
+                                    <div style="display: flex; align-items: center; min-height: 40px; padding-left: ${indentPixels}px;">
+                                        <div style="display: flex; align-items: center; width: 100%; padding: 8px 12px; ${borderStyle} background: ${depth > 0 ? '#fafafa' : 'transparent'}; border-radius: 0 6px 6px 0;">
+                                            ${icon} <span style="font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3;">${n.name}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 8px; text-align: right; font-size: 13px; font-weight: 700; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.l.toLocaleString()}</td>
+                                <td style="padding: 8px; text-align: right; font-size: 13px; font-weight: 700; color: #1d4ed8; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.p.toLocaleString()}</td>
+                                <td style="padding: 8px 15px 8px 8px; text-align: right; font-size: 13px; font-weight: 700; color: #10b981; border-bottom: 1px solid #f1f5f9; vertical-align: middle;">${n.stats.e.toLocaleString()}</td>
+                            </tr>
+                        `;
+                    }
+
+                    if (shouldRecurse && n.children) {
+                        rowHtml += buildRowsHTML(n.children, depth + 1);
+                    }
+                }
+            });
+            return rowHtml;
+        }
+
+        html += buildRowsHTML(treeData, 0);
+        html += `</tbody></table></div>`;
+
+        // 6. Помещаем HTML в контейнер
+        printArea.innerHTML = html;
+
+        // 7. Вызываем нативную печать с небольшой задержкой для отрисовки
+        setTimeout(() => {
+            // Подменяем title сайта, чтобы файл по умолчанию назывался красиво
+            const originalTitle = document.title;
+            document.title = isFullMode 
+                ? (isRu ? 'Stathydra_Full_Report' : 'Stathydra_Full_Specification') 
+                : (isRu ? 'Stathydra_Report' : 'Stathydra_Specification');
+            
+            // Вызываем окно печати/сохранения
+            window.print();
+            
+            // Возвращаем всё как было
+            document.title = originalTitle;
+            printArea.innerHTML = ''; 
+        }, 300);
     }
 
     /* ================= ONBOARDING TOUR LOGIC ================= */
