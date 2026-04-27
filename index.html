@@ -239,9 +239,7 @@
 
         <div class="actions">
             <button class="btn btn-download" style="background: #2563eb; margin-bottom: 8px;" onclick="downloadPDF(false)">📄 PDF (Выбранное)</button>
-            
             <button class="btn btn-download" style="background: #475569; margin-bottom: 10px;" onclick="downloadPDF(true)">📄 PDF (Весь фильтр)</button>
-            
             <button class="btn btn-download" id="btnDownload" onclick="downloadOrder()">⬇ Скачать заказ</button>
             <button class="btn btn-reset" id="btnReset" onclick="resetAll()">Сброс</button>
         </div>
@@ -288,8 +286,7 @@
 </div>
 
 <div class="lang-float">
-    <div class="lang-float-btn" id="currentLangIcon">
-        </div>
+    <div class="lang-float-btn" id="currentLangIcon"></div>
     <div class="lang-menu">
         <div class="lang-opt" data-lang="ru" onclick="selectLang('ru')" title="Русский">
             <img class="flag-img-small" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Crect fill='%23fff' width='9' height='3'/%3E%3Crect fill='%23d52b1e' y='3' width='9' height='3'/%3E%3Crect fill='%230039a6' y='2' width='9' height='2'/%3E%3C/svg%3E">
@@ -312,7 +309,6 @@
 </div>
 
 <script>
-    // === ВШИТЫЕ SVG ФЛАГИ ===
     const FLAG_RU = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 6'%3E%3Crect fill='%23fff' width='9' height='3'/%3E%3Crect fill='%23d52b1e' y='3' width='9' height='3'/%3E%3Crect fill='%230039a6' y='2' width='9' height='2'/%3E%3C/svg%3E";
     const FLAG_EN = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 31.5'%3E%3Crect fill='%23b22234' width='60' height='31.5'/%3E%3Cpath d='M0,2.25H60M0,6.75H60M0,11.25H60M0,15.75H60M0,20.25H60M0,24.75H60M0,29.25H60' stroke='%23fff' stroke-width='2.25'/%3E%3Crect fill='%233c3b6e' width='24' height='15.75'/%3E%3Cg fill='%23fff'%3E%3Cpath d='M2,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,1.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M3.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM6.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM9.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM12.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM15.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM18.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM21.5,3.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M2,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,5.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M3.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM6.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM9.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM12.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM15.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM18.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM21.5,7.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M2,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,9.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M3.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM6.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM9.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM12.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM15.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM18.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM21.5,11.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3Cpath d='M2,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM5,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM8,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM11,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM14,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM17,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM20,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1zM23,13.5l.3.9h1l-.8.6.3.9-.8-.6-.8.6.3-.9-.8-.6h1z'/%3E%3C/g%3E%3C/svg%3E";
 
@@ -389,26 +385,25 @@
         }
     };
 
-const TIERS_RU = [
-    { limit: 20000, rate: 0.025, name: "Новичок" },         
-    { limit: 50000, rate: 0.017, name: "Старт" },            
-    { limit: 100000, rate: 0.013, name: "Активный" },      
-    { limit: 250000, rate: 0.0085, name: "Бизнес" },          
-    { limit: 500000, rate: 0.006, name: "Профи" },          
-    { limit: 1000000, rate: 0.0045, name: "Опт" },           
-    { limit: Infinity, rate: 0.002, name: "Супер опт" }    
-];
+    const TIERS_RU = [
+        { limit: 20000, rate: 0.025, name: "Новичок" },         
+        { limit: 50000, rate: 0.017, name: "Старт" },            
+        { limit: 100000, rate: 0.013, name: "Активный" },      
+        { limit: 250000, rate: 0.0085, name: "Бизнес" },          
+        { limit: 500000, rate: 0.006, name: "Профи" },          
+        { limit: 1000000, rate: 0.0045, name: "Опт" },           
+        { limit: Infinity, rate: 0.002, name: "Супер опт" }    
+    ];
 
-// Сетка тарифов для долларов (EN)
-const TIERS_EN = [
-    { limit: 20000, rate: 0.00045, name: "Newbie" },          
-    { limit: 50000, rate: 0.00035, name: "Starter" },            
-    { limit: 100000, rate: 0.00026, name: "Active" },       
-    { limit: 250000, rate: 0.00018, name: "Business" },          
-    { limit: 500000, rate: 0.000085, name: "Pro" },          
-    { limit: 1000000, rate: 0.000055, name: "Wholesale" },           
-    { limit: Infinity, rate: 0.000035, name: "Super Whole" }    
-];
+    const TIERS_EN = [
+        { limit: 20000, rate: 0.00045, name: "Newbie" },          
+        { limit: 50000, rate: 0.00035, name: "Starter" },            
+        { limit: 100000, rate: 0.00026, name: "Active" },       
+        { limit: 250000, rate: 0.00018, name: "Business" },          
+        { limit: 500000, rate: 0.000085, name: "Pro" },          
+        { limit: 1000000, rate: 0.000055, name: "Wholesale" },           
+        { limit: Infinity, rate: 0.000035, name: "Super Whole" }    
+    ];
     
     let TIERS = TIERS_RU;
     let LEVEL_LABELS = DICT.ru.lvlLabels;
@@ -432,7 +427,6 @@ const TIERS_EN = [
         
         const d = DICT[currentLang];
         
-        // Static UI
         document.getElementById('lblTotal').innerText = d.lblTotal;
         document.getElementById('lblStep').innerText = d.lblStep;
         document.getElementById('btnDownload').innerText = d.btnDownload;
@@ -452,7 +446,6 @@ const TIERS_EN = [
         document.getElementById('btnTourSkip').innerText = d.tourSkip;
         document.getElementById('currencySym').innerText = d.currency;
 
-        // Dynamic Arrays Update
         LEVEL_LABELS = d.lvlLabels;
         LEVEL_PLURALS = d.lvlPlurals;
         TOUR_STEPS = d.tourSteps;
@@ -954,7 +947,6 @@ const TIERS_EN = [
     /* ================= PDF EXPORT LOGIC ================= */
     function downloadPDF(isFullMode = false) {
         try {
-            // Проверки на пустоту
             if (!isFullMode && (!selectedIds || selectedIds.size === 0) && (!indeterminateIds || indeterminateIds.size === 0)) {
                 return alert(DICT[currentLang].alertEmpty);
             }
@@ -965,18 +957,16 @@ const TIERS_EN = [
             const isRu = currentLang === 'ru';
             const d = DICT[currentLang];
             
-            // Включаем экран загрузки
             const loader = document.getElementById('loader');
             const loaderStatus = document.getElementById('loaderStatus');
             if (loader && loaderStatus) {
                 loader.style.display = 'flex';
-                loaderStatus.innerText = isRu ? "Создаем красивый отчет..." : "Generating beautiful report...";
+                loaderStatus.innerText = isRu ? "Формируем отчет..." : "Generating report...";
             }
 
             setTimeout(() => {
                 let printWrapper = null;
                 try {
-                    // 1. Считаем количество строк для защиты от пустых листов
                     let rowCount = 0;
                     function countRows(nodes) {
                         nodes.forEach(n => {
@@ -996,16 +986,17 @@ const TIERS_EN = [
                     }
                     countRows(treeData);
 
-                    // Умный масштаб: если строк очень много, понижаем масштаб, чтобы Canvas браузера не выдал пустоту
-                    let canvasScale = 2; // Идеальное качество
-                    if (rowCount > 500) canvasScale = 1.5;
-                    if (rowCount > 1000) canvasScale = 1;
+                    // Умный масштаб от краша Canvas
+                    let canvasScale = 2; 
+                    if (rowCount > 400) canvasScale = 1.5;
+                    if (rowCount > 800) canvasScale = 1.0;
+                    if (rowCount > 1500) canvasScale = 0.8;
 
                     const pdfStrings = {
                         geoTitle: isRu ? "Гео-таргетинг" : "Geo-Targeting",
                         allLocs: isRu ? "Все локации" : "All locations",
                         catTitle: isFullMode 
-                            ? (isRu ? "Сводка по фильтрам (Полная детализация)" : "Filter Summary (Full Details)") 
+                            ? (isRu ? "Сводка (Полная детализация)" : "Summary (Full Details)") 
                             : (isRu ? "Детализация выбранных категорий" : "Selected Categories Details"),
                         partial: isRu ? "частично" : "partial",
                         lblLines: isRu ? "📋 Строк всего" : "📋 Total Lines",
@@ -1017,18 +1008,15 @@ const TIERS_EN = [
                     const getFolderSolidIcon = (color) => `<svg style="width: 15px; height: 15px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
                     const getFileIcon = (color) => `<svg style="width: 14px; height: 14px; margin-right: 8px; fill: ${color}; flex-shrink: 0;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
 
-                    // 2. ЖЕЛЕЗОБЕТОННАЯ ОБЕРТКА ДЛЯ ИСКЛЮЧЕНИЯ СМЕЩЕНИЯ
-                    // Мы позиционируем её абсолютно в координаты 0,0, чтобы игнорировать flex-свойства твоего body
+                    // ОБЕРТКА (Изоляция от стилей сайта для защиты от смещения влево)
                     printWrapper = document.createElement('div');
                     printWrapper.style.position = 'absolute';
                     printWrapper.style.top = '0px';
                     printWrapper.style.left = '0px';
-                    printWrapper.style.width = '850px';
+                    printWrapper.style.width = '800px';
                     printWrapper.style.backgroundColor = '#ffffff';
-                    printWrapper.style.zIndex = '-9999'; // Невидимо для пользователя
+                    printWrapper.style.zIndex = '-9999'; 
                     printWrapper.style.display = 'block'; 
-                    printWrapper.style.margin = '0px';
-                    printWrapper.style.padding = '0px';
 
                     const pdfContainer = document.createElement('div');
                     pdfContainer.style.width = '100%'; 
@@ -1074,15 +1062,15 @@ const TIERS_EN = [
                         <div style="display: flex; gap: 15px; margin-bottom: 30px;">
                             <div style="padding: 20px; background: #ffffff; border: 2px solid #cbd5e1; border-radius: 14px; flex: 1; text-align: center;">
                                 <div style="font-size: 11px; color: #475569; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblLines}</div>
-                                <div style="font-size: 28px; font-weight: 900; color: #0f172a;">${finalL.toLocaleString()}</div>
+                                <div style="font-size: 26px; font-weight: 900; color: #0f172a;">${finalL.toLocaleString()}</div>
                             </div>
                             <div style="padding: 20px; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 14px; flex: 1; text-align: center;">
                                 <div style="font-size: 11px; color: #2563eb; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblPhones}</div>
-                                <div style="font-size: 28px; font-weight: 900; color: #1d4ed8;">${finalP.toLocaleString()}</div>
+                                <div style="font-size: 26px; font-weight: 900; color: #1d4ed8;">${finalP.toLocaleString()}</div>
                             </div>
                             <div style="padding: 20px; background: #ecfdf5; border: 2px solid #34d399; border-radius: 14px; flex: 1; text-align: center;">
                                 <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">${pdfStrings.lblEmails}</div>
-                                <div style="font-size: 28px; font-weight: 900; color: #059669;">${finalE.toLocaleString()}</div>
+                                <div style="font-size: 26px; font-weight: 900; color: #059669;">${finalE.toLocaleString()}</div>
                             </div>
                         </div>
                         <h3 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 800; border-left: 4px solid #3b82f6; padding-left: 12px;">${pdfStrings.catTitle}</h3>
@@ -1107,9 +1095,9 @@ const TIERS_EN = [
 
                             const isFolder = n.children && n.children.length > 0;
                             const tr = document.createElement('tr');
-                            tr.style.pageBreakInside = 'avoid'; // Запрещаем разрыв строки при переходе на новую страницу
+                            tr.style.pageBreakInside = 'avoid';
                             
-                            const indentPixels = depth * 24; 
+                            const indentPixels = depth * 20; 
                             const depthColors = ['#94a3b8', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
                             const lineColor = depthColors[Math.min(depth, depthColors.length - 1)];
                             const borderStyle = `border-left: 4px solid ${lineColor};`;
@@ -1124,7 +1112,7 @@ const TIERS_EN = [
                             } else {
                                 if (selectedIds.has(n.id)) {
                                     shouldPrint = true;
-                                    shouldRecurse = false; // Не проваливаемся, папка выбрана целиком
+                                    shouldRecurse = false;
                                 } else if (isFolder && indeterminateIds.has(n.id)) {
                                     shouldPrint = true;
                                     shouldRecurse = true;
@@ -1133,11 +1121,13 @@ const TIERS_EN = [
                             }
 
                             if (shouldPrint) {
+                                const bg = isFolder ? '#f8fafc' : '#ffffff';
+                                const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
+
                                 if (isPartial) {
-                                    // ЧАСТИЧНО ВЫБРАННАЯ ПАПКА
-                                    tr.style.background = '#ffffff';
+                                    tr.style.background = '#f1f5f9';
                                     tr.innerHTML = `
-                                        <td colspan="4" style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
+                                        <td colspan="4" style="padding: 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
                                             <div style="display: flex; align-items: center; min-height: 40px; padding-left: ${indentPixels}px;">
                                                 <div style="display: flex; align-items: center; width: 100%; padding: 8px 12px; ${borderStyle} background: #fafafa; border-radius: 0 6px 6px 0;">
                                                     ${getFolderOpenIcon('#64748b')} 
@@ -1149,9 +1139,7 @@ const TIERS_EN = [
                                         </td>
                                     `;
                                 } else {
-                                    // ПОЛНОСТЬЮ ВЫБРАННАЯ (ИЛИ ВЕСЬ ОТЧЕТ)
-                                    tr.style.background = isFolder ? '#f8fafc' : '#ffffff';
-                                    const icon = isFolder ? getFolderSolidIcon('#3b82f6') : getFileIcon('#64748b');
+                                    tr.style.background = bg;
                                     tr.innerHTML = `
                                         <td style="padding: 0; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
                                             <div style="display: flex; align-items: center; min-height: 40px; padding-left: ${indentPixels}px;">
@@ -1176,7 +1164,7 @@ const TIERS_EN = [
 
                     buildPDFRows(treeData, 0);
 
-                    // Добавляем таблицу в жесткую невидимую обертку и помещаем в DOM
+                    // Добавляем в DOM (абсолютно невидимо)
                     printWrapper.appendChild(pdfContainer);
                     document.body.appendChild(printWrapper);
 
@@ -1184,7 +1172,6 @@ const TIERS_EN = [
                         ? (isRu ? 'Stathydra_Full_Report.pdf' : 'Stathydra_Full_Specification.pdf')
                         : (isRu ? 'Stathydra_Report.pdf' : 'Stathydra_Specification.pdf');
 
-                    // 3. Строгие настройки генерации (без смещений)
                     const opt = {
                         margin:       10, 
                         filename:     fileName,
@@ -1194,14 +1181,13 @@ const TIERS_EN = [
                             useCORS: true, 
                             scrollX: 0, 
                             scrollY: 0, 
-                            windowWidth: 850 
+                            windowWidth: 800 
                         }, 
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                         pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' } 
                     };
 
                     html2pdf().set(opt).from(pdfContainer).save().then(() => {
-                        // Чистим за собой
                         if (printWrapper) printWrapper.remove();
                         if (loader) loader.style.display = 'none';
                     }).catch(err => {
@@ -1215,13 +1201,11 @@ const TIERS_EN = [
                     if (document.getElementById('loader')) document.getElementById('loader').style.display = 'none';
                     alert("Сбой подготовки данных: " + innerError.message);
                 }
-            }, 100); 
-
+            }, 150); 
         } catch (error) {
             alert("Критическая ошибка: " + error.message);
         }
-    }e(name);
-}
+    }
 
     /* ================= ONBOARDING TOUR LOGIC ================= */
     let currentTourStep = 0;
